@@ -1,0 +1,223 @@
+% Andrew McNabb's Resume
+% Created: 7 Jan 2004
+% Last Modified: 17 Jul 2004
+
+\documentclass[11pt,a4paper,oneside]{article}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+
+\pagestyle{empty}
+\geometry{a4paper,tmargin=2cm,bmargin=2cm,lmargin=2cm,rmargin=2cm,headheight=0cm,headsep=0cm,footskip=1cm}
+
+\setlength{\parindent}{0cm}
+\setlength{\parskip}{0cm}
+\setlength{\itemsep}{0cm}
+\setlength{\topsep}{0cm}
+\setlength{\tabcolsep}{0cm}
+
+% Name and contact information
+\newcommand{\name}{Michael Cooney}
+\newcommand{\addr}{271 Premier Square, New Finglas Road, Dublin 11}
+\newcommand{\phone}{+353 87 819-5992}
+\newcommand{\email}{mcooney@describedata.com}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% New commands and environments
+
+% This defines how the name looks
+\newcommand{\bigname}[1]{
+  \begin{center}\Huge\scshape#1\end{center}
+}
+
+% A ressection is a main section (<H1>Section</H1>)
+\newenvironment{ressection}[1]{
+  \vspace{4pt}
+  {\Large#1}
+  \begin{itemize}
+    \vspace{3pt}
+}{
+  \end{itemize}
+}
+
+% A resitem is a simple list element in a ressection (first level)
+\newcommand{\resitem}[1]{
+  \vspace{-4pt}
+  \item \begin{flushleft} #1 \end{flushleft}
+}
+
+% A ressubitem is a simple list element in anything but a ressection (second level)
+\newcommand{\ressubitem}[1]{
+  \vspace{-1pt}
+  \item \begin{flushleft} #1 \end{flushleft}
+}
+
+% A resbigitem is a complex list element for stuff like jobs and education:
+%  Arg 1: Name of company or university
+%  Arg 2: Location
+%  Arg 3: Title and/or date range
+\newcommand{\resbigitem}[3]{
+  \vspace{-5pt}
+  \item
+  \textbf{#1}---#2 \\
+  \textit{#3}
+}
+
+% This is a list that comes with a resbigitem
+\newenvironment{ressubsec}[3]{
+  \resbigitem{#1}{#2}{#3}
+  \vspace{-2pt}
+  \begin{itemize}
+}{
+  \end{itemize}
+}
+
+% This is a simple sublist
+\newenvironment{reslist}[1]{
+  \resitem{\textbf{#1}}
+  \vspace{-5pt}
+  \begin{itemize}
+}{
+  \end{itemize}
+}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Now for the actual document:
+
+\begin{document}
+
+% Name with horizontal rule
+\bigname{\name}
+
+\vspace{-8pt} \rule{\textwidth}{1pt}
+
+\vspace{-1pt} {\small\itshape \addr \hfill \phone; \email}
+
+\vspace{8pt}
+
+A quantitative analyst and data scientist with over twenty years of experience
+across capital markets and insurance. Specialising in the delivery of practical
+tools and models that help practitioners evaluate risk at both the individual
+and portfolio level.
+
+\vspace{6pt}
+
+My work spans applied statistics, machine learning, natural language processing,
+and AI, with a strong foundation in data engineering and software development. I
+have built pricing tools, underwriting systems, and planning platforms for
+clients in Lloyd's and the London Company Market.
+
+\vspace{6pt}
+
+I am particularly drawn to problems at the intersection of complex risk and data
+— finding common structure across domains that others treat as unrelated. I
+maintain an active professional network across the insurance and data science
+communities in London and Dublin.
+
+\vspace{4pt}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{ressection}{Relevant Experience}
+
+  \item[] \hspace*{-\leftmargin} LinkedIn Profile: \href{https://www.linkedin.com/in/mick-cooney/}{https://www.linkedin.com/in/mick-cooney/}
+  \vspace{2pt}
+
+
+  \begin{ressubsec}{Describe Data}{Dublin and London}{Chief Technical Officer: Nov 2018 -- present}
+    \ressubitem{Assisted clients with their data strategy, focusing on identifying and extracting value from existing data sources}
+    \ressubitem{Built internal tools for clients to manage their pricing models}
+    \ressubitem{Performed a feasability study for clients to build automated underwriting engines in the London Company Market}
+    \ressubitem{Built tools to model out future business planning, accounting for risk parameter co-occurence}
+    \ressubitem{Constructed data pipelines and modelling for specialty financial lines insurance}
+    \ressubitem{Managed, collated and curated public company financial data}
+    \ressubitem{Produced a number of Exploratory Data Analysis reports of US Public Company data}
+    \ressubitem{Constructed tools to assist with the planning and execution of a portfolio-first approach to underwriting, and a rules-based engine to demostrate an approach to auto-follow syndicates in the Lloyd's Market}
+    \ressubitem{Combined fleet and AIS data to track and analysis smaller coaster vessels in European markets}
+    \ressubitem{Scoped, prototyped and helped to implement a outwards reinsurance net-down calculation engine for a large insurance company and assisted them in putting the system into production}
+    \ressubitem{Built a tool to aid C-suite executives in their annual planning that modelled lines of business and reinsurance strategies to aid them in triaging various 'what-if' scenarios}
+    \ressubitem{Built an AI agent to work with the planning tools to enable free-form interrogation of the planning system using natural language}
+  \end{ressubsec}
+
+  \begin{ressubsec}{Self-employed Contractor}{Dublin and London}{Quantitative Analyst / Programmer / Data Scientist: Nov 2014 -- Nov 2018}
+    \ressubitem{Churn modelling for life insurance policies using Bayesian stats and survival analysis}
+    \ressubitem{Used NLP techniques to analyse security-related issues for Cyber insurance analysis}
+    \ressubitem{MonteCarlo simulation of mortality and morbidity to prices books of life insurance}
+    \ressubitem{MonteCarlo simulation of policy lapse rates to investigate the effect of book reweighting}
+    \ressubitem{Implemented Nominatim geocoder to geocode addresses}
+    \ressubitem{Used agglomerative hierarchical clustering on census data for market segmentation}
+  \end{ressubsec}
+
+  \begin{ressubsec}{Harcourt Research and Technology (was Volare Capital Management)}{Dublin, Ireland}{Quantitative Analyst / Programmer: Apr 2007 -- Oct 2014}
+    \ressubitem{Produce time-series based volatility forecasts for option pricing}
+    \ressubitem{Constructed the data pipelines to produce forecasts for trading on a daily basis}
+    \ressubitem{Migrated the system over to git version control}
+    \ressubitem{Deployed and maintained hardware and software platform for a CEP system}
+    \ressubitem{Designed and implemented a fully automated US / Canada Interlisted Arbitrage trading system on a CEP platform (Progress Apama)}
+    \ressubitem{Developed prototypes for fully automated algorithmic trading strategies based on rebate-trading, pairs trading and mean-reversion}
+    \ressubitem{Automated systems interface with backend clearing systems}
+    \ressubitem{Used GARCH-based models to forecast equity option volatility}
+    \ressubitem{Used Monte Carlo methods to model the equity option implied volatility skew}
+    \ressubitem{Developed prototypes to model forecasting errors, risk management systems and dispersion trading}
+  \end{ressubsec}
+
+  \resbigitem{CPD College}{Dublin, Ireland}{Sysadmin / Programmer: Jan 2002 -- Oct 2011}
+
+  \resbigitem{Dublin Institute of Technology}{Dublin, Ireland}{Assistant Lecturer: Jan 2000--Sep 2006}
+
+\end{ressection}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{ressection}{Skills}
+
+  \item[] \hspace*{-\leftmargin} GitHub Repos: \href{http://www.github.com/kaybenleroll}{http://www.github.com/kaybenleroll}
+  \vspace{4pt}
+
+  \resitem{\textbf{Machine Learning:} Classification, Regression, Reinforcement Learning, Clustering, GIS/AIS Modeling}
+  \resitem{\textbf{Software Engineering:} R, python, Java, Scala/Spark, perl, C/C++, bash scripting}
+  \resitem{\textbf{Quant Analysis:} Time Series and Spectrum Analysis, Monte Carlo, Option Pricing}
+  \resitem{\textbf{Risk and Portfolio Management:} Correlation estimation, CAPM, VAR, CrashMetrics}
+  \resitem{\textbf{Data Management:} PostgreSQL programming, MySQL, Spark, MongoDB, polars}
+  \resitem{\textbf{Tools and Systems:} git, emacs, vim, Linux, PostGIS, AWS (EC2, RDS), Jupyter, quarto, LaTeX}
+\end{ressection}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{ressection}{Meetup Group Organiser}
+  \resbigitem{Dublin Data Science Meetup Group}{Dublin, Ireland}{Co-Organiser: April 2017 -- present}
+
+  \begin{ressubsec}{Dublin R Meetup Group}{Dublin, Ireland}{Co-Organiser: August 2012 -- Nov 2016}
+    \ressubitem{Organiser and speaker for talks and workshops on a variety of topics: Exploratory Data Analysis (EDA), Graph modelling, Time series analysis, Bayesian data analysis, Customer Lifetime Value, Survival Analysis, Bootstrapping, etc}
+  \end{ressubsec}
+\end{ressection}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{ressection}{Education}
+  \item \textbf{[Trinity College, Dublin] 1994--1998} BA (Mod.) in Theoretical Physics
+  \item \textbf{[Trinity College, Dublin] 1998--1999} MSc in High Performance Computing
+  \item \textbf{[Trinity College, Dublin] 1999--2005} PhD in Computational Stochastic Mathematics
+\end{ressection}
+
+
+
+
+\end{document}
