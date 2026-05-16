@@ -1,0 +1,99 @@
+# =============================================================================
+# PROJECT CONFIGURATION
+# =============================================================================
+
+PROJECT_NAME    := "numerical_analysis_primer"
+SOURCE_MD       := PROJECT_NAME + ".md"
+OUTPUT_HTML     := PROJECT_NAME + ".html"
+OUTPUT_HTML_MATHML := PROJECT_NAME + ".mathml.html"
+OUTPUT_HTML_MATHJAX := PROJECT_NAME + ".mathjax.html"
+OUTPUT_PDF      := PROJECT_NAME + ".pdf"
+TEMPLATE        := "doc-template.html"
+
+TITLE           := "Numerical Analysis Primer: A Practical Guide for Practitioners"
+AUTHOR          := "May 2026"
+
+# Container configuration
+PWD             := `pwd`
+PANDOC_CORE     := "docker.io/pandoc/core:latest"
+PANDOC_LATEX    := "docker.io/pandoc/latex:latest"
+
+# =============================================================================
+# DEFAULT TARGET
+# =============================================================================
+
+default:
+  @just --list
+
+# =============================================================================
+# RENDERING TARGETS
+# =============================================================================
+
+# Build both HTML and PDF outputs
+all: html pdf
+
+# Render markdown to HTML using pandoc/core container
+html:
+  podman run --rm -v "{{PWD}}:/data" {{PANDOC_CORE}} \
+    {{SOURCE_MD}} -o {{OUTPUT_HTML}} \
+    --standalone --embed-resources --toc --toc-depth=3 \
+    --mathjax \
+    --syntax-highlighting=breezedark --template="{{TEMPLATE}}" \
+    --metadata title="{{TITLE}}" \
+    --metadata author="{{AUTHOR}}"
+  @echo "✓ HTML written to {{OUTPUT_HTML}}"
+
+# Render markdown to HTML (MathML variant)
+html-mathml:
+  podman run --rm -v "{{PWD}}:/data" {{PANDOC_CORE}} \
+    {{SOURCE_MD}} -o {{OUTPUT_HTML_MATHML}} \
+    --standalone --embed-resources --toc --toc-depth=3 \
+    --mathml \
+    --syntax-highlighting=breezedark --template="{{TEMPLATE}}" \
+    --metadata title="{{TITLE}}" \
+    --metadata author="{{AUTHOR}}"
+  @echo "✓ MathML HTML written to {{OUTPUT_HTML_MATHML}}"
+
+# Render markdown to HTML (MathJax variant)
+html-mathjax:
+  podman run --rm -v "{{PWD}}:/data" {{PANDOC_CORE}} \
+    {{SOURCE_MD}} -o {{OUTPUT_HTML_MATHJAX}} \
+    --standalone --embed-resources --toc --toc-depth=3 \
+    --mathjax \
+    --syntax-highlighting=breezedark --template="{{TEMPLATE}}" \
+    --metadata title="{{TITLE}}" \
+    --metadata author="{{AUTHOR}}"
+  @echo "✓ MathJax HTML written to {{OUTPUT_HTML_MATHJAX}}"
+
+# Build both HTML math variants
+html-variants: html-mathml html-mathjax
+
+# Render markdown to PDF (via xelatex) using pandoc/latex container
+pdf:
+  podman run --rm -v "{{PWD}}:/data" {{PANDOC_LATEX}} \
+    {{SOURCE_MD}} -o {{OUTPUT_PDF}} \
+    --pdf-engine=xelatex --toc --toc-depth=3 \
+    -V geometry:margin=1.2in -V fontsize=11pt -V linestretch=1.25 \
+    -V colorlinks=true -V linkcolor=NavyBlue -V urlcolor=NavyBlue \
+    -V toc-title="Table of Contents" \
+    --metadata title="{{TITLE}}" \
+    --metadata author="{{AUTHOR}}" \
+    --include-in-header=pandoc-compact-code.latex
+  @echo "✓ PDF written to {{OUTPUT_PDF}}"
+
+# =============================================================================
+# CONTAINER MANAGEMENT
+# =============================================================================
+
+# Pull both pandoc images explicitly
+pull-images:
+  podman pull {{PANDOC_CORE}}
+  podman pull {{PANDOC_LATEX}}
+
+# =============================================================================
+# CLEANING
+# =============================================================================
+
+# Remove generated output files
+clean:
+  rm -fv {{OUTPUT_HTML}} {{OUTPUT_HTML_MATHML}} {{OUTPUT_HTML_MATHJAX}} {{OUTPUT_PDF}}
