@@ -1,0 +1,7 @@
+# LaTeX/PDF build byproducts
+*.aux
+*.out
+*.toc
+*.synctex.gz
+*.fdb_latexmk
+*.fls
