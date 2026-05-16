@@ -1,0 +1,1981 @@
+<!DOCTYPE html>
+<!-- saved from url=(0044)https://plus.maths.org/information-birth-bit -->
+<html lang="en" dir="ltr" prefix="og: https://ogp.me/ns#" data-component-id="" class=" js" data-once="drupal-dialog-deprecation-listener"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+<script type="text/javascript" defer="" async="" src="./Information is bits _ plus.maths.org_files/matomo.js"></script><script>const currentPageTags = 'Information theory,entropy,computer science,information about information';</script>
+<script async="" src="./Information is bits _ plus.maths.org_files/js" type="text/plain" id="cookies_ga_google_analytics_tracking_file" data-cookieconsent="analytics"></script>
+<script>window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments)};gtag("js", new Date());gtag("set", "developer_id.dMDhkMT", true);gtag("config", "G-SXC2XSWRLT", {"groups":"default","page_placeholder":"PLACEHOLDER_page_location"});</script>
+<script>var _paq = _paq || [];(function(){var u=(("https:" == document.location.protocol) ? "https://maths-org.matomo.cloud/" : "https://maths-org.matomo.cloud/");_paq.push(["setSiteId", "1"]);_paq.push(["setTrackerUrl", u+"matomo.php"]);_paq.push(["setDoNotTrack", 1]);_paq.push(["disableCookies"]);_paq.push(["setCustomVariable", 2, "page_title", "Information is bits", "page"]);_paq.push(["setCustomVariable", 3, "role", "anonymous", "visit"]);_paq.push(['setCustomDimension', 1, currentPageTags]);if (!window.matomo_search_results_active) {_paq.push(["trackPageView"]);}_paq.push(["setIgnoreClasses", ["no-tracking","colorbox"]]);_paq.push(["enableLinkTracking"]);var d=document,g=d.createElement("script"),s=d.getElementsByTagName("script")[0];g.type="text/javascript";g.defer=true;g.async=true;g.src=u+"matomo.js";s.parentNode.insertBefore(g,s);})();</script>
+<meta name="description" content="Information is bits. We send information over the internet every day. All that information, whether it&#39;s a birthday email or your homework, is in encoded into sequences of 0s and 1s. What&#39;s the best way of doing this? The way that uses the least amount of 0s and 1s and therefore requires the smallest amount of computer memory.">
+<link rel="canonical" href="https://plus.maths.org/information-birth-bit">
+<link rel="image_src" href="https://plus.maths.org/,,https://plus.maths.org/sites/default/files/abstractpics/5/20_mar_2015_-_1723/bits_icon.jpg,https://plus.maths.org/sites/default/files/bits_frontpage.jpg">
+<meta property="og:site_name" content="Plus Maths">
+<meta property="og:type" content="Article">
+<meta property="og:url" content="https://plus.maths.org/information-birth-bit">
+<meta property="og:title" content="Information is bits">
+<meta property="og:description" content="Computers represent information using bits — that&#39;s 0s and 1s. It turns out that Claude Shannon&#39;s entropy, a measure of information invented long before computers became mainstream, measures the minimal number of bits you need to encode a piece of information.">
+<meta property="og:image" content="https://plus.maths.org/sites/default/files/abstractpics/5/20_mar_2015_-_1723/bits_icon.jpg">
+<meta property="og:image" content="https://plus.maths.org/sites/default/files/bits_frontpage.jpg">
+<meta property="article:publisher" content="https://www.facebook.com/plusmagazine/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:description" content="Computers represent information using bits — that&#39;s 0s and 1s. It turns out that Claude Shannon&#39;s entropy, a measure of information invented long before computers became mainstream, measures the minimal number of bits you need to encode a piece of information.">
+<meta name="twitter:title" content="Information is bits">
+<meta name="twitter:site" content="@plusmathsorg">
+<meta name="twitter:image" content="https://plus.maths.org/sites/default/files/abstractpics/5/20_mar_2015_-_1723/bits_icon.jpg">
+<meta name="Generator" content="Drupal 10 (https://www.drupal.org)">
+<meta name="MobileOptimized" content="width">
+<meta name="HandheldFriendly" content="true">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="https://plus.maths.org/sites/default/files/plus_favicon_0.ico" type="image/vnd.microsoft.icon">
+
+    <title>Information is bits | plus.maths.org</title>
+    <link rel="stylesheet" media="all" href="./Information is bits _ plus.maths.org_files/css_AoMfjwPjpAkIrmzYbebmx4nVE5D8_PvQwNw1rGmd9MA.css">
+<link rel="stylesheet" media="all" href="./Information is bits _ plus.maths.org_files/css_f-eTa9iznXtix7weoxdnqik8QAUe2xriWZ-5TY_orpA.css">
+<link rel="stylesheet" media="all" href="./Information is bits _ plus.maths.org_files/fancybox.css">
+<link rel="stylesheet" media="all" href="./Information is bits _ plus.maths.org_files/css_eocFs3uF2JaK9EIhi6sP21UogEhm1sGTe8Z-H6Q7D8Y.css">
+
+    <script type="application/json" data-drupal-selector="drupal-settings-json">{"path":{"baseUrl":"\/","pathPrefix":"","currentPath":"node\/6315","currentPathIsAdmin":false,"isFront":false,"currentLanguage":"en"},"pluralDelimiter":"\u0003","suppressDeprecationErrors":true,"ajaxPageState":{"libraries":"eJyNlG1u5CAMhi-UhlWlPQ9ywCHu8JEFs5309IVkZqfaH06kCITfB-zYBuOhlE3FZHEwKd0Ii3rMHyWPxsanWTtQEMFvTKY0Y8YGhjVFjFzG1dfy_uv999vb5JO5SXplTlEADGQrySkyUMQsMBYb4qUoZ0Ivedl1rZsWmnIO9gQ2PCMwXjj3wJnY41W40oVzGe8Xgu2U_iRedKkhQN5Ot1D0LeUCtqRMX70y_qx-FMBJJ-26nlMOwCxW-SALb2ISW-A3qRN2_UiyQLUuqIK8l2iu3gvMn5pYcpHRkXgxypIqt09CPLVAKOoVxHKVrTAGPWWIlqLTZ5f2wfcsnLIMk5RvpiBFVgvmCCLyl_Cz6D5egnSNz2569KXNdQU_Qstm3-vxWZfYOU9fOMwenOrD2PtDwwfcB5eS86j_PYLqf8PQnCyNVAW5rn2VQlLHNDxDUxMUfK0MhCmTdT9MM0SzTen-srjKGCfM7mWi9jBZaq_NbtJ7-A9PBSGbRf_8PcULBhwDxXZp_GhKGY6SHtHsyVL7OIZkq8dvjo4_sA","theme":"plus2025","theme_token":null},"ajaxTrustedUrl":[],"matomo":{"disableCookies":true,"trackColorbox":false,"trackMailto":true},"google_analytics":{"account":"G-SXC2XSWRLT","trackOutbound":true,"trackMailto":true,"trackTel":true,"trackDownload":true,"trackDownloadExtensions":"7z|aac|arc|arj|asf|asx|avi|bin|csv|doc(x|m)?|dot(x|m)?|exe|flv|gif|gz|gzip|hqx|jar|jpe?g|js|mp(2|3|4|e?g)|mov(ie)?|msi|msp|pdf|phps|png|ppt(x|m)?|pot(x|m)?|pps(x|m)?|ppam|sld(x|m)?|thmx|qtm?|ra(m|r)?|sea|sit|tar|tgz|torrent|txt|wav|wma|wmv|wpd|xls(x|m|b)?|xlt(x|m)|xlam|xml|z|zip"},"mathjax":{"config_type":1,"config":{"loader":{"load":["[tex]\/textmacros"]},"tex":{"inlineMath":[["$","$"],["\\(","\\)"]],"packages":{"[+]":["textmacros"]}}}},"search_autocomplete":{"articles_title":{"source":"\/callback\/articles","selector":".view-articles #edit-title","minChars":3,"maxSuggestions":10,"autoSubmit":true,"autoRedirect":true,"theme":"minimal","filters":["q","title"],"noResult":{"group":{"group_id":"no_results"},"label":"No results found for [search-phrase]. Click to perform full search.","value":"[search-phrase]","link":""},"moreResults":{"group":{"group_id":"more_results"},"label":"View all results for [search-phrase].","value":"[search-phrase]","link":""}},"collections_title":{"source":"\/callback\/collections","selector":".view-collections #edit-title","minChars":3,"maxSuggestions":10,"autoSubmit":true,"autoRedirect":true,"theme":"minimal","filters":["q","title"],"noResult":{"group":{"group_id":"no_results"},"label":"No results found for [search-phrase]. Click to perform full search.","value":"[search-phrase]","link":""},"moreResults":{"group":{"group_id":"more_results"},"label":"View all results for [search-phrase].","value":"[search-phrase]","link":""}},"search_api_block":{"source":"\/callback\/nodes","selector":".region-search-pane input[type=\u0022search\u0022]","minChars":3,"maxSuggestions":10,"autoSubmit":true,"autoRedirect":true,"theme":"minimal","filters":["q","title"],"noResult":{"group":{"group_id":"no_results"},"label":"No results found for [search-phrase]. Click to perform full search.","value":"[search-phrase]","link":""},"moreResults":{"group":{"group_id":"more_results"},"label":"View all results for [search-phrase].","value":"[search-phrase]","link":""}}},"cookies":{"cookiesjsr":{"config":{"cookie":{"name":"cookiesjsr","expires":31536000000,"domain":"","sameSite":"Lax","secure":false},"library":{"libBasePath":"https:\/\/cdn.jsdelivr.net\/gh\/jfeltkamp\/cookiesjsr@1\/dist","libPath":"https:\/\/cdn.jsdelivr.net\/gh\/jfeltkamp\/cookiesjsr@1\/dist\/cookiesjsr.min.js","scrollLimit":0},"callback":{"method":"post","url":"\/index%2Ephp\/cookies\/consent\/callback.json","headers":[]},"interface":{"openSettingsHash":"#editCookieSettings","showDenyAll":true,"denyAllOnLayerClose":false,"settingsAsLink":false,"availableLangs":["en"],"defaultLang":"en","groupConsent":false,"cookieDocs":true}},"services":{"functional":{"id":"functional","services":[{"key":"functional","type":"functional","name":"Required functional","info":{"value":"\u003Ctable\u003E\r\n\t\u003Cthead\u003E\r\n\t\t\u003Ctr\u003E\r\n\t\t\t\u003Cth width=\u002215%\u0022\u003ECookie name\u003C\/th\u003E\r\n\t\t\t\u003Cth width=\u002215%\u0022\u003EDefault expiration time\u003C\/th\u003E\r\n\t\t\t\u003Cth\u003EDescription\u003C\/th\u003E\r\n\t\t\u003C\/tr\u003E\r\n\t\u003C\/thead\u003E\r\n\t\u003Ctbody\u003E\r\n\t\t\u003Ctr\u003E\r\n\t\t\t\u003Ctd\u003E\u003Ccode dir=\u0022ltr\u0022 translate=\u0022no\u0022\u003ESSESS\u0026lt;ID\u0026gt;\u003C\/code\u003E\u003C\/td\u003E\r\n\t\t\t\u003Ctd\u003E1 month\u003C\/td\u003E\r\n\t\t\t\u003Ctd\u003EIf you are logged in to this website, a session cookie is required to identify and connect your browser to your user account in the server backend of this website.\u003C\/td\u003E\r\n\t\t\u003C\/tr\u003E\r\n\t\t\u003Ctr\u003E\r\n\t\t\t\u003Ctd\u003E\u003Ccode dir=\u0022ltr\u0022 translate=\u0022no\u0022\u003Ecookiesjsr\u003C\/code\u003E\u003C\/td\u003E\r\n\t\t\t\u003Ctd\u003E1 year\u003C\/td\u003E\r\n\t\t\t\u003Ctd\u003EWhen you visited this website for the first time, you were asked for your permission to use several services (including those from third parties) that require data to be saved in your browser (cookies, local storage). Your decisions about each service (allow, deny) are stored in this cookie and are reused each time you visit this website.\u003C\/td\u003E\r\n\t\t\u003C\/tr\u003E\r\n\t\u003C\/tbody\u003E\r\n\u003C\/table\u003E\r\n","format":"full_html"},"uri":"","needConsent":false}],"weight":1},"tracking":{"id":"tracking","services":[{"key":"analytics","type":"tracking","name":"Google Analytics","info":{"format":"full_html","value":""},"uri":"https:\/\/analytics.google.com\/","needConsent":true}],"weight":10},"video":{"id":"video","services":[{"key":"video","type":"video","name":"Video provided by YouTube, Vimeo","info":{"format":"full_html","value":""},"uri":"","needConsent":true}],"weight":40}},"translation":{"_core":{"default_config_hash":"PpB_t3-mnEd5Lckhxc9rfquSMa0CndPslGvJZlcg61E"},"langcode":"en","bannerText":"We use cookies to enhance your experience.","privacyPolicy":"About our cookies","privacyUri":"https:\/\/maths.org\/cookies","imprint":"Imprint","imprintUri":"","cookieDocs":"Cookie details","cookieDocsUri":"\/cookies\/documentation","officialWebsite":"Official website","denyAll":"Deny all","alwaysActive":"Always active","settings":"Cookie settings","acceptAll":"Accept all","requiredCookies":"Required cookies","cookieSettings":"Cookie settings","close":"Close","readMore":"Read more","allowed":"Allowed","denied":"Denied","settingsAllServices":"Settings for all services","saveSettings":"Save","default_langcode":"en","disclaimerText":"All cookie information is subject to change by the service providers. We update this information regularly.","disclaimerTextPosition":"above","processorDetailsLabel":"Processor Company Details","processorLabel":"Company","processorWebsiteUrlLabel":"Company Website","processorPrivacyPolicyUrlLabel":"Company Privacy Policy","processorCookiePolicyUrlLabel":"Company Cookie Policy","processorContactLabel":"Data Protection Contact Details","placeholderAcceptAllText":"Accept All Cookies","functional":{"title":"Functional","details":"Cookies are small text files that are placed by your browser on your device in order to store certain information. Using the information that is stored and returned, a website can recognize that you have previously accessed and visited it using the browser on your end device. We use this information to arrange and display the website optimally in accordance with your preferences. Within this process, only the cookie itself is identified on your device. Personal data is only stored following your express consent or where this is absolutely necessary to enable use the service provided by us and accessed by you."},"tracking":{"title":"Tracking cookies","details":"Marketing cookies come from external advertising companies (\u0022third-party cookies\u0022) and are used to collect information about the websites visited by the user. The purpose of this is to create and display target group-oriented content and advertising for the user."},"video":{"title":"Video","details":"Video sharing services help to add rich media on the site and increase its visibility."}}},"cookiesTexts":{"_core":{"default_config_hash":"PpB_t3-mnEd5Lckhxc9rfquSMa0CndPslGvJZlcg61E"},"langcode":"en","bannerText":"We use cookies to enhance your experience.","privacyPolicy":"About our cookies","privacyUri":"https:\/\/maths.org\/cookies","imprint":"Imprint","imprintUri":"","cookieDocs":"Cookie details","cookieDocsUri":"\/cookies\/documentation","officialWebsite":"Official website","denyAll":"Deny all","alwaysActive":"Always active","settings":"Cookie settings","acceptAll":"Accept all","requiredCookies":"Required cookies","cookieSettings":"Cookie settings","close":"Close","readMore":"Read more","allowed":"Allowed","denied":"Denied","settingsAllServices":"Settings for all services","saveSettings":"Save","default_langcode":"en","disclaimerText":"All cookie information is subject to change by the service providers. We update this information regularly.","disclaimerTextPosition":"above","processorDetailsLabel":"Processor Company Details","processorLabel":"Company","processorWebsiteUrlLabel":"Company Website","processorPrivacyPolicyUrlLabel":"Company Privacy Policy","processorCookiePolicyUrlLabel":"Company Cookie Policy","processorContactLabel":"Data Protection Contact Details","placeholderAcceptAllText":"Accept All Cookies"},"services":{"analytics":{"uuid":"f78438a9-1b72-4cfa-8286-e718f9428096","langcode":"en","status":true,"dependencies":{"enforced":{"module":["cookies_ga"]}},"_core":{"default_config_hash":"kdI8DLFQN2AVW0p7C2m5w9Fp9Cdt4cdvo4wnJHmcKjA"},"id":"analytics","label":"Google Analytics","group":"tracking","info":{"format":"full_html","value":""},"consentRequired":true,"purpose":"","processor":"","processorContact":"","processorUrl":"https:\/\/analytics.google.com\/","processorPrivacyPolicyUrl":"","processorCookiePolicyUrl":"https:\/\/support.google.com\/analytics\/answer\/6004245","placeholderMainText":"This content is blocked because Google Analytics cookies have not been accepted.","placeholderAcceptText":"Only accept Google Analytics cookies"},"functional":{"uuid":"bb6d8921-7107-4e2b-a713-e4491e5e1ea4","langcode":"en","status":true,"dependencies":[],"_core":{"default_config_hash":"N-O3629vb-jExOxfM0FYcfPzEu6QVzgWHMm06jMERLg"},"id":"functional","label":"Required functional","group":"functional","info":{"value":"\u003Ctable\u003E\r\n\t\u003Cthead\u003E\r\n\t\t\u003Ctr\u003E\r\n\t\t\t\u003Cth width=\u002215%\u0022\u003ECookie name\u003C\/th\u003E\r\n\t\t\t\u003Cth width=\u002215%\u0022\u003EDefault expiration time\u003C\/th\u003E\r\n\t\t\t\u003Cth\u003EDescription\u003C\/th\u003E\r\n\t\t\u003C\/tr\u003E\r\n\t\u003C\/thead\u003E\r\n\t\u003Ctbody\u003E\r\n\t\t\u003Ctr\u003E\r\n\t\t\t\u003Ctd\u003E\u003Ccode dir=\u0022ltr\u0022 translate=\u0022no\u0022\u003ESSESS\u0026lt;ID\u0026gt;\u003C\/code\u003E\u003C\/td\u003E\r\n\t\t\t\u003Ctd\u003E1 month\u003C\/td\u003E\r\n\t\t\t\u003Ctd\u003EIf you are logged in to this website, a session cookie is required to identify and connect your browser to your user account in the server backend of this website.\u003C\/td\u003E\r\n\t\t\u003C\/tr\u003E\r\n\t\t\u003Ctr\u003E\r\n\t\t\t\u003Ctd\u003E\u003Ccode dir=\u0022ltr\u0022 translate=\u0022no\u0022\u003Ecookiesjsr\u003C\/code\u003E\u003C\/td\u003E\r\n\t\t\t\u003Ctd\u003E1 year\u003C\/td\u003E\r\n\t\t\t\u003Ctd\u003EWhen you visited this website for the first time, you were asked for your permission to use several services (including those from third parties) that require data to be saved in your browser (cookies, local storage). Your decisions about each service (allow, deny) are stored in this cookie and are reused each time you visit this website.\u003C\/td\u003E\r\n\t\t\u003C\/tr\u003E\r\n\t\u003C\/tbody\u003E\r\n\u003C\/table\u003E\r\n","format":"full_html"},"consentRequired":false,"purpose":"Essential functional cookies to provide general functionality","processor":"","processorContact":"","processorUrl":"","processorPrivacyPolicyUrl":"","processorCookiePolicyUrl":"","placeholderMainText":"This content is blocked because required functional cookies have not been accepted.","placeholderAcceptText":"Only accept required functional cookies"},"video":{"uuid":"c3d8e7a5-af36-4e8c-a379-966d87c71931","langcode":"en","status":true,"dependencies":{"enforced":{"module":["cookies_video"]}},"_core":{"default_config_hash":"iwaHmTJMLoZx7mRsDI0tPU1JgG2K9UHeNOvDNtNKFdI"},"id":"video","label":"Video provided by YouTube, Vimeo","group":"video","info":{"format":"full_html","value":""},"consentRequired":true,"purpose":"","processor":"","processorContact":"","processorUrl":"","processorPrivacyPolicyUrl":"","processorCookiePolicyUrl":"https:\/\/policies.google.com\/privacy","placeholderMainText":"This content is blocked because Video cookies have not been accepted.","placeholderAcceptText":"Only accept Video cookies"}},"groups":{"functional":{"uuid":"dcaa93c3-b9c5-46f6-8c8a-d7e9ec69a8d5","langcode":"en","status":true,"dependencies":[],"_core":{"default_config_hash":"aHm4Q63Ge97tcktTa_qmUqJMir45iyGY2lEvvqPW68g"},"id":"functional","label":"Functional","weight":1,"title":"Functional","details":"Cookies are small text files that are placed by your browser on your device in order to store certain information. Using the information that is stored and returned, a website can recognize that you have previously accessed and visited it using the browser on your end device. We use this information to arrange and display the website optimally in accordance with your preferences. Within this process, only the cookie itself is identified on your device. Personal data is only stored following your express consent or where this is absolutely necessary to enable use the service provided by us and accessed by you."},"marketing":{"uuid":"8496aeb4-29f8-4868-92c6-8bd3a4daa83b","langcode":"en","status":true,"dependencies":[],"_core":{"default_config_hash":"JkP6try0AxX_f4RpFEletep5NHSlVB1BbGw0snW4MO8"},"id":"marketing","label":"Marketing","weight":20,"title":"Marketing","details":"Customer communication and marketing tools."},"performance":{"uuid":"729cc8b4-c0da-40b9-a48d-4b00f106bede","langcode":"en","status":true,"dependencies":[],"_core":{"default_config_hash":"Jv3uIJviBj7D282Qu1ZpEQwuOEb3lCcDvx-XVHeOJpw"},"id":"performance","label":"Performance","weight":30,"title":"Performance Cookies","details":"Performance cookies collect aggregated information about how our website is used. The purpose of this is to improve its attractiveness, content and functionality. These cookies help us to determine whether, how often and for how long particular sub-pages of our website are accessed and which content users are particularly interested in. Search terms, country, region and (where applicable) the city from which the website is accessed are also recorded, as is the proportion of mobile devices that are used to access the website. We use this information to compile statistical reports that help us tailor the content of our website to your needs and optimize our offer."},"social":{"uuid":"5f9ba6dd-f1b2-477e-b20a-0c5739bc40ec","langcode":"en","status":true,"dependencies":[],"_core":{"default_config_hash":"w9uS0Ktbh58ffWxW1ue_MKgB_he6iZPMx2Pc6tN4K4o"},"id":"social","label":"Social Plugins","weight":20,"title":"Social Plugins","details":"Social media widgets provide additional content originally published on third party platforms."},"tracking":{"uuid":"43f43e00-3c39-473b-92a4-80a55f98228c","langcode":"en","status":true,"dependencies":[],"_core":{"default_config_hash":"_gYDe3qoEc6L5uYR6zhu5V-3ARLlyis9gl1diq7Tnf4"},"id":"tracking","label":"Tracking","weight":10,"title":"Tracking cookies","details":"Marketing cookies come from external advertising companies (\u0022third-party cookies\u0022) and are used to collect information about the websites visited by the user. The purpose of this is to create and display target group-oriented content and advertising for the user."},"video":{"uuid":"63e5825f-d470-4423-8b9e-20ea938cd438","langcode":"en","status":true,"dependencies":[],"_core":{"default_config_hash":"w1WnCmP2Xfgx24xbx5u9T27XLF_ZFw5R0MlO-eDDPpQ"},"id":"video","label":"Videos","weight":40,"title":"Video","details":"Video sharing services help to add rich media on the site and increase its visibility."}}},"user":{"uid":0,"permissionsHash":"53b43ab7d9ecce5acf2473a5056675abd7a072c7fa11051a49726d7dc0d2f476"}}</script>
+<script src="./Information is bits _ plus.maths.org_files/js_OtAPyspL-DhUwQoRrsNl16XcyNTDg6qa4KYf8_WxBZg.js"></script>
+<script src="./Information is bits _ plus.maths.org_files/cookiesjsr.conf.js" defer=""></script>
+
+  <script src="./Information is bits _ plus.maths.org_files/textmacros.js" charset="UTF-8"></script><script type="text/javascript" src="./Information is bits _ plus.maths.org_files/cookiesjsr.min.js"></script><style>:is([id*='google_ads_iframe'],[id*='taboola-'],.taboolaHeight,.taboola-placeholder,#top-ad,#credential_picker_container,#credentials-picker-container,#credential_picker_iframe,[id*='google-one-tap-iframe'],#google-one-tap-popup-container,.google-one-tap__module,.google-one-tap-modal-div,#amp_floatingAdDiv,#ez-content-blocker-container) {display:none!important;min-height:0!important;height:0!important;}</style><style type="text/css">.CtxtMenu_InfoClose {  top:.2em; right:.2em;}
+.CtxtMenu_InfoContent {  overflow:auto; text-align:left; font-size:80%;  padding:.4em .6em; border:1px inset; margin:1em 0px;  max-height:20em; max-width:30em; background-color:#EEEEEE;  white-space:normal;}
+.CtxtMenu_Info.CtxtMenu_MousePost {outline:none;}
+.CtxtMenu_Info {  position:fixed; left:50%; width:auto; text-align:center;  border:3px outset; padding:1em 2em; background-color:#DDDDDD;  color:black;  cursor:default; font-family:message-box; font-size:120%;  font-style:normal; text-indent:0; text-transform:none;  line-height:normal; letter-spacing:normal; word-spacing:normal;  word-wrap:normal; white-space:nowrap; float:none; z-index:201;  border-radius: 15px;                     /* Opera 10.5 and IE9 */  -webkit-border-radius:15px;               /* Safari and Chrome */  -moz-border-radius:15px;                  /* Firefox */  -khtml-border-radius:15px;                /* Konqueror */  box-shadow:0px 10px 20px #808080;         /* Opera 10.5 and IE9 */  -webkit-box-shadow:0px 10px 20px #808080; /* Safari 3 & Chrome */  -moz-box-shadow:0px 10px 20px #808080;    /* Forefox 3.5 */  -khtml-box-shadow:0px 10px 20px #808080;  /* Konqueror */  filter:progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color="gray", Positive="true"); /* IE */}
+</style><style type="text/css">.CtxtMenu_MenuClose {  position:absolute;  cursor:pointer;  display:inline-block;  border:2px solid #AAA;  border-radius:18px;  -webkit-border-radius: 18px;             /* Safari and Chrome */  -moz-border-radius: 18px;                /* Firefox */  -khtml-border-radius: 18px;              /* Konqueror */  font-family: "Courier New", Courier;  font-size:24px;  color:#F0F0F0}
+.CtxtMenu_MenuClose span {  display:block; background-color:#AAA; border:1.5px solid;  border-radius:18px;  -webkit-border-radius: 18px;             /* Safari and Chrome */  -moz-border-radius: 18px;                /* Firefox */  -khtml-border-radius: 18px;              /* Konqueror */  line-height:0;  padding:8px 0 6px     /* may need to be browser-specific */}
+.CtxtMenu_MenuClose:hover {  color:white!important;  border:2px solid #CCC!important}
+.CtxtMenu_MenuClose:hover span {  background-color:#CCC!important}
+.CtxtMenu_MenuClose:hover:focus {  outline:none}
+</style><style type="text/css">.CtxtMenu_Menu {  position:absolute;  background-color:white;  color:black;  width:auto; padding:5px 0px;  border:1px solid #CCCCCC; margin:0; cursor:default;  font: menu; text-align:left; text-indent:0; text-transform:none;  line-height:normal; letter-spacing:normal; word-spacing:normal;  word-wrap:normal; white-space:nowrap; float:none; z-index:201;  border-radius: 5px;                     /* Opera 10.5 and IE9 */  -webkit-border-radius: 5px;             /* Safari and Chrome */  -moz-border-radius: 5px;                /* Firefox */  -khtml-border-radius: 5px;              /* Konqueror */  box-shadow:0px 10px 20px #808080;         /* Opera 10.5 and IE9 */  -webkit-box-shadow:0px 10px 20px #808080; /* Safari 3 & Chrome */  -moz-box-shadow:0px 10px 20px #808080;    /* Forefox 3.5 */  -khtml-box-shadow:0px 10px 20px #808080;  /* Konqueror */}
+.CtxtMenu_MenuItem {  padding: 1px 2em;  background:transparent;}
+.CtxtMenu_MenuArrow {  position:absolute; right:.5em; padding-top:.25em; color:#666666;  font-family: null; font-size: .75em}
+.CtxtMenu_MenuActive .CtxtMenu_MenuArrow {color:white}
+.CtxtMenu_MenuArrow.CtxtMenu_RTL {left:.5em; right:auto}
+.CtxtMenu_MenuCheck {  position:absolute; left:.7em;  font-family: null}
+.CtxtMenu_MenuCheck.CtxtMenu_RTL { right:.7em; left:auto }
+.CtxtMenu_MenuRadioCheck {  position:absolute; left: .7em;}
+.CtxtMenu_MenuRadioCheck.CtxtMenu_RTL {  right: .7em; left:auto}
+.CtxtMenu_MenuInputBox {  padding-left: 1em; right:.5em; color:#666666;  font-family: null;}
+.CtxtMenu_MenuInputBox.CtxtMenu_RTL {  left: .1em;}
+.CtxtMenu_MenuComboBox {  left:.1em; padding-bottom:.5em;}
+.CtxtMenu_MenuSlider {  left: .1em;}
+.CtxtMenu_SliderValue {  position:absolute; right:.1em; padding-top:.25em; color:#333333;  font-size: .75em}
+.CtxtMenu_SliderBar {  outline: none; background: #d3d3d3}
+.CtxtMenu_MenuLabel {  padding: 1px 2em 3px 1.33em;  font-style:italic}
+.CtxtMenu_MenuRule {  border-top: 1px solid #DDDDDD;  margin: 4px 3px;}
+.CtxtMenu_MenuDisabled {  color:GrayText}
+.CtxtMenu_MenuActive {  background-color: #606872;  color: white;}
+.CtxtMenu_MenuDisabled:focus {  background-color: #E8E8E8}
+.CtxtMenu_MenuLabel:focus {  background-color: #E8E8E8}
+.CtxtMenu_ContextMenu:focus {  outline:none}
+.CtxtMenu_ContextMenu .CtxtMenu_MenuItem:focus {  outline:none}
+.CtxtMenu_SelectionMenu {  position:relative; float:left;  border-bottom: none; -webkit-box-shadow:none; -webkit-border-radius:0px; }
+.CtxtMenu_SelectionItem {  padding-right: 1em;}
+.CtxtMenu_Selection {  right: 40%; width:50%; }
+.CtxtMenu_SelectionBox {  padding: 0em; max-height:20em; max-width: none;  background-color:#FFFFFF;}
+.CtxtMenu_SelectionDivider {  clear: both; border-top: 2px solid #000000;}
+.CtxtMenu_Menu .CtxtMenu_MenuClose {  top:-10px; left:-10px}
+</style><style id="MJX-CHTML-styles">
+mjx-container[jax="CHTML"] {
+  line-height: 0;
+}
+
+mjx-container [space="1"] {
+  margin-left: .111em;
+}
+
+mjx-container [space="2"] {
+  margin-left: .167em;
+}
+
+mjx-container [space="3"] {
+  margin-left: .222em;
+}
+
+mjx-container [space="4"] {
+  margin-left: .278em;
+}
+
+mjx-container [space="5"] {
+  margin-left: .333em;
+}
+
+mjx-container [rspace="1"] {
+  margin-right: .111em;
+}
+
+mjx-container [rspace="2"] {
+  margin-right: .167em;
+}
+
+mjx-container [rspace="3"] {
+  margin-right: .222em;
+}
+
+mjx-container [rspace="4"] {
+  margin-right: .278em;
+}
+
+mjx-container [rspace="5"] {
+  margin-right: .333em;
+}
+
+mjx-container [size="s"] {
+  font-size: 70.7%;
+}
+
+mjx-container [size="ss"] {
+  font-size: 50%;
+}
+
+mjx-container [size="Tn"] {
+  font-size: 60%;
+}
+
+mjx-container [size="sm"] {
+  font-size: 85%;
+}
+
+mjx-container [size="lg"] {
+  font-size: 120%;
+}
+
+mjx-container [size="Lg"] {
+  font-size: 144%;
+}
+
+mjx-container [size="LG"] {
+  font-size: 173%;
+}
+
+mjx-container [size="hg"] {
+  font-size: 207%;
+}
+
+mjx-container [size="HG"] {
+  font-size: 249%;
+}
+
+mjx-container [width="full"] {
+  width: 100%;
+}
+
+mjx-box {
+  display: inline-block;
+}
+
+mjx-block {
+  display: block;
+}
+
+mjx-itable {
+  display: inline-table;
+}
+
+mjx-row {
+  display: table-row;
+}
+
+mjx-row > * {
+  display: table-cell;
+}
+
+mjx-mtext {
+  display: inline-block;
+}
+
+mjx-mstyle {
+  display: inline-block;
+}
+
+mjx-merror {
+  display: inline-block;
+  color: red;
+  background-color: yellow;
+}
+
+mjx-mphantom {
+  visibility: hidden;
+}
+
+_::-webkit-full-page-media, _:future, :root mjx-container {
+  will-change: opacity;
+}
+
+mjx-assistive-mml {
+  position: absolute !important;
+  top: 0px;
+  left: 0px;
+  clip: rect(1px, 1px, 1px, 1px);
+  padding: 1px 0px 0px 0px !important;
+  border: 0px !important;
+  display: block !important;
+  width: auto !important;
+  overflow: hidden !important;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+mjx-assistive-mml[display="block"] {
+  width: 100% !important;
+}
+
+mjx-math {
+  display: inline-block;
+  text-align: left;
+  line-height: 0;
+  text-indent: 0;
+  font-style: normal;
+  font-weight: normal;
+  font-size: 100%;
+  font-size-adjust: none;
+  letter-spacing: normal;
+  border-collapse: collapse;
+  word-wrap: normal;
+  word-spacing: normal;
+  white-space: nowrap;
+  direction: ltr;
+  padding: 1px 0;
+}
+
+mjx-container[jax="CHTML"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="CHTML"][display="true"][width="full"] {
+  display: flex;
+}
+
+mjx-container[jax="CHTML"][display="true"] mjx-math {
+  padding: 0;
+}
+
+mjx-container[jax="CHTML"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="CHTML"][justify="right"] {
+  text-align: right;
+}
+
+mjx-msup {
+  display: inline-block;
+  text-align: left;
+}
+
+mjx-mn {
+  display: inline-block;
+  text-align: left;
+}
+
+mjx-c {
+  display: inline-block;
+}
+
+mjx-utext {
+  display: inline-block;
+  padding: .75em 0 .2em 0;
+}
+
+mjx-mi {
+  display: inline-block;
+  text-align: left;
+}
+
+mjx-mo {
+  display: inline-block;
+  text-align: left;
+}
+
+mjx-stretchy-h {
+  display: inline-table;
+  width: 100%;
+}
+
+mjx-stretchy-h > * {
+  display: table-cell;
+  width: 0;
+}
+
+mjx-stretchy-h > * > mjx-c {
+  display: inline-block;
+  transform: scalex(1.0000001);
+}
+
+mjx-stretchy-h > * > mjx-c::before {
+  display: inline-block;
+  width: initial;
+}
+
+mjx-stretchy-h > mjx-ext {
+  /* IE */ overflow: hidden;
+  /* others */ overflow: clip visible;
+  width: 100%;
+}
+
+mjx-stretchy-h > mjx-ext > mjx-c::before {
+  transform: scalex(500);
+}
+
+mjx-stretchy-h > mjx-ext > mjx-c {
+  width: 0;
+}
+
+mjx-stretchy-h > mjx-beg > mjx-c {
+  margin-right: -.1em;
+}
+
+mjx-stretchy-h > mjx-end > mjx-c {
+  margin-left: -.1em;
+}
+
+mjx-stretchy-v {
+  display: inline-block;
+}
+
+mjx-stretchy-v > * {
+  display: block;
+}
+
+mjx-stretchy-v > mjx-beg {
+  height: 0;
+}
+
+mjx-stretchy-v > mjx-end > mjx-c {
+  display: block;
+}
+
+mjx-stretchy-v > * > mjx-c {
+  transform: scaley(1.0000001);
+  transform-origin: left center;
+  overflow: hidden;
+}
+
+mjx-stretchy-v > mjx-ext {
+  display: block;
+  height: 100%;
+  box-sizing: border-box;
+  border: 0px solid transparent;
+  /* IE */ overflow: hidden;
+  /* others */ overflow: visible clip;
+}
+
+mjx-stretchy-v > mjx-ext > mjx-c::before {
+  width: initial;
+  box-sizing: border-box;
+}
+
+mjx-stretchy-v > mjx-ext > mjx-c {
+  transform: scaleY(500) translateY(.075em);
+  overflow: visible;
+}
+
+mjx-mark {
+  display: inline-block;
+  height: 0px;
+}
+
+mjx-msub {
+  display: inline-block;
+  text-align: left;
+}
+
+mjx-TeXAtom {
+  display: inline-block;
+  text-align: left;
+}
+
+mjx-mfrac {
+  display: inline-block;
+  text-align: left;
+}
+
+mjx-frac {
+  display: inline-block;
+  vertical-align: 0.17em;
+  padding: 0 .22em;
+}
+
+mjx-frac[type="d"] {
+  vertical-align: .04em;
+}
+
+mjx-frac[delims] {
+  padding: 0 .1em;
+}
+
+mjx-frac[atop] {
+  padding: 0 .12em;
+}
+
+mjx-frac[atop][delims] {
+  padding: 0;
+}
+
+mjx-dtable {
+  display: inline-table;
+  width: 100%;
+}
+
+mjx-dtable > * {
+  font-size: 2000%;
+}
+
+mjx-dbox {
+  display: block;
+  font-size: 5%;
+}
+
+mjx-num {
+  display: block;
+  text-align: center;
+}
+
+mjx-den {
+  display: block;
+  text-align: center;
+}
+
+mjx-mfrac[bevelled] > mjx-num {
+  display: inline-block;
+}
+
+mjx-mfrac[bevelled] > mjx-den {
+  display: inline-block;
+}
+
+mjx-den[align="right"], mjx-num[align="right"] {
+  text-align: right;
+}
+
+mjx-den[align="left"], mjx-num[align="left"] {
+  text-align: left;
+}
+
+mjx-nstrut {
+  display: inline-block;
+  height: .054em;
+  width: 0;
+  vertical-align: -.054em;
+}
+
+mjx-nstrut[type="d"] {
+  height: .217em;
+  vertical-align: -.217em;
+}
+
+mjx-dstrut {
+  display: inline-block;
+  height: .505em;
+  width: 0;
+}
+
+mjx-dstrut[type="d"] {
+  height: .726em;
+}
+
+mjx-line {
+  display: block;
+  box-sizing: border-box;
+  min-height: 1px;
+  height: .06em;
+  border-top: .06em solid;
+  margin: .06em -.1em;
+  overflow: hidden;
+}
+
+mjx-line[type="d"] {
+  margin: .18em -.1em;
+}
+
+mjx-c::before {
+  display: block;
+  width: 0;
+}
+
+.MJX-TEX {
+  font-family: MJXZERO, MJXTEX;
+}
+
+.TEX-B {
+  font-family: MJXZERO, MJXTEX-B;
+}
+
+.TEX-I {
+  font-family: MJXZERO, MJXTEX-I;
+}
+
+.TEX-MI {
+  font-family: MJXZERO, MJXTEX-MI;
+}
+
+.TEX-BI {
+  font-family: MJXZERO, MJXTEX-BI;
+}
+
+.TEX-S1 {
+  font-family: MJXZERO, MJXTEX-S1;
+}
+
+.TEX-S2 {
+  font-family: MJXZERO, MJXTEX-S2;
+}
+
+.TEX-S3 {
+  font-family: MJXZERO, MJXTEX-S3;
+}
+
+.TEX-S4 {
+  font-family: MJXZERO, MJXTEX-S4;
+}
+
+.TEX-A {
+  font-family: MJXZERO, MJXTEX-A;
+}
+
+.TEX-C {
+  font-family: MJXZERO, MJXTEX-C;
+}
+
+.TEX-CB {
+  font-family: MJXZERO, MJXTEX-CB;
+}
+
+.TEX-FR {
+  font-family: MJXZERO, MJXTEX-FR;
+}
+
+.TEX-FRB {
+  font-family: MJXZERO, MJXTEX-FRB;
+}
+
+.TEX-SS {
+  font-family: MJXZERO, MJXTEX-SS;
+}
+
+.TEX-SSB {
+  font-family: MJXZERO, MJXTEX-SSB;
+}
+
+.TEX-SSI {
+  font-family: MJXZERO, MJXTEX-SSI;
+}
+
+.TEX-SC {
+  font-family: MJXZERO, MJXTEX-SC;
+}
+
+.TEX-T {
+  font-family: MJXZERO, MJXTEX-T;
+}
+
+.TEX-V {
+  font-family: MJXZERO, MJXTEX-V;
+}
+
+.TEX-VB {
+  font-family: MJXZERO, MJXTEX-VB;
+}
+
+mjx-stretchy-v mjx-c, mjx-stretchy-h mjx-c {
+  font-family: MJXZERO, MJXTEX-S1, MJXTEX-S4, MJXTEX, MJXTEX-A ! important;
+}
+
+@font-face /* 0 */ {
+  font-family: MJXZERO;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Zero.woff") format("woff");
+}
+
+@font-face /* 1 */ {
+  font-family: MJXTEX;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Main-Regular.woff") format("woff");
+}
+
+@font-face /* 2 */ {
+  font-family: MJXTEX-B;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Main-Bold.woff") format("woff");
+}
+
+@font-face /* 3 */ {
+  font-family: MJXTEX-I;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Math-Italic.woff") format("woff");
+}
+
+@font-face /* 4 */ {
+  font-family: MJXTEX-MI;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Main-Italic.woff") format("woff");
+}
+
+@font-face /* 5 */ {
+  font-family: MJXTEX-BI;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Math-BoldItalic.woff") format("woff");
+}
+
+@font-face /* 6 */ {
+  font-family: MJXTEX-S1;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Size1-Regular.woff") format("woff");
+}
+
+@font-face /* 7 */ {
+  font-family: MJXTEX-S2;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Size2-Regular.woff") format("woff");
+}
+
+@font-face /* 8 */ {
+  font-family: MJXTEX-S3;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Size3-Regular.woff") format("woff");
+}
+
+@font-face /* 9 */ {
+  font-family: MJXTEX-S4;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Size4-Regular.woff") format("woff");
+}
+
+@font-face /* 10 */ {
+  font-family: MJXTEX-A;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_AMS-Regular.woff") format("woff");
+}
+
+@font-face /* 11 */ {
+  font-family: MJXTEX-C;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Calligraphic-Regular.woff") format("woff");
+}
+
+@font-face /* 12 */ {
+  font-family: MJXTEX-CB;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Calligraphic-Bold.woff") format("woff");
+}
+
+@font-face /* 13 */ {
+  font-family: MJXTEX-FR;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Fraktur-Regular.woff") format("woff");
+}
+
+@font-face /* 14 */ {
+  font-family: MJXTEX-FRB;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Fraktur-Bold.woff") format("woff");
+}
+
+@font-face /* 15 */ {
+  font-family: MJXTEX-SS;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_SansSerif-Regular.woff") format("woff");
+}
+
+@font-face /* 16 */ {
+  font-family: MJXTEX-SSB;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_SansSerif-Bold.woff") format("woff");
+}
+
+@font-face /* 17 */ {
+  font-family: MJXTEX-SSI;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_SansSerif-Italic.woff") format("woff");
+}
+
+@font-face /* 18 */ {
+  font-family: MJXTEX-SC;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Script-Regular.woff") format("woff");
+}
+
+@font-face /* 19 */ {
+  font-family: MJXTEX-T;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Typewriter-Regular.woff") format("woff");
+}
+
+@font-face /* 20 */ {
+  font-family: MJXTEX-V;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Vector-Regular.woff") format("woff");
+}
+
+@font-face /* 21 */ {
+  font-family: MJXTEX-VB;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Vector-Bold.woff") format("woff");
+}
+
+mjx-c.mjx-c32::before {
+  padding: 0.666em 0.5em 0 0;
+  content: "2";
+}
+
+mjx-c.mjx-c1D45A.TEX-I::before {
+  padding: 0.442em 0.878em 0.011em 0;
+  content: "m";
+}
+
+mjx-c.mjx-c2265::before {
+  padding: 0.636em 0.778em 0.138em 0;
+  content: "\2265";
+}
+
+mjx-c.mjx-c37::before {
+  padding: 0.676em 0.5em 0.022em 0;
+  content: "7";
+}
+
+mjx-c.mjx-c2E::before {
+  padding: 0.12em 0.278em 0 0;
+  content: ".";
+}
+
+mjx-c.mjx-c6C::before {
+  padding: 0.694em 0.278em 0 0;
+  content: "l";
+}
+
+mjx-c.mjx-c6F::before {
+  padding: 0.448em 0.5em 0.01em 0;
+  content: "o";
+}
+
+mjx-c.mjx-c67::before {
+  padding: 0.453em 0.5em 0.206em 0;
+  content: "g";
+}
+
+mjx-c.mjx-c2061::before {
+  padding: 0 0 0 0;
+  content: "";
+}
+
+mjx-c.mjx-c2248::before {
+  padding: 0.483em 0.778em 0 0;
+  content: "\2248";
+}
+
+mjx-c.mjx-c34::before {
+  padding: 0.677em 0.5em 0 0;
+  content: "4";
+}
+
+mjx-c.mjx-c35::before {
+  padding: 0.666em 0.5em 0.022em 0;
+  content: "5";
+}
+
+mjx-c.mjx-c2C::before {
+  padding: 0.121em 0.278em 0.194em 0;
+  content: ",";
+}
+
+mjx-c.mjx-c30::before {
+  padding: 0.666em 0.5em 0.022em 0;
+  content: "0";
+}
+
+mjx-c.mjx-c31::before {
+  padding: 0.666em 0.5em 0 0;
+  content: "1";
+}
+
+mjx-c.mjx-c36::before {
+  padding: 0.666em 0.5em 0.022em 0;
+  content: "6";
+}
+
+mjx-c.mjx-c2F::before {
+  padding: 0.75em 0.5em 0.25em 0;
+  content: "/";
+}
+
+mjx-c.mjx-cD7::before {
+  padding: 0.491em 0.778em 0 0;
+  content: "\D7";
+}
+
+mjx-c.mjx-c2B::before {
+  padding: 0.583em 0.778em 0.082em 0;
+  content: "+";
+}
+
+mjx-c.mjx-c3D::before {
+  padding: 0.583em 0.778em 0.082em 0;
+  content: "=";
+}
+
+mjx-c.mjx-c33::before {
+  padding: 0.665em 0.5em 0.022em 0;
+  content: "3";
+}
+
+mjx-c.mjx-c2212::before {
+  padding: 0.583em 0.778em 0.082em 0;
+  content: "\2212";
+}
+
+mjx-c.mjx-c1D45B.TEX-I::before {
+  padding: 0.442em 0.6em 0.011em 0;
+  content: "n";
+}
+
+mjx-c.mjx-c1D45D.TEX-I::before {
+  padding: 0.442em 0.503em 0.194em 0;
+  content: "p";
+}
+
+mjx-c.mjx-c28::before {
+  padding: 0.75em 0.389em 0.25em 0;
+  content: "(";
+}
+
+mjx-c.mjx-c29::before {
+  padding: 0.75em 0.389em 0.25em 0;
+  content: ")";
+}
+
+mjx-c.mjx-c1D456.TEX-I::before {
+  padding: 0.661em 0.345em 0.011em 0;
+  content: "i";
+}
+
+mjx-c.mjx-c1D43B.TEX-I::before {
+  padding: 0.683em 0.888em 0 0;
+  content: "H";
+}
+
+mjx-c.mjx-c1D436.TEX-I::before {
+  padding: 0.705em 0.76em 0.022em 0;
+  content: "C";
+}
+</style></head>
+  <body class="path-node page-node-type-article colour_scheme-red full-path--information-birth-bit">
+        <a href="https://plus.maths.org/information-birth-bit#main-content" class="visually-hidden focusable skip-link">
+      Skip to main content
+    </a>
+    
+      <div class="dialog-off-canvas-main-canvas" data-off-canvas-main-canvas="">
+    <div class="layout-container">
+  <div id="pre-header">
+    
+  </div>
+
+  <header role="banner" id="header">
+        <div data-component-id="plus2025:region" class="region region-header">
+        
+<div data-test="" id="block-plus2025-sitebranding" class="block block-system block-system-branding-block">
+  
+    
+
+    
+<div data-component-id="plus2025:system_branding_block" class="branding_block">
+  <div class="show">
+          <a href="https://plus.maths.org/" rel="home" class="site-logo">
+        <img src="./Information is bits _ plus.maths.org_files/plus_logo_0.svg" alt="Home">
+      </a>
+      </div>
+
+  <div class="tell">
+          <div class="site-name">
+        <a href="https://plus.maths.org/" rel="home">plus.maths.org</a>
+      </div>
+    
+      </div>
+</div>
+</div>
+
+<div data-test="" id="block-header-search-form" class="hide-on-small block block-block-content block-block-content4f91b775-912a-4943-ae82-123bfccc0be9">
+  
+    
+
+      
+                                  <div class="field field--name-body field--type-text-with-summary field--label-hidden field__item"><form id="header-search-form" action="https://plus.maths.org/search" data-once="form-updated" data-drupal-form-fields="search-pane-input">
+  <label for="search-pane-input" class="hidden">Search articles, podcasts, etc.</label>
+
+  <input id="header-search-pane-input" type="search" placeholder="Search articles, podcasts, etc." name="text">
+
+  <button type="submit" class="button">
+    <span class="material-icons">search</span>
+  </button>
+</form></div>
+            
+
+      </div>
+<nav role="navigation" aria-labelledby="block-plus2025-bootplus-menu-secondary-menu-menu" data-component-id="plus2025:system_menu_block" class="hide-on-small menu-horizontal block block-menu navigation menu--secondary-menu">
+
+            
+  <h2 class="visually-hidden" id="block-plus2025-bootplus-menu-secondary-menu-menu">Secondary menu</h2>
+  
+
+                  
+  <menu data-component-id="plus2025:menu" aria-orientation="horizontal" style="--path: themes/custom/plus2025/components/navigation/menu;">
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/favourites">
+          <span>My list</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/about-plus">
+          <span>About Plus</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/plus-sponsors">
+          <span>Sponsors</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/subscribe-plus">
+          <span>Subscribe</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/contact-us">
+          <span>Contact Us</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/user/login">
+          <span>Log in</span>
+  
+    </a>
+  
+  </li>
+
+      </menu>
+
+
+
+  </nav>
+
+<div data-test="" id="block-plus2025-menutoggle-2" class="block block-block-content block-block-content06635716-6a4c-47da-a333-bfa4a863452b">
+  
+    
+
+      
+                                  <div class="field field--name-body field--type-text-with-summary field--label-hidden field__item"><button id="menu-toggle" title="Show / hide main menu">
+  <span class="visually-hidden">Menu</span>
+  <!--<drupal-media data-entity-type="media" data-entity-uuid="9bf33525-6978-40a5-a108-bfa21ffc51e2">&nbsp;</drupal-media>-->
+  <img src="./Information is bits _ plus.maths.org_files/menu.svg" alt="menu icon">
+</button></div>
+            
+
+      </div>
+
+  </div>
+
+  </header>
+
+  <div id="nav-container">
+    <div id="primary-nav">
+          <div data-component-id="plus2025:region" class="region region-primary-nav">
+        <nav role="navigation" aria-labelledby="block-plus2025-main-navigation-menu" data-component-id="plus2025:system_menu_block" class="hide-on-small menu-horizontal block block-menu navigation menu--main">
+
+            
+  <h2 class="visually-hidden" id="block-plus2025-main-navigation-menu">Main navigation</h2>
+  
+
+                  
+  <menu data-component-id="plus2025:menu" aria-orientation="horizontal" style="--path: themes/custom/plus2025/components/navigation/menu;">
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/">
+          <span>Home</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/articles">
+          <span>Articles</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/collections">
+          <span>Collections</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/podcasts">
+          <span>Podcasts</span>
+  
+    </a>
+  
+  </li>
+
+          
+  
+<li data-is-expanded="">
+          
+  
+      <button aria-haspopup="menu">
+          <span>More</span>
+  
+      <img src="./Information is bits _ plus.maths.org_files/caret_down.svg" alt="down icon">
+    </button>
+  
+                
+  <menu data-component-id="plus2025:menu" class="dropdown" aria-orientation="vertical" data-level="1" style="--path: themes/custom/plus2025/components/navigation/menu;">
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/tags/maths-minute">
+          <span>Maths in a minute</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/puzzles">
+          <span>Puzzles</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/videos">
+          <span>Videos</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/tags">
+          <span>Topics and tags</span>
+  
+    </a>
+  
+  </li>
+
+      </menu>
+
+
+  </li>
+
+      </menu>
+
+
+
+  </nav>
+<nav role="navigation" aria-labelledby="block-plus2025-audiences-menu" data-component-id="plus2025:system_menu_block" class="hide-on-small menu-horizontal block block-menu navigation menu--audiences">
+
+      
+  <h2 id="block-plus2025-audiences-menu">For</h2>
+  
+
+        
+
+  <ul data-region="primary_nav" class="menu menu-level-0" aria-orientation="horizontal">
+                  
+        <li class="menu-item">
+                                
+  
+  <div class="menu_link_content menu-link-contentaudiences view-mode-default menu-dropdown menu-dropdown-0 menu-type-default">
+                                    <div class="field field--name-field-image field--type-entity-reference field--label-hidden field__item"><span data-component-id="plus2025:image_formatter">
+      <img loading="lazy" src="./Information is bits _ plus.maths.org_files/cat-icon-white-2.svg" alt="cat icon" data-component-id="plus2025:image">
+
+  </span>
+</div>
+            
+      </div>
+
+
+
+                    <a href="https://plus.maths.org/everybody" data-drupal-link-system-path="node/8032">Curiosity</a>
+        </li>
+                      
+        <li class="menu-item">
+                                
+  
+  <div class="menu_link_content menu-link-contentaudiences view-mode-default menu-dropdown menu-dropdown-0 menu-type-default">
+                                    <div class="field field--name-field-image field--type-entity-reference field--label-hidden field__item"><span data-component-id="plus2025:image_formatter">
+      <img loading="lazy" src="./Information is bits _ plus.maths.org_files/newspaper-icon-white.svg" alt="newspaper icon" data-component-id="plus2025:image">
+
+  </span>
+</div>
+            
+      </div>
+
+
+
+                    <a href="https://plus.maths.org/media" data-drupal-link-system-path="node/8029">Media</a>
+        </li>
+                      
+        <li class="menu-item">
+                                
+  
+  <div class="menu_link_content menu-link-contentaudiences view-mode-default menu-dropdown menu-dropdown-0 menu-type-default">
+                                    <div class="field field--name-field-image field--type-entity-reference field--label-hidden field__item"><span data-component-id="plus2025:image_formatter">
+      <img loading="lazy" src="./Information is bits _ plus.maths.org_files/graduation-icon-white.svg" alt="graduation icon" data-component-id="plus2025:image">
+
+  </span>
+</div>
+            
+      </div>
+
+
+
+                    <a href="https://plus.maths.org/schools" data-drupal-link-system-path="node/8030">Education</a>
+        </li>
+                      
+        <li class="menu-item">
+                                
+  
+  <div class="menu_link_content menu-link-contentaudiences view-mode-default menu-dropdown menu-dropdown-0 menu-type-default">
+                                    <div class="field field--name-field-image field--type-entity-reference field--label-hidden field__item"><span data-component-id="plus2025:image_formatter">
+      <img loading="lazy" src="./Information is bits _ plus.maths.org_files/briefcase-icon-white.svg" alt="briefcase icon" data-component-id="plus2025:image">
+
+  </span>
+</div>
+            
+      </div>
+
+
+
+                    <a href="https://plus.maths.org/policy-makers" data-drupal-link-system-path="node/8031">Policy</a>
+        </li>
+          </ul>
+
+
+  </nav>
+
+  </div>
+
+    </div>
+      <dialog class="region region-search-pane">
+    <div role="presentation">
+      <button class="close material-icons">
+        <span class="visually-hidden">close</span>
+                <img src="./Information is bits _ plus.maths.org_files/close.svg" alt="down icon">
+      </button>
+      
+<div data-test="" id="block-search-form" class="block block-block-content block-block-contentf6497e1d-fe3d-4c68-936b-56f072a3e538">
+  
+    
+
+      
+                                  <div class="field field--name-body field--type-text-with-summary field--label-hidden field__item"><form id="search-pane-form" action="https://plus.maths.org/search" data-once="form-updated" data-drupal-form-fields="search-pane-input">
+  <label for="search-pane-input" class="hidden">Search articles, podcasts, etc.</label>
+
+  <input id="search-pane-input" type="search" placeholder="Search articles, podcasts, etc." name="text" class="form-autocomplete ui-autocomplete-input" data-id="search_api_block" data-once="autocomplete" autocomplete="off" autofocus="true">
+
+  <button type="submit" class="button">
+    <span class="material-icons">search</span>
+  </button>
+<ul id="ui-id-1" tabindex="0" class="ui-menu ui-widget ui-widget-content ui-autocomplete ui-front" data-sa-theme="minimal" data-input-ref="search_api_block" style="display: none;"></ul></form></div>
+            
+
+      </div>
+
+<div data-test="" id="block-search-pane-tags" class="block block-block-content block-block-content39d59d9f-7b12-43ff-9050-38869cb27b5d">
+  
+      <h2>Popular topics and tags</h2>
+    
+
+      
+                                  <div class="field field--name-body field--type-text-with-summary field--label-hidden field__item"><div class="tex2jax_process"><div class="text-cols-3"><div><h3>Shapes</h3><ul><li><a href="https://plus.maths.org/tags/geometry">Geometry</a></li><li><a href="https://plus.maths.org/tags/vector">Vectors</a> and <a href="https://plus.maths.org/tags/matrix">matrices</a></li><li><a href="https://plus.maths.org/tags/topology">Topology</a></li><li><a href="https://plus.maths.org/tags/network">Networks</a> and <a href="https://plus.maths.org/tags/graph-theory">graph theory</a></li><li><a href="https://plus.maths.org/tags/fractal">Fractals</a></li></ul></div><div><h3>Numbers</h3><ul><li><a href="https://plus.maths.org/tags/number-theory">Number theory</a></li><li><a href="https://plus.maths.org/tags/arithmetic">Arithmetic</a></li><li><a href="https://plus.maths.org/tags/prime-number">Prime numbers</a></li><li><a href="https://plus.maths.org/tags/fermats-last-theorem">Fermat's last theorem</a></li><li><a href="https://plus.maths.org/tags/cryptography">Cryptography</a></li></ul></div><div><h3>Computing and information</h3><ul><li><a href="https://plus.maths.org/tags/quantum-computing">Quantum computing</a></li><li><a href="https://plus.maths.org/tags/complexity">Complexity</a></li><li><a href="https://plus.maths.org/tags/information-theory">Information theory</a></li><li><a href="https://plus.maths.org/tags/artificial-intelligence">Artificial intelligence</a> and <a href="https://plus.maths.org/tags/machine-learning">machine learning</a></li><li><a href="https://plus.maths.org/tags/algorithm">Algorithm</a></li></ul></div><div><h3>Data and probability</h3><ul><li><a href="https://plus.maths.org/tags/statistics">Statistics</a></li><li><a href="https://plus.maths.org/tags/probability">Probability</a> and <a href="https://plus.maths.org/tags/uncertainty">uncertainty</a></li><li><a href="https://plus.maths.org/tags/randomness">Randomness</a></li></ul></div><div><h3>Abstract structures</h3><ul><li><a href="https://plus.maths.org/tags/symmetry">Symmetry</a></li><li><a href="https://plus.maths.org/tags/algebra">Algebra</a> and <a href="https://plus.maths.org/tags/group-theory">group theory</a></li><li><a href="https://plus.maths.org/tags/vector">Vectors</a> and <a href="https://plus.maths.org/tags/matrix">matrices</a></li></ul></div><div><h3>Physics</h3><ul><li><a href="https://plus.maths.org/tags/fluid-dynamics">Fluid dynamics</a></li><li><a href="https://plus.maths.org/tags/quantum-physics">Quantum physics</a></li><li><a href="https://plus.maths.org/tags/general-relativity">General relativity</a>, <a href="https://plus.maths.org/tags/gravity">gravity</a> and <a href="https://plus.maths.org/tags/black-hole">black holes</a></li><li><a href="https://plus.maths.org/tags/entropy">Entropy</a> and <a href="https://plus.maths.org/tags/thermodynamics">thermodynamics</a></li><li><a href="https://plus.maths.org/tags/string-theory">String theory</a> and <a href="https://plus.maths.org/tags/quantum-gravity">quantum gravity</a></li></ul></div><div><h3>Arts, humanities and sport</h3><ul><li><a href="https://plus.maths.org/tags/history-mathematics">History</a> and <a href="https://plus.maths.org/tags/philosophy-mathematics">philosophy of mathematics</a></li><li><a href="https://plus.maths.org/tags/mathematics-and-art">Art</a> and <a href="https://plus.maths.org/tags/mathematics-and-music">Music</a></li><li><a href="https://plus.maths.org/tags/mathematics-and-language">Language</a></li><li><a href="https://plus.maths.org/tags/mathematics-sport">Sport</a></li></ul></div><div><h3>Logic, proof and strategy</h3><ul><li><a href="https://plus.maths.org/tags/logic">Logic</a></li><li><a href="https://plus.maths.org/tags/proof">Proof</a></li><li><a href="https://plus.maths.org/tags/game-theory">Game theory</a></li></ul></div><div><h3>Calculus and analysis</h3><ul><li><a href="https://plus.maths.org/tags/differential-equation">Differential equations</a></li><li><a href="https://plus.maths.org/tags/calculus">Calculus</a></li></ul></div><div><h3>Towards applications</h3><ul><li><a href="https://plus.maths.org/tags/mathematical-modelling">Mathematical modelling</a></li><li><a href="https://plus.maths.org/tags/dynamical-system">Dynamical systems</a> and <a href="https://plus.maths.org/tags/chaos">Chaos</a></li></ul></div><div><h3>Applications</h3><ul><li><a href="https://plus.maths.org/tags/medicine-and-health">Medicine and health</a></li><li><a href="https://plus.maths.org/tags/epidemiology">Epidemiology</a></li><li><a href="https://plus.maths.org/tags/biology">Biology</a></li><li><a href="https://plus.maths.org/tags/financial-mathematics">Economics and finance</a></li><li><a href="https://plus.maths.org/tags/engineering">Engineering</a> and <a href="https://plus.maths.org/tags/architecture">architecture</a></li><li><a href="https://plus.maths.org/tags/weather-forecasting">Weather forecasting</a></li><li><a href="https://plus.maths.org/tags/mathematics-and-climate-change">Climate change</a></li></ul></div><div><h3>Understanding of mathematics</h3><ul><li><a href="https://plus.maths.org/tags/public-understanding-mathematics">Public understanding of mathematics</a></li><li><a href="https://plus.maths.org/tags/mathematics-education">Education</a></li></ul></div><div><h3>Get your maths quickly</h3><ul><li><a href="https://plus.maths.org/tags/maths-minute">Maths in a minute</a></li></ul></div></div></div></div>
+            
+
+      </div>
+
+    </div>
+  </dialog>
+
+  </div>
+
+  <div id="mobile-nav">
+    
+  <div data-component-id="plus2025:slide_in_pane" class="slide-in from-right">
+            <div data-component-id="plus2025:region" class="region region-mobile-nav">
+        
+<div data-test="" id="block-mobile-search-form" class="block block-block-content block-block-contentf6497e1d-fe3d-4c68-936b-56f072a3e538">
+  
+    
+
+      
+                                  <div class="field field--name-body field--type-text-with-summary field--label-hidden field__item"><form id="search-pane-form" action="https://plus.maths.org/search" data-once="form-updated" data-drupal-form-fields="search-pane-input">
+  <label for="search-pane-input" class="hidden">Search articles, podcasts, etc.</label>
+
+  <input id="search-pane-input" type="search" placeholder="Search articles, podcasts, etc." name="text">
+
+  <button type="submit" class="button">
+    <span class="material-icons">search</span>
+  </button>
+</form></div>
+            
+
+      </div>
+<nav role="navigation" aria-labelledby="block-plus2025-mainmenu-menu" data-component-id="plus2025:system_menu_block" class="block block-menu navigation menu--main">
+
+            
+  <h2 class="visually-hidden" id="block-plus2025-mainmenu-menu">Main menu</h2>
+  
+
+                  
+  <menu data-component-id="plus2025:menu" aria-orientation="horizontal" style="--path: themes/custom/plus2025/components/navigation/menu;">
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/">
+          <span>Home</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/articles">
+          <span>Articles</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/collections">
+          <span>Collections</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/podcasts">
+          <span>Podcasts</span>
+  
+    </a>
+  
+  </li>
+
+          
+  
+<li data-is-expanded="">
+          
+  
+      <button aria-haspopup="menu">
+          <span>More</span>
+  
+      <img src="./Information is bits _ plus.maths.org_files/caret_down.svg" alt="down icon">
+    </button>
+  
+                
+  <menu data-component-id="plus2025:menu" class="dropdown" aria-orientation="vertical" data-level="1" style="--path: themes/custom/plus2025/components/navigation/menu;">
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/tags/maths-minute">
+          <span>Maths in a minute</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/puzzles">
+          <span>Puzzles</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/videos">
+          <span>Videos</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/tags">
+          <span>Topics and tags</span>
+  
+    </a>
+  
+  </li>
+
+      </menu>
+
+
+  </li>
+
+      </menu>
+
+
+
+  </nav>
+<nav role="navigation" aria-labelledby="block-mobile-nav-audiences-menu" data-component-id="plus2025:system_menu_block" class="block block-menu navigation menu--audiences">
+
+            
+  <h2 class="visually-hidden" id="block-mobile-nav-audiences-menu">Audiences</h2>
+  
+
+        
+
+  <ul data-region="mobile_nav" class="menu menu-level-0" aria-orientation="horizontal">
+                  
+        <li class="menu-item">
+                                
+  
+  <div class="menu_link_content menu-link-contentaudiences view-mode-default menu-dropdown menu-dropdown-0 menu-type-default">
+                                    <div class="field field--name-field-image field--type-entity-reference field--label-hidden field__item"><span data-component-id="plus2025:image_formatter">
+      <img loading="lazy" src="./Information is bits _ plus.maths.org_files/cat-icon-white-2.svg" alt="cat icon" data-component-id="plus2025:image">
+
+  </span>
+</div>
+            
+      </div>
+
+
+
+                    <a href="https://plus.maths.org/everybody" data-drupal-link-system-path="node/8032">Curiosity</a>
+        </li>
+                      
+        <li class="menu-item">
+                                
+  
+  <div class="menu_link_content menu-link-contentaudiences view-mode-default menu-dropdown menu-dropdown-0 menu-type-default">
+                                    <div class="field field--name-field-image field--type-entity-reference field--label-hidden field__item"><span data-component-id="plus2025:image_formatter">
+      <img loading="lazy" src="./Information is bits _ plus.maths.org_files/newspaper-icon-white.svg" alt="newspaper icon" data-component-id="plus2025:image">
+
+  </span>
+</div>
+            
+      </div>
+
+
+
+                    <a href="https://plus.maths.org/media" data-drupal-link-system-path="node/8029">Media</a>
+        </li>
+                      
+        <li class="menu-item">
+                                
+  
+  <div class="menu_link_content menu-link-contentaudiences view-mode-default menu-dropdown menu-dropdown-0 menu-type-default">
+                                    <div class="field field--name-field-image field--type-entity-reference field--label-hidden field__item"><span data-component-id="plus2025:image_formatter">
+      <img loading="lazy" src="./Information is bits _ plus.maths.org_files/graduation-icon-white.svg" alt="graduation icon" data-component-id="plus2025:image">
+
+  </span>
+</div>
+            
+      </div>
+
+
+
+                    <a href="https://plus.maths.org/schools" data-drupal-link-system-path="node/8030">Education</a>
+        </li>
+                      
+        <li class="menu-item">
+                                
+  
+  <div class="menu_link_content menu-link-contentaudiences view-mode-default menu-dropdown menu-dropdown-0 menu-type-default">
+                                    <div class="field field--name-field-image field--type-entity-reference field--label-hidden field__item"><span data-component-id="plus2025:image_formatter">
+      <img loading="lazy" src="./Information is bits _ plus.maths.org_files/briefcase-icon-white.svg" alt="briefcase icon" data-component-id="plus2025:image">
+
+  </span>
+</div>
+            
+      </div>
+
+
+
+                    <a href="https://plus.maths.org/policy-makers" data-drupal-link-system-path="node/8031">Policy</a>
+        </li>
+          </ul>
+
+
+  </nav>
+<nav role="navigation" aria-labelledby="block-plus2025-secondarymenu-2-menu" data-component-id="plus2025:system_menu_block" class="block block-menu navigation menu--secondary-menu">
+
+            
+  <h2 class="visually-hidden" id="block-plus2025-secondarymenu-2-menu">Secondary menu</h2>
+  
+
+                  
+  <menu data-component-id="plus2025:menu" aria-orientation="horizontal" style="--path: themes/custom/plus2025/components/navigation/menu;">
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/favourites">
+          <span>My list</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/about-plus">
+          <span>About Plus</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/plus-sponsors">
+          <span>Sponsors</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/subscribe-plus">
+          <span>Subscribe</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/contact-us">
+          <span>Contact Us</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/user/login">
+          <span>Log in</span>
+  
+    </a>
+  
+  </li>
+
+      </menu>
+
+
+
+  </nav>
+
+  </div>
+    </div>
+
+
+  </div>
+
+  <div id="highlighted">
+    
+  </div>
+
+      <div id="body" data-has-sidebars=" second">
+    <main role="main">
+      <a id="main-content" tabindex="-1"></a>
+      <div class="layout-content">
+            <div data-component-id="plus2025:region" class="region region-content">
+        
+<div data-test="" id="block-plus2025-messages" data-component-id="plus2025:block" class="block block-system block-system-messages-block">
+  
+    
+
+      
+          <div data-drupal-messages-fallback="" class="hidden"></div>
+      </div>
+
+<div data-test="" id="block-plus2025-bootplus-system-main" class="block block-system block-system-main-block">
+  
+    
+
+      
+            
+
+
+
+
+
+<article data-history-node-id="6315" data-component-id="plus2025:node_full" class="node article full" data-is-published="yes" data-type="article" data-view-mode="full">
+
+  <header>
+              <figure>
+                              <div class="field field--name-field-fp-ico field--type-image field--label-hidden field__item"><span data-component-id="plus2025:image_formatter">
+      <span data-component-id="plus2025:image_style">
+  <img loading="lazy" src="./Information is bits _ plus.maths.org_files/bits_frontpage.jpg" width="200" height="200" alt="" data-component-id="plus2025:image" class="image-style-small-square">
+
+</span>
+
+  </span>
+</div>
+            
+      </figure>
+      
+    <div class="tell">
+              
+        <h1>
+            <span data-component-id="plus2025:field_inline" class="field field--name-title field--type-string field--label-hidden">Information is bits</span>
+
+
+        </h1>
+        
+
+        
+      
+                        <footer class="node__meta">
+            
+                        <div class="node__submitted tell">
+              
+                                            <div class="field field--name-field-authors field--type-entity-reference field--label-hidden field__items">
+                  <div class="field__item"><a href="https://plus.maths.org/people/marianne-freiberger" hreflang="en">Marianne Freiberger</a></div>
+              </div>
+      
+              
+                <span data-component-id="plus2025:field_inline" class="field field--name-created field--type-created field--label-hidden"><time datetime="2015-03-24T16:17:20+00:00" title="Tuesday, March 24, 2015 - 16:17" data-component-id="plus2025:time" class="datetime">24  March,  2015</time>
+</span>
+
+
+                            
+              
+            </div>
+          </footer>
+                  </div>
+  </header>
+
+  <div class="node__content">
+                                <div class="field field--name-body field--type-text-with-summary field--label-hidden field__item"><div class="tex2jax_process"><div class="rightimage" style="width: 300px;"><img src="./Information is bits _ plus.maths.org_files/info_bits.jpg" width="300" height="212" alt="Bits" loading="lazy"><p>Information is bits.</p></div>
+
+
+
+<p>We send information over the internet every day. All that
+information, whether it's a birthday email or your homework, is
+in encoded into sequences of 0s and 1s. What's the best way of doing
+this? The way that uses the least amount of 0s and 1s and therefore
+requires the smallest amount of computer memory.  </p>
+
+Let's do a back-of-the-envelope calculation. Suppose we want to
+encode the 26 (lower case) letters of the alphabet, plus an
+additional symbol that denotes a space: each of the 27 symbols is to
+be represented by a string of 0s and 1s. How long do these strings
+need to be? Clearly they must be long enough to give a total of
+at least 27 distinct strings, so that we can associate them uniquely
+to our 27 symbols. There are <mjx-container class="MathJax CtxtMenu_Attached_0" jax="CHTML" tabindex="0" ctxtmenu_counter="0" style="font-size: 117.4%; position: relative;"><mjx-math class="MJX-TEX" aria-hidden="true"><mjx-msup><mjx-mn class="mjx-n"><mjx-c class="mjx-c32"></mjx-c></mjx-mn><mjx-script style="vertical-align: 0.363em;"><mjx-mi class="mjx-i" size="s"><mjx-c class="mjx-c1D45A TEX-I"></mjx-c></mjx-mi></mjx-script></mjx-msup></mjx-math><mjx-assistive-mml unselectable="on" display="inline"><math xmlns="http://www.w3.org/1998/Math/MathML"><msup><mn>2</mn><mi>m</mi></msup></math></mjx-assistive-mml></mjx-container> strings of length <mjx-container class="MathJax CtxtMenu_Attached_0" jax="CHTML" tabindex="0" ctxtmenu_counter="1" style="font-size: 117.4%; position: relative;"><mjx-math class="MJX-TEX" aria-hidden="true"><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D45A TEX-I"></mjx-c></mjx-mi></mjx-math><mjx-assistive-mml unselectable="on" display="inline"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>m</mi></math></mjx-assistive-mml></mjx-container> (because we
+have two choices for each entry in the string) so we need
+
+<mjx-container class="MathJax CtxtMenu_Attached_0" jax="CHTML" display="true" tabindex="0" ctxtmenu_counter="2" style="font-size: 117.4%; position: relative;"><mjx-math display="true" class="MJX-TEX" aria-hidden="true" style="margin-left: 0px; margin-right: 0px;"><mjx-msup><mjx-mn class="mjx-n"><mjx-c class="mjx-c32"></mjx-c></mjx-mn><mjx-script style="vertical-align: 0.413em;"><mjx-mi class="mjx-i" size="s"><mjx-c class="mjx-c1D45A TEX-I"></mjx-c></mjx-mi></mjx-script></mjx-msup><mjx-mo class="mjx-n" space="4"><mjx-c class="mjx-c2265"></mjx-c></mjx-mo><mjx-mn class="mjx-n" space="4"><mjx-c class="mjx-c32"></mjx-c><mjx-c class="mjx-c37"></mjx-c><mjx-c class="mjx-c2E"></mjx-c></mjx-mn></mjx-math><mjx-assistive-mml unselectable="on" display="block"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><msup><mn>2</mn><mi>m</mi></msup><mo>≥</mo><mn>27.</mn></math></mjx-assistive-mml></mjx-container> Solving for <mjx-container class="MathJax CtxtMenu_Attached_0" jax="CHTML" tabindex="0" ctxtmenu_counter="3" style="font-size: 117.4%; position: relative;"><mjx-math class="MJX-TEX" aria-hidden="true"><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D45A TEX-I"></mjx-c></mjx-mi></mjx-math><mjx-assistive-mml unselectable="on" display="inline"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>m</mi></math></mjx-assistive-mml></mjx-container> gives
+
+<mjx-container class="MathJax CtxtMenu_Attached_0" jax="CHTML" display="true" tabindex="0" ctxtmenu_counter="4" style="font-size: 117.4%; position: relative;"><mjx-math display="true" class="MJX-TEX" aria-hidden="true" style="margin-left: 0px; margin-right: 0px;"><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D45A TEX-I"></mjx-c></mjx-mi><mjx-mo class="mjx-n" space="4"><mjx-c class="mjx-c2265"></mjx-c></mjx-mo><mjx-msub space="4"><mjx-mi class="mjx-n"><mjx-c class="mjx-c6C"></mjx-c><mjx-c class="mjx-c6F"></mjx-c><mjx-c class="mjx-c67"></mjx-c></mjx-mi><mjx-script style="vertical-align: -0.241em;"><mjx-mn class="mjx-n" size="s"><mjx-c class="mjx-c32"></mjx-c></mjx-mn></mjx-script></mjx-msub><mjx-mo class="mjx-n"><mjx-c class="mjx-c2061"></mjx-c></mjx-mo><mjx-texatom space="2" texclass="ORD"><mjx-mn class="mjx-n"><mjx-c class="mjx-c32"></mjx-c><mjx-c class="mjx-c37"></mjx-c></mjx-mn></mjx-texatom><mjx-mo class="mjx-n" space="4"><mjx-c class="mjx-c2248"></mjx-c></mjx-mo><mjx-mn class="mjx-n" space="4"><mjx-c class="mjx-c34"></mjx-c><mjx-c class="mjx-c2E"></mjx-c><mjx-c class="mjx-c37"></mjx-c><mjx-c class="mjx-c35"></mjx-c></mjx-mn><mjx-mo class="mjx-n"><mjx-c class="mjx-c2E"></mjx-c></mjx-mo></mjx-math><mjx-assistive-mml unselectable="on" display="block"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mi>m</mi><mo>≥</mo><msub><mi>log</mi><mn>2</mn></msub><mo data-mjx-texclass="NONE">⁡</mo><mrow data-mjx-texclass="ORD"><mn>27</mn></mrow><mo>≈</mo><mn>4.75</mn><mo>.</mo></math></mjx-assistive-mml></mjx-container>
+
+This suggests that we need 5 bits per character to encode each of our
+27 symbols. You can make a similar calculation for the 45,000 characters of the Mandarin
+language, giving
+<mjx-container class="MathJax CtxtMenu_Attached_0" jax="CHTML" display="true" tabindex="0" ctxtmenu_counter="5" style="font-size: 117.4%; position: relative;"><mjx-math display="true" class="MJX-TEX" aria-hidden="true" style="margin-left: 0px; margin-right: 0px;"><mjx-msub><mjx-mi class="mjx-n"><mjx-c class="mjx-c6C"></mjx-c><mjx-c class="mjx-c6F"></mjx-c><mjx-c class="mjx-c67"></mjx-c></mjx-mi><mjx-script style="vertical-align: -0.241em;"><mjx-mn class="mjx-n" size="s"><mjx-c class="mjx-c32"></mjx-c></mjx-mn></mjx-script></mjx-msub><mjx-mo class="mjx-n"><mjx-c class="mjx-c2061"></mjx-c></mjx-mo><mjx-texatom space="2" texclass="ORD"><mjx-mn class="mjx-n"><mjx-c class="mjx-c34"></mjx-c><mjx-c class="mjx-c35"></mjx-c></mjx-mn><mjx-mo class="mjx-n"><mjx-c class="mjx-c2C"></mjx-c></mjx-mo><mjx-mn class="mjx-n" space="2"><mjx-c class="mjx-c30"></mjx-c><mjx-c class="mjx-c30"></mjx-c><mjx-c class="mjx-c30"></mjx-c></mjx-mn></mjx-texatom><mjx-mo class="mjx-n" space="4"><mjx-c class="mjx-c2248"></mjx-c></mjx-mo><mjx-mn class="mjx-n" space="4"><mjx-c class="mjx-c31"></mjx-c><mjx-c class="mjx-c35"></mjx-c><mjx-c class="mjx-c2E"></mjx-c><mjx-c class="mjx-c34"></mjx-c><mjx-c class="mjx-c36"></mjx-c></mjx-mn></mjx-math><mjx-assistive-mml unselectable="on" display="block"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><msub><mi>log</mi><mn>2</mn></msub><mo data-mjx-texclass="NONE">⁡</mo><mrow data-mjx-texclass="ORD"><mn>45</mn><mo>,</mo><mn>000</mn></mrow><mo>≈</mo><mn>15.46</mn></math></mjx-assistive-mml></mjx-container> 
+
+ and suggesting that you need  16 bits per character to encode
+ them. We still don't know the exact code to use, but at least we
+ know how heavy it's going to be on our computer memory.
+
+
+
+<h3>Exploiting patterns</h3>
+
+<p>The calculation above is neat, but we can  do better. "Any
+reasonable  [code] would take advantage of the
+fact that some letters, like the letter "e" in English, occur much more frequently
+than others," explains <a href="http://scottaaronson.com/">Scott Aaronson</a>, a computer scientist at the Massachusetts Institute of Technology.   "So we can use a smaller
+number of bits for those." It's
+an idea that's been used in Morse code for over 150 years: here the more common letters
+are encoded using shorter strings of dots and dashes than the rarer
+ones.</p>
+
+<div style="float: left; width: 40%;"><div class="rightimage" style="width: 300px;"><img src="./Information is bits _ plus.maths.org_files/morse.png" width="300" height="387" alt="Morse code" loading="lazy"><p>.</p></div></div>
+<div style="float: right; width: 60%;">
+As an example, suppose there are only three letters to encode, A, B and  C. Suppose  that A has frequency 1/2 (in a long text half of the letters will be A) and B and C have frequency 1/4 each (in a long text a quarter of the letters will be B and another quarter will be C). Since A is the most frequent, let's use a single bit, say 0, to encode it. For B and C we will use two bits each, say 01 and 11. You can check for yourself that this is a decent code — the receiver can decode it to find the original letter sequence without any ambiguity. To encode a text made up of those letters, we need one bit per symbol half of the time (for the A), two bits per symbol a quarter of the time (for the B) and two bits per symbol another quarter of the time (for the C). So the average number of bits per symbols is
+
+<mjx-container class="MathJax CtxtMenu_Attached_0" jax="CHTML" display="true" tabindex="0" ctxtmenu_counter="6" style="font-size: 117.4%; position: relative;"><mjx-math display="true" class="MJX-TEX" aria-hidden="true" style="margin-left: 0px; margin-right: 0px;"><mjx-mn class="mjx-n"><mjx-c class="mjx-c31"></mjx-c></mjx-mn><mjx-texatom texclass="ORD"><mjx-mo class="mjx-n"><mjx-c class="mjx-c2F"></mjx-c></mjx-mo></mjx-texatom><mjx-mn class="mjx-n"><mjx-c class="mjx-c32"></mjx-c></mjx-mn><mjx-mo class="mjx-n" space="3"><mjx-c class="mjx-cD7"></mjx-c></mjx-mo><mjx-mn class="mjx-n" space="3"><mjx-c class="mjx-c31"></mjx-c></mjx-mn><mjx-mo class="mjx-n" space="3"><mjx-c class="mjx-c2B"></mjx-c></mjx-mo><mjx-mn class="mjx-n" space="3"><mjx-c class="mjx-c31"></mjx-c></mjx-mn><mjx-texatom texclass="ORD"><mjx-mo class="mjx-n"><mjx-c class="mjx-c2F"></mjx-c></mjx-mo></mjx-texatom><mjx-mn class="mjx-n"><mjx-c class="mjx-c34"></mjx-c></mjx-mn><mjx-mo class="mjx-n" space="3"><mjx-c class="mjx-cD7"></mjx-c></mjx-mo><mjx-mn class="mjx-n" space="3"><mjx-c class="mjx-c32"></mjx-c></mjx-mn><mjx-mo class="mjx-n" space="3"><mjx-c class="mjx-c2B"></mjx-c></mjx-mo><mjx-mn class="mjx-n" space="3"><mjx-c class="mjx-c31"></mjx-c></mjx-mn><mjx-texatom texclass="ORD"><mjx-mo class="mjx-n"><mjx-c class="mjx-c2F"></mjx-c></mjx-mo></mjx-texatom><mjx-mn class="mjx-n"><mjx-c class="mjx-c34"></mjx-c></mjx-mn><mjx-mo class="mjx-n" space="3"><mjx-c class="mjx-cD7"></mjx-c></mjx-mo><mjx-mn class="mjx-n" space="3"><mjx-c class="mjx-c32"></mjx-c></mjx-mn><mjx-mo class="mjx-n" space="4"><mjx-c class="mjx-c3D"></mjx-c></mjx-mo><mjx-mn class="mjx-n" space="4"><mjx-c class="mjx-c33"></mjx-c></mjx-mn><mjx-texatom texclass="ORD"><mjx-mo class="mjx-n"><mjx-c class="mjx-c2F"></mjx-c></mjx-mo></mjx-texatom><mjx-mn class="mjx-n"><mjx-c class="mjx-c32"></mjx-c></mjx-mn><mjx-mo class="mjx-n" space="4"><mjx-c class="mjx-c3D"></mjx-c></mjx-mo><mjx-mn class="mjx-n" space="4"><mjx-c class="mjx-c31"></mjx-c><mjx-c class="mjx-c2E"></mjx-c><mjx-c class="mjx-c35"></mjx-c></mjx-mn><mjx-mo class="mjx-n"><mjx-c class="mjx-c2E"></mjx-c></mjx-mo></mjx-math><mjx-assistive-mml unselectable="on" display="block"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mn>1</mn><mrow data-mjx-texclass="ORD"><mo>/</mo></mrow><mn>2</mn><mo>×</mo><mn>1</mn><mo>+</mo><mn>1</mn><mrow data-mjx-texclass="ORD"><mo>/</mo></mrow><mn>4</mn><mo>×</mo><mn>2</mn><mo>+</mo><mn>1</mn><mrow data-mjx-texclass="ORD"><mo>/</mo></mrow><mn>4</mn><mo>×</mo><mn>2</mn><mo>=</mo><mn>3</mn><mrow data-mjx-texclass="ORD"><mo>/</mo></mrow><mn>2</mn><mo>=</mo><mn>1.5</mn><mo>.</mo></math></mjx-assistive-mml></mjx-container>
+
+We can even guess at a more general formula that works for different frequency distributions. To see how, let's first stick to our example of A, B and C, and imagine that  half of the time the letter A occurs it is red and
+that the other half it is green. This gives four possibilities:
+a red letter A with frequency 1/4, a green letter A with frequency 1/4, an ordinary black letter B with frequency 1/4, and a black letter C with frequency 1/4. All the
+frequencies are now the same, so if we wanted to encode the 
+characters in a way that distinguishes the colour of the A's
+we would need around
+
+<mjx-container class="MathJax CtxtMenu_Attached_0" jax="CHTML" display="true" tabindex="0" ctxtmenu_counter="7" style="font-size: 117.4%; position: relative;"><mjx-math display="true" class="MJX-TEX" aria-hidden="true" style="margin-left: 0px; margin-right: 0px;"><mjx-msub><mjx-mi class="mjx-n"><mjx-c class="mjx-c6C"></mjx-c><mjx-c class="mjx-c6F"></mjx-c><mjx-c class="mjx-c67"></mjx-c></mjx-mi><mjx-script style="vertical-align: -0.241em;"><mjx-mn class="mjx-n" size="s"><mjx-c class="mjx-c32"></mjx-c></mjx-mn></mjx-script></mjx-msub><mjx-mo class="mjx-n"><mjx-c class="mjx-c2061"></mjx-c></mjx-mo><mjx-texatom space="2" texclass="ORD"><mjx-mn class="mjx-n"><mjx-c class="mjx-c34"></mjx-c></mjx-mn></mjx-texatom></mjx-math><mjx-assistive-mml unselectable="on" display="block"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><msub><mi>log</mi><mn>2</mn></msub><mo data-mjx-texclass="NONE">⁡</mo><mrow data-mjx-texclass="ORD"><mn>4</mn></mrow></math></mjx-assistive-mml></mjx-container>
+
+</div><br clear="all">
+
+bits per character. That's the same calculation as the one above. In particular, we need <mjx-container class="MathJax CtxtMenu_Attached_0" jax="CHTML" tabindex="0" ctxtmenu_counter="8" style="font-size: 117.4%; position: relative;"><mjx-math class="MJX-TEX" aria-hidden="true"><mjx-msub><mjx-mi class="mjx-n"><mjx-c class="mjx-c6C"></mjx-c><mjx-c class="mjx-c6F"></mjx-c><mjx-c class="mjx-c67"></mjx-c></mjx-mi><mjx-script style="vertical-align: -0.241em;"><mjx-mn class="mjx-n" size="s"><mjx-c class="mjx-c32"></mjx-c></mjx-mn></mjx-script></mjx-msub><mjx-mo class="mjx-n"><mjx-c class="mjx-c2061"></mjx-c></mjx-mo><mjx-texatom space="2" texclass="ORD"><mjx-mn class="mjx-n"><mjx-c class="mjx-c34"></mjx-c></mjx-mn></mjx-texatom></mjx-math><mjx-assistive-mml unselectable="on" display="inline"><math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>log</mi><mn>2</mn></msub><mo data-mjx-texclass="NONE">⁡</mo><mrow data-mjx-texclass="ORD"><mn>4</mn></mrow></math></mjx-assistive-mml></mjx-container> bits to
+identify the B and the C.
+
+
+
+For the letter A, the number <mjx-container class="MathJax CtxtMenu_Attached_0" jax="CHTML" tabindex="0" ctxtmenu_counter="9" style="font-size: 117.4%; position: relative;"><mjx-math class="MJX-TEX" aria-hidden="true"><mjx-msub><mjx-mi class="mjx-n"><mjx-c class="mjx-c6C"></mjx-c><mjx-c class="mjx-c6F"></mjx-c><mjx-c class="mjx-c67"></mjx-c></mjx-mi><mjx-script style="vertical-align: -0.241em;"><mjx-mn class="mjx-n" size="s"><mjx-c class="mjx-c32"></mjx-c></mjx-mn></mjx-script></mjx-msub><mjx-mo class="mjx-n"><mjx-c class="mjx-c2061"></mjx-c></mjx-mo><mjx-texatom space="2" texclass="ORD"><mjx-mn class="mjx-n"><mjx-c class="mjx-c34"></mjx-c></mjx-mn></mjx-texatom></mjx-math><mjx-assistive-mml unselectable="on" display="inline"><math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>log</mi><mn>2</mn></msub><mo data-mjx-texclass="NONE">⁡</mo><mrow data-mjx-texclass="ORD"><mn>4</mn></mrow></math></mjx-assistive-mml></mjx-container> is overkill:  we don't
+actually need to distinguish between the two
+colours. So let's deduct the number of bits needed to distinguish
+between two different characters (corresponding to the two different
+colours), which is <mjx-container class="MathJax CtxtMenu_Attached_0" jax="CHTML" tabindex="0" ctxtmenu_counter="10" style="font-size: 117.4%; position: relative;"><mjx-math class="MJX-TEX" aria-hidden="true"><mjx-msub><mjx-mi class="mjx-n"><mjx-c class="mjx-c6C"></mjx-c><mjx-c class="mjx-c6F"></mjx-c><mjx-c class="mjx-c67"></mjx-c></mjx-mi><mjx-script style="vertical-align: -0.241em;"><mjx-mn class="mjx-n" size="s"><mjx-c class="mjx-c32"></mjx-c></mjx-mn></mjx-script></mjx-msub><mjx-mo class="mjx-n"><mjx-c class="mjx-c2061"></mjx-c></mjx-mo><mjx-texatom space="2" texclass="ORD"><mjx-mn class="mjx-n"><mjx-c class="mjx-c32"></mjx-c></mjx-mn></mjx-texatom><mjx-mo class="mjx-n"><mjx-c class="mjx-c2E"></mjx-c></mjx-mo></mjx-math><mjx-assistive-mml unselectable="on" display="inline"><math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>log</mi><mn>2</mn></msub><mo data-mjx-texclass="NONE">⁡</mo><mrow data-mjx-texclass="ORD"><mn>2</mn></mrow><mo>.</mo></math></mjx-assistive-mml></mjx-container> This gives
+
+<mjx-container class="MathJax CtxtMenu_Attached_0" jax="CHTML" display="true" tabindex="0" ctxtmenu_counter="11" style="font-size: 117.4%; position: relative;"><mjx-math display="true" class="MJX-TEX" aria-hidden="true" style="margin-left: 0px; margin-right: 0px;"><mjx-msub><mjx-mi class="mjx-n"><mjx-c class="mjx-c6C"></mjx-c><mjx-c class="mjx-c6F"></mjx-c><mjx-c class="mjx-c67"></mjx-c></mjx-mi><mjx-script style="vertical-align: -0.241em;"><mjx-mn class="mjx-n" size="s"><mjx-c class="mjx-c32"></mjx-c></mjx-mn></mjx-script></mjx-msub><mjx-mo class="mjx-n"><mjx-c class="mjx-c2061"></mjx-c></mjx-mo><mjx-texatom space="2" texclass="ORD"><mjx-mn class="mjx-n"><mjx-c class="mjx-c34"></mjx-c></mjx-mn></mjx-texatom><mjx-mo class="mjx-n" space="3"><mjx-c class="mjx-c2212"></mjx-c></mjx-mo><mjx-msub space="3"><mjx-mi class="mjx-n"><mjx-c class="mjx-c6C"></mjx-c><mjx-c class="mjx-c6F"></mjx-c><mjx-c class="mjx-c67"></mjx-c></mjx-mi><mjx-script style="vertical-align: -0.241em;"><mjx-mn class="mjx-n" size="s"><mjx-c class="mjx-c32"></mjx-c></mjx-mn></mjx-script></mjx-msub><mjx-mo class="mjx-n"><mjx-c class="mjx-c2061"></mjx-c></mjx-mo><mjx-texatom space="2" texclass="ORD"><mjx-mn class="mjx-n"><mjx-c class="mjx-c32"></mjx-c></mjx-mn></mjx-texatom><mjx-mo class="mjx-n" space="4"><mjx-c class="mjx-c3D"></mjx-c></mjx-mo><mjx-msub space="4"><mjx-mi class="mjx-n"><mjx-c class="mjx-c6C"></mjx-c><mjx-c class="mjx-c6F"></mjx-c><mjx-c class="mjx-c67"></mjx-c></mjx-mi><mjx-script style="vertical-align: -0.241em;"><mjx-mn class="mjx-n" size="s"><mjx-c class="mjx-c32"></mjx-c></mjx-mn></mjx-script></mjx-msub><mjx-mo class="mjx-n"><mjx-c class="mjx-c2061"></mjx-c></mjx-mo><mjx-texatom space="2" texclass="ORD"><mjx-mfrac><mjx-frac type="d"><mjx-num><mjx-nstrut type="d"></mjx-nstrut><mjx-mn class="mjx-n"><mjx-c class="mjx-c34"></mjx-c></mjx-mn></mjx-num><mjx-dbox><mjx-dtable><mjx-line type="d"></mjx-line><mjx-row><mjx-den><mjx-dstrut type="d"></mjx-dstrut><mjx-mn class="mjx-n"><mjx-c class="mjx-c32"></mjx-c></mjx-mn></mjx-den></mjx-row></mjx-dtable></mjx-dbox></mjx-frac></mjx-mfrac></mjx-texatom><mjx-mo class="mjx-n" space="4"><mjx-c class="mjx-c3D"></mjx-c></mjx-mo><mjx-msub space="4"><mjx-mi class="mjx-n"><mjx-c class="mjx-c6C"></mjx-c><mjx-c class="mjx-c6F"></mjx-c><mjx-c class="mjx-c67"></mjx-c></mjx-mi><mjx-script style="vertical-align: -0.241em;"><mjx-mn class="mjx-n" size="s"><mjx-c class="mjx-c32"></mjx-c></mjx-mn></mjx-script></mjx-msub><mjx-mo class="mjx-n"><mjx-c class="mjx-c2061"></mjx-c></mjx-mo><mjx-texatom space="2" texclass="ORD"><mjx-mn class="mjx-n"><mjx-c class="mjx-c32"></mjx-c></mjx-mn></mjx-texatom></mjx-math><mjx-assistive-mml unselectable="on" display="block"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><msub><mi>log</mi><mn>2</mn></msub><mo data-mjx-texclass="NONE">⁡</mo><mrow data-mjx-texclass="ORD"><mn>4</mn></mrow><mo>−</mo><msub><mi>log</mi><mn>2</mn></msub><mo data-mjx-texclass="NONE">⁡</mo><mrow data-mjx-texclass="ORD"><mn>2</mn></mrow><mo>=</mo><msub><mi>log</mi><mn>2</mn></msub><mo data-mjx-texclass="NONE">⁡</mo><mrow data-mjx-texclass="ORD"><mfrac><mn>4</mn><mn>2</mn></mfrac></mrow><mo>=</mo><msub><mi>log</mi><mn>2</mn></msub><mo data-mjx-texclass="NONE">⁡</mo><mrow data-mjx-texclass="ORD"><mn>2</mn></mrow></math></mjx-assistive-mml></mjx-container>
+
+bits to represent the A.
+
+The average number of bits per symbol is now
+
+<mjx-container class="MathJax CtxtMenu_Attached_0" jax="CHTML" display="true" tabindex="0" ctxtmenu_counter="12" style="font-size: 117.4%; position: relative;"><mjx-math display="true" class="MJX-TEX" aria-hidden="true" style="margin-left: 0px; margin-right: 0px;"><mjx-mfrac><mjx-frac type="d"><mjx-num><mjx-nstrut type="d"></mjx-nstrut><mjx-mn class="mjx-n"><mjx-c class="mjx-c31"></mjx-c></mjx-mn></mjx-num><mjx-dbox><mjx-dtable><mjx-line type="d"></mjx-line><mjx-row><mjx-den><mjx-dstrut type="d"></mjx-dstrut><mjx-mn class="mjx-n"><mjx-c class="mjx-c32"></mjx-c></mjx-mn></mjx-den></mjx-row></mjx-dtable></mjx-dbox></mjx-frac></mjx-mfrac><mjx-msub><mjx-mi class="mjx-n"><mjx-c class="mjx-c6C"></mjx-c><mjx-c class="mjx-c6F"></mjx-c><mjx-c class="mjx-c67"></mjx-c></mjx-mi><mjx-script style="vertical-align: -0.241em;"><mjx-mn class="mjx-n" size="s"><mjx-c class="mjx-c32"></mjx-c></mjx-mn></mjx-script></mjx-msub><mjx-mo class="mjx-n"><mjx-c class="mjx-c2061"></mjx-c></mjx-mo><mjx-texatom space="2" texclass="ORD"><mjx-mn class="mjx-n"><mjx-c class="mjx-c32"></mjx-c></mjx-mn></mjx-texatom><mjx-mo class="mjx-n" space="3"><mjx-c class="mjx-c2B"></mjx-c></mjx-mo><mjx-mfrac space="3"><mjx-frac type="d"><mjx-num><mjx-nstrut type="d"></mjx-nstrut><mjx-mn class="mjx-n"><mjx-c class="mjx-c31"></mjx-c></mjx-mn></mjx-num><mjx-dbox><mjx-dtable><mjx-line type="d"></mjx-line><mjx-row><mjx-den><mjx-dstrut type="d"></mjx-dstrut><mjx-mn class="mjx-n"><mjx-c class="mjx-c34"></mjx-c></mjx-mn></mjx-den></mjx-row></mjx-dtable></mjx-dbox></mjx-frac></mjx-mfrac><mjx-msub><mjx-mi class="mjx-n"><mjx-c class="mjx-c6C"></mjx-c><mjx-c class="mjx-c6F"></mjx-c><mjx-c class="mjx-c67"></mjx-c></mjx-mi><mjx-script style="vertical-align: -0.241em;"><mjx-mn class="mjx-n" size="s"><mjx-c class="mjx-c32"></mjx-c></mjx-mn></mjx-script></mjx-msub><mjx-mo class="mjx-n"><mjx-c class="mjx-c2061"></mjx-c></mjx-mo><mjx-texatom space="2" texclass="ORD"><mjx-mn class="mjx-n"><mjx-c class="mjx-c34"></mjx-c></mjx-mn></mjx-texatom><mjx-mo class="mjx-n" space="3"><mjx-c class="mjx-c2B"></mjx-c></mjx-mo><mjx-mfrac space="3"><mjx-frac type="d"><mjx-num><mjx-nstrut type="d"></mjx-nstrut><mjx-mn class="mjx-n"><mjx-c class="mjx-c31"></mjx-c></mjx-mn></mjx-num><mjx-dbox><mjx-dtable><mjx-line type="d"></mjx-line><mjx-row><mjx-den><mjx-dstrut type="d"></mjx-dstrut><mjx-mn class="mjx-n"><mjx-c class="mjx-c34"></mjx-c></mjx-mn></mjx-den></mjx-row></mjx-dtable></mjx-dbox></mjx-frac></mjx-mfrac><mjx-msub><mjx-mi class="mjx-n"><mjx-c class="mjx-c6C"></mjx-c><mjx-c class="mjx-c6F"></mjx-c><mjx-c class="mjx-c67"></mjx-c></mjx-mi><mjx-script style="vertical-align: -0.241em;"><mjx-mn class="mjx-n" size="s"><mjx-c class="mjx-c32"></mjx-c></mjx-mn></mjx-script></mjx-msub><mjx-mo class="mjx-n"><mjx-c class="mjx-c2061"></mjx-c></mjx-mo><mjx-texatom space="2" texclass="ORD"><mjx-mn class="mjx-n"><mjx-c class="mjx-c34"></mjx-c></mjx-mn></mjx-texatom><mjx-mo class="mjx-n" space="4"><mjx-c class="mjx-c3D"></mjx-c></mjx-mo><mjx-mn class="mjx-n" space="4"><mjx-c class="mjx-c31"></mjx-c></mjx-mn><mjx-texatom texclass="ORD"><mjx-mo class="mjx-n"><mjx-c class="mjx-c2F"></mjx-c></mjx-mo></mjx-texatom><mjx-mn class="mjx-n"><mjx-c class="mjx-c32"></mjx-c></mjx-mn><mjx-mo class="mjx-n" space="3"><mjx-c class="mjx-c2B"></mjx-c></mjx-mo><mjx-mn class="mjx-n" space="3"><mjx-c class="mjx-c31"></mjx-c></mjx-mn><mjx-texatom texclass="ORD"><mjx-mo class="mjx-n"><mjx-c class="mjx-c2F"></mjx-c></mjx-mo></mjx-texatom><mjx-mn class="mjx-n"><mjx-c class="mjx-c32"></mjx-c></mjx-mn><mjx-mo class="mjx-n" space="3"><mjx-c class="mjx-c2B"></mjx-c></mjx-mo><mjx-mn class="mjx-n" space="3"><mjx-c class="mjx-c31"></mjx-c></mjx-mn><mjx-texatom texclass="ORD"><mjx-mo class="mjx-n"><mjx-c class="mjx-c2F"></mjx-c></mjx-mo></mjx-texatom><mjx-mn class="mjx-n"><mjx-c class="mjx-c32"></mjx-c></mjx-mn><mjx-mo class="mjx-n" space="4"><mjx-c class="mjx-c3D"></mjx-c></mjx-mo><mjx-mn class="mjx-n" space="4"><mjx-c class="mjx-c33"></mjx-c></mjx-mn><mjx-texatom texclass="ORD"><mjx-mo class="mjx-n"><mjx-c class="mjx-c2F"></mjx-c></mjx-mo></mjx-texatom><mjx-mn class="mjx-n"><mjx-c class="mjx-c32"></mjx-c></mjx-mn><mjx-mo class="mjx-n" space="4"><mjx-c class="mjx-c3D"></mjx-c></mjx-mo><mjx-mn class="mjx-n" space="4"><mjx-c class="mjx-c31"></mjx-c><mjx-c class="mjx-c2E"></mjx-c><mjx-c class="mjx-c35"></mjx-c></mjx-mn></mjx-math><mjx-assistive-mml unselectable="on" display="block"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mfrac><mn>1</mn><mn>2</mn></mfrac><msub><mi>log</mi><mn>2</mn></msub><mo data-mjx-texclass="NONE">⁡</mo><mrow data-mjx-texclass="ORD"><mn>2</mn></mrow><mo>+</mo><mfrac><mn>1</mn><mn>4</mn></mfrac><msub><mi>log</mi><mn>2</mn></msub><mo data-mjx-texclass="NONE">⁡</mo><mrow data-mjx-texclass="ORD"><mn>4</mn></mrow><mo>+</mo><mfrac><mn>1</mn><mn>4</mn></mfrac><msub><mi>log</mi><mn>2</mn></msub><mo data-mjx-texclass="NONE">⁡</mo><mrow data-mjx-texclass="ORD"><mn>4</mn></mrow><mo>=</mo><mn>1</mn><mrow data-mjx-texclass="ORD"><mo>/</mo></mrow><mn>2</mn><mo>+</mo><mn>1</mn><mrow data-mjx-texclass="ORD"><mo>/</mo></mrow><mn>2</mn><mo>+</mo><mn>1</mn><mrow data-mjx-texclass="ORD"><mo>/</mo></mrow><mn>2</mn><mo>=</mo><mn>3</mn><mrow data-mjx-texclass="ORD"><mo>/</mo></mrow><mn>2</mn><mo>=</mo><mn>1.5</mn></math></mjx-assistive-mml></mjx-container>
+
+That's the same number we got before, which is reassuring. But we also notice that each term in the sum above is the frequency of one of the characters (e.g. 1/2 for A) times the logarithm of 1 divided by the frequency (e.g. <mjx-container class="MathJax CtxtMenu_Attached_0" jax="CHTML" tabindex="0" ctxtmenu_counter="13" style="font-size: 117.4%; position: relative;"><mjx-math class="MJX-TEX" aria-hidden="true"><mjx-msub><mjx-mi class="mjx-n"><mjx-c class="mjx-c6C"></mjx-c><mjx-c class="mjx-c6F"></mjx-c><mjx-c class="mjx-c67"></mjx-c></mjx-mi><mjx-script style="vertical-align: -0.241em;"><mjx-mn class="mjx-n" size="s"><mjx-c class="mjx-c32"></mjx-c></mjx-mn></mjx-script></mjx-msub><mjx-mo class="mjx-n"><mjx-c class="mjx-c2061"></mjx-c></mjx-mo><mjx-texatom space="2" texclass="ORD"><mjx-mn class="mjx-n"><mjx-c class="mjx-c32"></mjx-c></mjx-mn></mjx-texatom></mjx-math><mjx-assistive-mml unselectable="on" display="inline"><math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>log</mi><mn>2</mn></msub><mo data-mjx-texclass="NONE">⁡</mo><mrow data-mjx-texclass="ORD"><mn>2</mn></mrow></math></mjx-assistive-mml></mjx-container> for A).  And it turns out that exactly the same way of thinking works in general for an alphabet of <mjx-container class="MathJax CtxtMenu_Attached_0" jax="CHTML" tabindex="0" ctxtmenu_counter="14" style="font-size: 117.4%; position: relative;"><mjx-math class="MJX-TEX" aria-hidden="true"><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D45B TEX-I"></mjx-c></mjx-mi></mjx-math><mjx-assistive-mml unselectable="on" display="inline"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>n</mi></math></mjx-assistive-mml></mjx-container> symbols.  Writing <mjx-container class="MathJax CtxtMenu_Attached_0" jax="CHTML" tabindex="0" ctxtmenu_counter="15" style="font-size: 117.4%; position: relative;"><mjx-math class="MJX-TEX" aria-hidden="true"><mjx-msub><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D45D TEX-I"></mjx-c></mjx-mi><mjx-script style="vertical-align: -0.15em;"><mjx-mn class="mjx-n" size="s"><mjx-c class="mjx-c31"></mjx-c></mjx-mn></mjx-script></mjx-msub></mjx-math><mjx-assistive-mml unselectable="on" display="inline"><math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>p</mi><mn>1</mn></msub></math></mjx-assistive-mml></mjx-container> for the frequency of symbol 1, <mjx-container class="MathJax CtxtMenu_Attached_0" jax="CHTML" tabindex="0" ctxtmenu_counter="16" style="font-size: 117.4%; position: relative;"><mjx-math class="MJX-TEX" aria-hidden="true"><mjx-msub><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D45D TEX-I"></mjx-c></mjx-mi><mjx-script style="vertical-align: -0.15em;"><mjx-mn class="mjx-n" size="s"><mjx-c class="mjx-c32"></mjx-c></mjx-mn></mjx-script></mjx-msub></mjx-math><mjx-assistive-mml unselectable="on" display="inline"><math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>p</mi><mn>2</mn></msub></math></mjx-assistive-mml></mjx-container> for the
+frequency of symbol 2, and so on, an estimate for the average  number of bits
+needed per symbol  is
+
+<mjx-container class="MathJax CtxtMenu_Attached_0" jax="CHTML" display="true" tabindex="0" ctxtmenu_counter="17" style="font-size: 117.4%; position: relative;"><mjx-math display="true" class="MJX-TEX" aria-hidden="true" style="margin-left: 0px; margin-right: 0px;"><mjx-msub><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D45D TEX-I"></mjx-c></mjx-mi><mjx-script style="vertical-align: -0.15em;"><mjx-mn class="mjx-n" size="s"><mjx-c class="mjx-c31"></mjx-c></mjx-mn></mjx-script></mjx-msub><mjx-mi class="mjx-n" space="2"><mjx-c class="mjx-c6C"></mjx-c><mjx-c class="mjx-c6F"></mjx-c><mjx-c class="mjx-c67"></mjx-c></mjx-mi><mjx-mo class="mjx-n"><mjx-c class="mjx-c2061"></mjx-c></mjx-mo><mjx-texatom space="2" texclass="ORD"><mjx-mo class="mjx-n"><mjx-c class="mjx-c28"></mjx-c></mjx-mo><mjx-mn class="mjx-n"><mjx-c class="mjx-c31"></mjx-c></mjx-mn><mjx-texatom texclass="ORD"><mjx-mo class="mjx-n"><mjx-c class="mjx-c2F"></mjx-c></mjx-mo></mjx-texatom><mjx-msub><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D45D TEX-I"></mjx-c></mjx-mi><mjx-script style="vertical-align: -0.15em;"><mjx-mn class="mjx-n" size="s"><mjx-c class="mjx-c31"></mjx-c></mjx-mn></mjx-script></mjx-msub><mjx-mo class="mjx-n"><mjx-c class="mjx-c29"></mjx-c></mjx-mo></mjx-texatom><mjx-mo class="mjx-n" space="3"><mjx-c class="mjx-c2B"></mjx-c></mjx-mo><mjx-msub space="3"><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D45D TEX-I"></mjx-c></mjx-mi><mjx-script style="vertical-align: -0.15em;"><mjx-mn class="mjx-n" size="s"><mjx-c class="mjx-c32"></mjx-c></mjx-mn></mjx-script></mjx-msub><mjx-mi class="mjx-n" space="2"><mjx-c class="mjx-c6C"></mjx-c><mjx-c class="mjx-c6F"></mjx-c><mjx-c class="mjx-c67"></mjx-c></mjx-mi><mjx-mo class="mjx-n"><mjx-c class="mjx-c2061"></mjx-c></mjx-mo><mjx-texatom space="2" texclass="ORD"><mjx-mo class="mjx-n"><mjx-c class="mjx-c28"></mjx-c></mjx-mo><mjx-mn class="mjx-n"><mjx-c class="mjx-c31"></mjx-c></mjx-mn><mjx-texatom texclass="ORD"><mjx-mo class="mjx-n"><mjx-c class="mjx-c2F"></mjx-c></mjx-mo></mjx-texatom><mjx-msub><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D45D TEX-I"></mjx-c></mjx-mi><mjx-script style="vertical-align: -0.15em;"><mjx-mn class="mjx-n" size="s"><mjx-c class="mjx-c32"></mjx-c></mjx-mn></mjx-script></mjx-msub><mjx-mo class="mjx-n"><mjx-c class="mjx-c29"></mjx-c></mjx-mo></mjx-texatom><mjx-mo class="mjx-n" space="3"><mjx-c class="mjx-c2B"></mjx-c></mjx-mo><mjx-msub space="3"><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D45D TEX-I"></mjx-c></mjx-mi><mjx-script style="vertical-align: -0.15em;"><mjx-mn class="mjx-n" size="s"><mjx-c class="mjx-c33"></mjx-c></mjx-mn></mjx-script></mjx-msub><mjx-mi class="mjx-n" space="2"><mjx-c class="mjx-c6C"></mjx-c><mjx-c class="mjx-c6F"></mjx-c><mjx-c class="mjx-c67"></mjx-c></mjx-mi><mjx-mo class="mjx-n"><mjx-c class="mjx-c2061"></mjx-c></mjx-mo><mjx-texatom space="2" texclass="ORD"><mjx-mo class="mjx-n"><mjx-c class="mjx-c28"></mjx-c></mjx-mo><mjx-mn class="mjx-n"><mjx-c class="mjx-c31"></mjx-c></mjx-mn><mjx-texatom texclass="ORD"><mjx-mo class="mjx-n"><mjx-c class="mjx-c2F"></mjx-c></mjx-mo></mjx-texatom><mjx-msub><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D45D TEX-I"></mjx-c></mjx-mi><mjx-script style="vertical-align: -0.15em;"><mjx-mn class="mjx-n" size="s"><mjx-c class="mjx-c33"></mjx-c></mjx-mn></mjx-script></mjx-msub><mjx-mo class="mjx-n"><mjx-c class="mjx-c29"></mjx-c></mjx-mo></mjx-texatom><mjx-mo class="mjx-n"><mjx-c class="mjx-c2B"></mjx-c></mjx-mo><mjx-mo class="mjx-n"><mjx-c class="mjx-c2E"></mjx-c></mjx-mo><mjx-mo class="mjx-n" space="2"><mjx-c class="mjx-c2E"></mjx-c></mjx-mo><mjx-mo class="mjx-n" space="2"><mjx-c class="mjx-c2E"></mjx-c></mjx-mo><mjx-mo class="mjx-n" space="2"><mjx-c class="mjx-c2B"></mjx-c></mjx-mo><mjx-msub><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D45D TEX-I"></mjx-c></mjx-mi><mjx-script style="vertical-align: -0.15em;"><mjx-mi class="mjx-i" size="s"><mjx-c class="mjx-c1D45B TEX-I"></mjx-c></mjx-mi></mjx-script></mjx-msub><mjx-mi class="mjx-n" space="2"><mjx-c class="mjx-c6C"></mjx-c><mjx-c class="mjx-c6F"></mjx-c><mjx-c class="mjx-c67"></mjx-c></mjx-mi><mjx-mo class="mjx-n"><mjx-c class="mjx-c2061"></mjx-c></mjx-mo><mjx-texatom space="2" texclass="ORD"><mjx-mo class="mjx-n"><mjx-c class="mjx-c28"></mjx-c></mjx-mo><mjx-mn class="mjx-n"><mjx-c class="mjx-c31"></mjx-c></mjx-mn><mjx-texatom texclass="ORD"><mjx-mo class="mjx-n"><mjx-c class="mjx-c2F"></mjx-c></mjx-mo></mjx-texatom><mjx-msub><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D45D TEX-I"></mjx-c></mjx-mi><mjx-script style="vertical-align: -0.15em;"><mjx-mi class="mjx-i" size="s"><mjx-c class="mjx-c1D45B TEX-I"></mjx-c></mjx-mi></mjx-script></mjx-msub><mjx-mo class="mjx-n"><mjx-c class="mjx-c29"></mjx-c></mjx-mo></mjx-texatom><mjx-mo class="mjx-n"><mjx-c class="mjx-c2E"></mjx-c></mjx-mo></mjx-math><mjx-assistive-mml unselectable="on" display="block"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><msub><mi>p</mi><mn>1</mn></msub><mi>log</mi><mo data-mjx-texclass="NONE">⁡</mo><mrow data-mjx-texclass="ORD"><mo stretchy="false">(</mo><mn>1</mn><mrow data-mjx-texclass="ORD"><mo>/</mo></mrow><msub><mi>p</mi><mn>1</mn></msub><mo stretchy="false">)</mo></mrow><mo>+</mo><msub><mi>p</mi><mn>2</mn></msub><mi>log</mi><mo data-mjx-texclass="NONE">⁡</mo><mrow data-mjx-texclass="ORD"><mo stretchy="false">(</mo><mn>1</mn><mrow data-mjx-texclass="ORD"><mo>/</mo></mrow><msub><mi>p</mi><mn>2</mn></msub><mo stretchy="false">)</mo></mrow><mo>+</mo><msub><mi>p</mi><mn>3</mn></msub><mi>log</mi><mo data-mjx-texclass="NONE">⁡</mo><mrow data-mjx-texclass="ORD"><mo stretchy="false">(</mo><mn>1</mn><mrow data-mjx-texclass="ORD"><mo>/</mo></mrow><msub><mi>p</mi><mn>3</mn></msub><mo stretchy="false">)</mo></mrow><mo>+</mo><mo>.</mo><mo>.</mo><mo>.</mo><mo>+</mo><msub><mi>p</mi><mi>n</mi></msub><mi>log</mi><mo data-mjx-texclass="NONE">⁡</mo><mrow data-mjx-texclass="ORD"><mo stretchy="false">(</mo><mn>1</mn><mrow data-mjx-texclass="ORD"><mo>/</mo></mrow><msub><mi>p</mi><mi>n</mi></msub><mo stretchy="false">)</mo></mrow><mo>.</mo></math></mjx-assistive-mml></mjx-container>
+
+
+
+
+
+<h3>The birth of the bit</h3>
+
+<p>Thinking of information in terms of bits — 0s and 1s — seems like
+something that firmly belongs to the modern era, but  the
+idea has been around for over 60 years. It was the mathematician <a href="http://www-history.mcs.st-and.ac.uk/Mathematicians/Shannon.html">Claude Shannon</a> who in 1948 popularised the word "bit", which is shorthand for
+"binary digit". Shannon also came up with the formula we found
+above. Given an alphabet of <mjx-container class="MathJax CtxtMenu_Attached_0" jax="CHTML" tabindex="0" ctxtmenu_counter="18" style="font-size: 117.4%; position: relative;"><mjx-math class="MJX-TEX" aria-hidden="true"><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D45B TEX-I"></mjx-c></mjx-mi></mjx-math><mjx-assistive-mml unselectable="on" display="inline"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>n</mi></math></mjx-assistive-mml></mjx-container> symbols and a probability distribution
+telling you the probability <mjx-container class="MathJax CtxtMenu_Attached_0" jax="CHTML" tabindex="0" ctxtmenu_counter="19" style="font-size: 117.4%; position: relative;"><mjx-math class="MJX-TEX" aria-hidden="true"><mjx-msub><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D45D TEX-I"></mjx-c></mjx-mi><mjx-script style="vertical-align: -0.15em;"><mjx-mi class="mjx-i" size="s"><mjx-c class="mjx-c1D456 TEX-I"></mjx-c></mjx-mi></mjx-script></mjx-msub></mjx-math><mjx-assistive-mml unselectable="on" display="inline"><math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>p</mi><mi>i</mi></msub></math></mjx-assistive-mml></mjx-container> with which a symbol <mjx-container class="MathJax CtxtMenu_Attached_0" jax="CHTML" tabindex="0" ctxtmenu_counter="20" style="font-size: 117.4%; position: relative;"><mjx-math class="MJX-TEX" aria-hidden="true"><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D456 TEX-I"></mjx-c></mjx-mi></mjx-math><mjx-assistive-mml unselectable="on" display="inline"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>i</mi></math></mjx-assistive-mml></mjx-container> occurs in a
+text made out of those symbols, the number</p>
+
+<mjx-container class="MathJax CtxtMenu_Attached_0" jax="CHTML" display="true" tabindex="0" ctxtmenu_counter="21" style="font-size: 117.4%; position: relative;"><mjx-math display="true" class="MJX-TEX" aria-hidden="true" style="margin-left: 0px; margin-right: 0px;"><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D43B TEX-I"></mjx-c></mjx-mi><mjx-mo class="mjx-n" space="4"><mjx-c class="mjx-c3D"></mjx-c></mjx-mo><mjx-msub space="4"><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D45D TEX-I"></mjx-c></mjx-mi><mjx-script style="vertical-align: -0.15em;"><mjx-mn class="mjx-n" size="s"><mjx-c class="mjx-c31"></mjx-c></mjx-mn></mjx-script></mjx-msub><mjx-mi class="mjx-n" space="2"><mjx-c class="mjx-c6C"></mjx-c><mjx-c class="mjx-c6F"></mjx-c><mjx-c class="mjx-c67"></mjx-c></mjx-mi><mjx-mo class="mjx-n"><mjx-c class="mjx-c2061"></mjx-c></mjx-mo><mjx-texatom space="2" texclass="ORD"><mjx-mo class="mjx-n"><mjx-c class="mjx-c28"></mjx-c></mjx-mo><mjx-mn class="mjx-n"><mjx-c class="mjx-c31"></mjx-c></mjx-mn><mjx-texatom texclass="ORD"><mjx-mo class="mjx-n"><mjx-c class="mjx-c2F"></mjx-c></mjx-mo></mjx-texatom><mjx-msub><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D45D TEX-I"></mjx-c></mjx-mi><mjx-script style="vertical-align: -0.15em;"><mjx-mn class="mjx-n" size="s"><mjx-c class="mjx-c31"></mjx-c></mjx-mn></mjx-script></mjx-msub><mjx-mo class="mjx-n"><mjx-c class="mjx-c29"></mjx-c></mjx-mo></mjx-texatom><mjx-mo class="mjx-n" space="3"><mjx-c class="mjx-c2B"></mjx-c></mjx-mo><mjx-msub space="3"><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D45D TEX-I"></mjx-c></mjx-mi><mjx-script style="vertical-align: -0.15em;"><mjx-mn class="mjx-n" size="s"><mjx-c class="mjx-c32"></mjx-c></mjx-mn></mjx-script></mjx-msub><mjx-mi class="mjx-n" space="2"><mjx-c class="mjx-c6C"></mjx-c><mjx-c class="mjx-c6F"></mjx-c><mjx-c class="mjx-c67"></mjx-c></mjx-mi><mjx-mo class="mjx-n"><mjx-c class="mjx-c2061"></mjx-c></mjx-mo><mjx-texatom space="2" texclass="ORD"><mjx-mo class="mjx-n"><mjx-c class="mjx-c28"></mjx-c></mjx-mo><mjx-mn class="mjx-n"><mjx-c class="mjx-c31"></mjx-c></mjx-mn><mjx-texatom texclass="ORD"><mjx-mo class="mjx-n"><mjx-c class="mjx-c2F"></mjx-c></mjx-mo></mjx-texatom><mjx-msub><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D45D TEX-I"></mjx-c></mjx-mi><mjx-script style="vertical-align: -0.15em;"><mjx-mn class="mjx-n" size="s"><mjx-c class="mjx-c32"></mjx-c></mjx-mn></mjx-script></mjx-msub><mjx-mo class="mjx-n"><mjx-c class="mjx-c29"></mjx-c></mjx-mo></mjx-texatom><mjx-mo class="mjx-n" space="3"><mjx-c class="mjx-c2B"></mjx-c></mjx-mo><mjx-msub space="3"><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D45D TEX-I"></mjx-c></mjx-mi><mjx-script style="vertical-align: -0.15em;"><mjx-mn class="mjx-n" size="s"><mjx-c class="mjx-c33"></mjx-c></mjx-mn></mjx-script></mjx-msub><mjx-mi class="mjx-n" space="2"><mjx-c class="mjx-c6C"></mjx-c><mjx-c class="mjx-c6F"></mjx-c><mjx-c class="mjx-c67"></mjx-c></mjx-mi><mjx-mo class="mjx-n"><mjx-c class="mjx-c2061"></mjx-c></mjx-mo><mjx-texatom space="2" texclass="ORD"><mjx-mo class="mjx-n"><mjx-c class="mjx-c28"></mjx-c></mjx-mo><mjx-mn class="mjx-n"><mjx-c class="mjx-c31"></mjx-c></mjx-mn><mjx-texatom texclass="ORD"><mjx-mo class="mjx-n"><mjx-c class="mjx-c2F"></mjx-c></mjx-mo></mjx-texatom><mjx-msub><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D45D TEX-I"></mjx-c></mjx-mi><mjx-script style="vertical-align: -0.15em;"><mjx-mn class="mjx-n" size="s"><mjx-c class="mjx-c33"></mjx-c></mjx-mn></mjx-script></mjx-msub><mjx-mo class="mjx-n"><mjx-c class="mjx-c29"></mjx-c></mjx-mo></mjx-texatom><mjx-mo class="mjx-n"><mjx-c class="mjx-c2B"></mjx-c></mjx-mo><mjx-mo class="mjx-n"><mjx-c class="mjx-c2E"></mjx-c></mjx-mo><mjx-mo class="mjx-n" space="2"><mjx-c class="mjx-c2E"></mjx-c></mjx-mo><mjx-mo class="mjx-n" space="2"><mjx-c class="mjx-c2E"></mjx-c></mjx-mo><mjx-mo class="mjx-n" space="2"><mjx-c class="mjx-c2B"></mjx-c></mjx-mo><mjx-msub><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D45D TEX-I"></mjx-c></mjx-mi><mjx-script style="vertical-align: -0.15em;"><mjx-mi class="mjx-i" size="s"><mjx-c class="mjx-c1D45B TEX-I"></mjx-c></mjx-mi></mjx-script></mjx-msub><mjx-mi class="mjx-n" space="2"><mjx-c class="mjx-c6C"></mjx-c><mjx-c class="mjx-c6F"></mjx-c><mjx-c class="mjx-c67"></mjx-c></mjx-mi><mjx-mo class="mjx-n"><mjx-c class="mjx-c2061"></mjx-c></mjx-mo><mjx-texatom space="2" texclass="ORD"><mjx-mo class="mjx-n"><mjx-c class="mjx-c28"></mjx-c></mjx-mo><mjx-mn class="mjx-n"><mjx-c class="mjx-c31"></mjx-c></mjx-mn><mjx-texatom texclass="ORD"><mjx-mo class="mjx-n"><mjx-c class="mjx-c2F"></mjx-c></mjx-mo></mjx-texatom><mjx-msub><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D45D TEX-I"></mjx-c></mjx-mi><mjx-script style="vertical-align: -0.15em;"><mjx-mi class="mjx-i" size="s"><mjx-c class="mjx-c1D45B TEX-I"></mjx-c></mjx-mi></mjx-script></mjx-msub><mjx-mo class="mjx-n"><mjx-c class="mjx-c29"></mjx-c></mjx-mo></mjx-texatom></mjx-math><mjx-assistive-mml unselectable="on" display="block"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mi>H</mi><mo>=</mo><msub><mi>p</mi><mn>1</mn></msub><mi>log</mi><mo data-mjx-texclass="NONE">⁡</mo><mrow data-mjx-texclass="ORD"><mo stretchy="false">(</mo><mn>1</mn><mrow data-mjx-texclass="ORD"><mo>/</mo></mrow><msub><mi>p</mi><mn>1</mn></msub><mo stretchy="false">)</mo></mrow><mo>+</mo><msub><mi>p</mi><mn>2</mn></msub><mi>log</mi><mo data-mjx-texclass="NONE">⁡</mo><mrow data-mjx-texclass="ORD"><mo stretchy="false">(</mo><mn>1</mn><mrow data-mjx-texclass="ORD"><mo>/</mo></mrow><msub><mi>p</mi><mn>2</mn></msub><mo stretchy="false">)</mo></mrow><mo>+</mo><msub><mi>p</mi><mn>3</mn></msub><mi>log</mi><mo data-mjx-texclass="NONE">⁡</mo><mrow data-mjx-texclass="ORD"><mo stretchy="false">(</mo><mn>1</mn><mrow data-mjx-texclass="ORD"><mo>/</mo></mrow><msub><mi>p</mi><mn>3</mn></msub><mo stretchy="false">)</mo></mrow><mo>+</mo><mo>.</mo><mo>.</mo><mo>.</mo><mo>+</mo><msub><mi>p</mi><mi>n</mi></msub><mi>log</mi><mo data-mjx-texclass="NONE">⁡</mo><mrow data-mjx-texclass="ORD"><mo stretchy="false">(</mo><mn>1</mn><mrow data-mjx-texclass="ORD"><mo>/</mo></mrow><msub><mi>p</mi><mi>n</mi></msub><mo stretchy="false">)</mo></mrow></math></mjx-assistive-mml></mjx-container>
+
+
+
+<div class="rightimage" style="width: 262px;"><img src="./Information is bits _ plus.maths.org_files/shannon.png" width="262" height="324" alt="Claude Shannon" loading="lazy"><p>Claude Shannon.</p></div>
+
+
+<p>is called the <em>entropy</em> of the distribution (see <a href="https://plus.maths.org/content/information-surprise">this article</a> to find out more). Shannon proved that
+ the average number of bits needed per symbol cannot be smaller than the entropy, no matter how cleverly you encode them.  For the vast
+ majority of alphabets and
+ distributions, the average number of bits needed is in fact only slightly bigger than the
+ entropy.
+(One encoding that  comes very close to Shannon's entropy for the vast
+ majority of alphabets and distributions 
+is the so-called <a href="http://en.wikipedia.org/wiki/Huffman_coding#Optimality">Huffman code</a>.)
+
+</p>
+
+
+If you're in the business of sending messages long-distance,
+the entropy is a useful number to know. If you know you can transmit
+some number <mjx-container class="MathJax CtxtMenu_Attached_0" jax="CHTML" tabindex="0" ctxtmenu_counter="22" style="font-size: 117.4%; position: relative;"><mjx-math class="MJX-TEX" aria-hidden="true"><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D436 TEX-I"></mjx-c></mjx-mi></mjx-math><mjx-assistive-mml unselectable="on" display="inline"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>C</mi></math></mjx-assistive-mml></mjx-container> bits per second, and that the symbols in your message
+require around <mjx-container class="MathJax CtxtMenu_Attached_0" jax="CHTML" tabindex="0" ctxtmenu_counter="23" style="font-size: 117.4%; position: relative;"><mjx-math class="MJX-TEX" aria-hidden="true"><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D43B TEX-I"></mjx-c></mjx-mi></mjx-math><mjx-assistive-mml unselectable="on" display="inline"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>H</mi></math></mjx-assistive-mml></mjx-container> bits per symbol on average, then you'd guess that you can
+transmit around <mjx-container class="MathJax CtxtMenu_Attached_0" jax="CHTML" tabindex="0" ctxtmenu_counter="24" style="font-size: 117.4%; position: relative;"><mjx-math class="MJX-TEX" aria-hidden="true"><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D436 TEX-I"></mjx-c></mjx-mi><mjx-texatom texclass="ORD"><mjx-mo class="mjx-n"><mjx-c class="mjx-c2F"></mjx-c></mjx-mo></mjx-texatom><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D43B TEX-I"></mjx-c></mjx-mi></mjx-math><mjx-assistive-mml unselectable="on" display="inline"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>C</mi><mrow data-mjx-texclass="ORD"><mo>/</mo></mrow><mi>H</mi></math></mjx-assistive-mml></mjx-container> symbols per second on average. Shannon showed that this is
+indeed correct:  by picking a clever way of encoding your symbols you
+can guarantee an average transmission rate that's as close to <mjx-container class="MathJax CtxtMenu_Attached_0" jax="CHTML" tabindex="0" ctxtmenu_counter="25" style="font-size: 117.4%; position: relative;"><mjx-math class="MJX-TEX" aria-hidden="true"><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D436 TEX-I"></mjx-c></mjx-mi><mjx-texatom texclass="ORD"><mjx-mo class="mjx-n"><mjx-c class="mjx-c2F"></mjx-c></mjx-mo></mjx-texatom><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D43B TEX-I"></mjx-c></mjx-mi></mjx-math><mjx-assistive-mml unselectable="on" display="inline"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>C</mi><mrow data-mjx-texclass="ORD"><mo>/</mo></mrow><mi>H</mi></math></mjx-assistive-mml></mjx-container> per second as you
+like. Conversely, no matter how you encode your symbols, it's impossible to transmit at a faster rate than <mjx-container class="MathJax CtxtMenu_Attached_0" jax="CHTML" tabindex="0" ctxtmenu_counter="26" style="font-size: 117.4%; position: relative;"><mjx-math class="MJX-TEX" aria-hidden="true"><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D436 TEX-I"></mjx-c></mjx-mi><mjx-texatom texclass="ORD"><mjx-mo class="mjx-n"><mjx-c class="mjx-c2F"></mjx-c></mjx-mo></mjx-texatom><mjx-mi class="mjx-i"><mjx-c class="mjx-c1D43B TEX-I"></mjx-c></mjx-mi><mjx-mo class="mjx-n"><mjx-c class="mjx-c2E"></mjx-c></mjx-mo></mjx-math><mjx-assistive-mml unselectable="on" display="inline"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>C</mi><mrow data-mjx-texclass="ORD"><mo>/</mo></mrow><mi>H</mi><mo>.</mo></math></mjx-assistive-mml></mjx-container> This neat fact is knows as Shannon's <em>source coding theorem</em>. 
+
+
+
+
+ 
+<p>Shannon published this result in <em><a href="http://cm.bell-labs.com/cm/ms/what/shannonday/shannon1948.pdf">A mathematical theory of communication</a></em>, "A paper that is justly celebrated as one of the greatest
+ of the twentieth century," says Aaronson. It's a highly
+theoretical effort. The source code theorem, for example, doesn't tell you which code
+gets you within a specified distance of the maximal rate of <em>C/H</em> per
+second — it only says that there is one. </p>
+
+<p>When it comes to practical
+applications, the theorem
+also has a major short-coming: it assumes that your communication
+channels transmit pristine messages and never introduce any errors. In
+real life this just doesn't happen:  whether you send a message in a telegram, via
+email or using SMS, there is always a chance it is
+scrambled on the way and  arrives at the other end
+corrupted. This is where things get interesting. How do you deal with
+so-called <em>noisy channels</em> and how much information can you transmit? Find out <a href="https://plus.maths.org/content/information-errors">in the next article</a>.</p>
+
+<hr>
+
+<h3>About this article</h3>
+
+<p><a href="https://plus.maths.org/content/people/index.html#marianne">Marianne Freiberger</a> is co-editor of <em>Plus</em>.   She would like to thank <a href="http://scottaaronson.com/">Scott Aaronson</a>, a computer scientist at the Massachusetts Institute of Technology, for a very useful conversation about information. And she recommends the book <a href="http://jim-stone.staff.shef.ac.uk/BookInfoTheory/InfoTheoryBookMain.html">Information Theory: A Tutorial Introduction</a> by James V. Stone as a mathematical introduction to the subject.</p>
+
+<div class="rightimage" style="width: 260px;"><img src="./Information is bits _ plus.maths.org_files/fqxi_logo.jpg" width="200" height="42" alt="FQXi logo" loading="lazy"></div>
+
+
+<p>This article is part of our <a href="https://plus.maths.org/content/information-about-information">Information about information project</a>, run <a href="https://plus.maths.org/content/information-about-information#fqxi">in collaboration with FQXi</a>. Click <a href="https://plus.maths.org/content/can-you-measure-information">here</a> to find out about other ways of measuring information.  </p>
+</div></div>
+            
+  <div class="node__links" data-component-id="plus2025:links__node">
+          <div data-component-id="plus2025:links">
+        <ul class="links inline"><li><a href="https://plus.maths.org/user/login?destination=/comment/reply/node/6315/comment_node_article%23comment-form">Log in</a> or <a href="https://plus.maths.org/user/register?destination=/comment/reply/node/6315/comment_node_article%23comment-form">register</a> to post comments</li></ul>  </div>
+  </div>
+<section data-component-id="plus2025:field__comment" class="field field--name-comment-node-article field--type-comment field--label-above comment-wrapper">
+  
+  
+
+  </section>
+
+    </div>
+</article>
+
+      </div>
+
+  </div>
+
+      </div>    </main>
+
+    
+          <aside class="second" role="complementary">
+                            <div data-component-id="plus2025:region" class="region region-sidebar-second">
+        
+<div data-test="" class="views-element-container block block-views block-views-blockrelated-tags-block-1" id="block-plus2025-views-block-related-tags">
+  
+      <h2>Read more about...</h2>
+    
+
+      
+          <div data-component-id="plus2025:container">
+    <div data-component-id="plus2025:views_view" class="view view-related-tags view-id-related_tags view-display-id-block_1 js-view-dom-id-43b677151ead84764d81a309c6825980ed5d466308f8ae1a25b0173470b0c4d4">
+    
+        
+            
+          <div class="view-content">
+        <div data-component-id="plus2025:views_view_unformatted">
+            <div class="card padding views-row"><div class="views-field views-field-name"><span class="field-content"><a href="https://plus.maths.org/tags/information-theory" hreflang="en">Information theory</a></span></div></div>
+          <div class="card padding views-row"><div class="views-field views-field-name"><span class="field-content"><a href="https://plus.maths.org/tags/entropy" hreflang="en">entropy</a></span></div></div>
+          <div class="card padding views-row"><div class="views-field views-field-name"><span class="field-content"><a href="https://plus.maths.org/tags/computer-science" hreflang="en">computer science</a></span></div></div>
+          <div class="card padding views-row"><div class="views-field views-field-name"><span class="field-content"><a href="https://plus.maths.org/tags/information-about-information" hreflang="en">information about information</a></span></div></div>
+  </div>
+
+      </div>
+    
+                      </div>
+
+</div>
+
+      </div>
+
+<div data-test="" id="block-pocast-cta-in-sidebar" class="block block-block-content block-block-contentee5a1008-e5e6-421d-a66c-c68255987cf2">
+  
+      <h2>Our Podcast: Maths on the Move</h2>
+    
+
+      
+                                  <div class="field field--name-body field--type-text-with-summary field--label-hidden field__item"><div class="card padding">
+  <p style="margin-top: 0;">
+   Our <a href="https://plus.maths.org/podcasts"><em>Maths on the Move</em> podcast</a> brings you the latest news from the world of maths, plus interviews and discussions with leading mathematicians and scientists about the maths that is changing our lives. </p>
+
+  <div class="wp-block-buttons" style="font-size: 0.9em;">
+    <div class="wp-block-button">
+      <a class="button wp-element-button" href="https://podcasts.apple.com/us/podcast/maths-on-the-move/id263456080" target="_blank" rel="noreferrer noopener" title="Apple Podcasts">
+        Apple Podcasts</a></div>
+
+    <div class="wp-block-button">
+      <a class="button wp-element-button" href="https://open.spotify.com/show/7uCdcgk4YRtw1MyVAU2j9j" target="_blank" rel="noreferrer noopener">
+        Spotify</a></div>
+
+    <div class="wp-block-button">
+      <a class="button wp-element-button" href="https://plusmathsorg.podbean.com/" target="_blank" rel="noreferrer noopener">
+        Podbean</a></div>
+  </div>
+</div></div>
+            
+
+      </div>
+
+<div data-test="" id="block-socials-cta-in-sidebar" class="block block-block-content block-block-content0c2a0c84-c834-4bc8-8d3e-a49b2db64940">
+  
+      <h2>Plus delivered to you</h2>
+    
+
+      
+                                  <div class="field field--name-body field--type-text-with-summary field--label-hidden field__item"><div class="card padding">
+  <img src="./Information is bits _ plus.maths.org_files/Plus_newsletter-a663aa5457a00baba2d4418195575b55-39bd0b.jpeg" style="float: left;  margin: 0 16px 8px 0; border: solid 1px #cecece;">
+  <p style="margin-top: 0;">Keep up to date with <em>Plus</em> by <a href="https://plus.maths.org/content/subscribe-plus" target="blank">subscribing to our newsletter</a> or following <em>Plus</em> on <a href="http://twitter.com/plusmathsorg" target="blank">X</a> or <a href="https://bsky.app/profile/plusmaths.bsky.social" target="blank">Bluesky</a>. </p>
+  <div style="clear: both;"></div>
+</div></div>
+            
+
+      </div>
+
+  </div>
+
+      </aside>
+      </div>
+
+      <footer role="contentinfo">
+          <div data-component-id="plus2025:region" class="region region-footer">
+        
+<div data-test="" id="block-plus2025-universityofcambridgelogo" class="block block-block-content block-block-content22db734c-7e2e-47dc-b27f-2b91015447f0">
+  
+    
+
+      
+                                <div class="field field--name-field-image field--type-entity-reference field--label-hidden field__item"><span data-component-id="plus2025:image_formatter">
+      <span data-component-id="plus2025:image_style">
+  <img loading="lazy" src="./Information is bits _ plus.maths.org_files/University_of_Cambridge_white_logo.png" width="500" height="104" alt="University of Cambridge logo" data-component-id="plus2025:image" class="image-style-medium">
+
+</span>
+
+  </span>
+</div>
+            
+      </div>
+
+<div data-test="" id="block-footer-text" class="block block-block-content block-block-content560c4e70-b018-4dcc-a020-a505114afbb4">
+  
+    
+
+      
+                                  <div class="field field--name-body field--type-text-with-summary field--label-hidden field__item"><div class="tex2jax_process"><p><em>Plus </em>is part of the family of activities in the Millennium Mathematics Project.<br>Copyright © 1997 - 2026. University of Cambridge. All rights reserved.</p><p><a href="https://plus.maths.org/terms-use-and-notices">Terms</a></p></div></div>
+            
+
+      </div>
+
+  </div>
+
+    </footer>
+  
+      <div id="post-footer">
+          <div data-component-id="plus2025:region" class="region region-post-footer">
+        
+<div data-test="" id="block-plus2025-cookiesui" class="block block-cookies block-cookies-ui-block">
+  
+    
+
+      
+          <div id="cookiesjsr"><div class="cookiesjsr--app"><div class="cookiesjsr-banner active"><div class="cookiesjsr-banner--info"><span class="cookiesjsr-banner--text">We use cookies to enhance your experience.</span><ul class="cookiesjsr-links cookiesjsr-banner--links links--row"><li><a href="https://maths.org/cookies" target="_blank" rel="noopener noreferrer">About our cookies</a></li><li><a href="https://plus.maths.org/cookies/documentation" target="_blank">Cookie details</a></li></ul></div><div class="cookiesjsr-banner--action"><button class="cookiesjsr-btn cookiesjsr-settings">Cookie settings</button><button class="cookiesjsr-btn important denyAll">Deny all</button><button class="cookiesjsr-btn important allowAll">Accept all</button></div></div></div></div>
+
+      </div>
+
+  </div>
+
+    </div>
+  
+</div>
+  </div>
+
+    
+    <script src="./Information is bits _ plus.maths.org_files/immediate.js"></script>
+<script src="./Information is bits _ plus.maths.org_files/js_PdQZDrlboRvAPE9bPKYfiV2TaLQrYy1aLG05NOm21vk.js"></script>
+<script src="./Information is bits _ plus.maths.org_files/cookiesjsr-preloader.min.js" defer=""></script>
+<script src="./Information is bits _ plus.maths.org_files/js_7T9zqbc6l7_feHCJ8T0o_SW_oDGP4p8fgi1zmmj0A_M.js"></script>
+<script src="./Information is bits _ plus.maths.org_files/google_analytics.js" type="text/plain" id="cookies_ga_ga" data-cookieconsent="analytics"></script>
+<script src="./Information is bits _ plus.maths.org_files/js_a4B1yL5QeQFTa2GwDPyoJK3Z-H7NAKFwc5LOmqbQ-R4.js"></script>
+<script src="./Information is bits _ plus.maths.org_files/tex-mml-chtml.js"></script>
+<script src="./Information is bits _ plus.maths.org_files/js_l11LT0pqYLjXoIq3bz_bZAEpPUP2SoPbxukOsrv-7PA.js"></script>
+<script src="./Information is bits _ plus.maths.org_files/fancybox.umd.js"></script>
+<script src="./Information is bits _ plus.maths.org_files/js_2H-k3HlCJS3k0FtgeBr_IaaDqMrGJyx_2hvVj1iJ164.js"></script>
+
+  
+
+<div id="drupal-live-announce" class="visually-hidden" aria-live="polite" aria-busy="false"></div><div role="status" aria-live="assertive" aria-relevant="additions" class="ui-helper-hidden-accessible"></div><div id="drupal-modal" class="ui-front" style="display: none;"></div></body></html>

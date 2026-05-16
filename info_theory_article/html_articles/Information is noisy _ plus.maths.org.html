@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<!-- saved from url=(0041)https://plus.maths.org/information-errors -->
+<html lang="en" dir="ltr" prefix="og: https://ogp.me/ns#" data-component-id="" class=" js" data-once="drupal-dialog-deprecation-listener"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+<script type="text/javascript" defer="" async="" src="./Information is noisy _ plus.maths.org_files/matomo.js"></script><script>const currentPageTags = 'error-correcting code,Information theory,computer science,information about information';</script>
+<script async="" src="./Information is noisy _ plus.maths.org_files/js" type="text/plain" id="cookies_ga_google_analytics_tracking_file" data-cookieconsent="analytics"></script>
+<script>window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments)};gtag("js", new Date());gtag("set", "developer_id.dMDhkMT", true);gtag("config", "G-SXC2XSWRLT", {"groups":"default","page_placeholder":"PLACEHOLDER_page_location"});</script>
+<script>var _paq = _paq || [];(function(){var u=(("https:" == document.location.protocol) ? "https://maths-org.matomo.cloud/" : "https://maths-org.matomo.cloud/");_paq.push(["setSiteId", "1"]);_paq.push(["setTrackerUrl", u+"matomo.php"]);_paq.push(["setDoNotTrack", 1]);_paq.push(["disableCookies"]);_paq.push(["setCustomVariable", 2, "page_title", "Information is noisy", "page"]);_paq.push(["setCustomVariable", 3, "role", "anonymous", "visit"]);_paq.push(['setCustomDimension', 1, currentPageTags]);if (!window.matomo_search_results_active) {_paq.push(["trackPageView"]);}_paq.push(["setIgnoreClasses", ["no-tracking","colorbox"]]);_paq.push(["enableLinkTracking"]);var d=document,g=d.createElement("script"),s=d.getElementsByTagName("script")[0];g.type="text/javascript";g.defer=true;g.async=true;g.src=u+"matomo.js";s.parentNode.insertBefore(g,s);})();</script>
+<meta name="description" content="This article is part of our Information about information project, run in collaboration with FQXi. Click here to find out about other ways of measuring information.">
+<link rel="canonical" href="https://plus.maths.org/information-errors">
+<link rel="image_src" href="https://plus.maths.org/,,https://plus.maths.org/sites/default/files/abstractpics/5/20_mar_2015_-_1733/mistake_icon.jpg,https://plus.maths.org/sites/default/files/mistake_frontpage.jpg">
+<meta property="og:site_name" content="Plus Maths">
+<meta property="og:type" content="Article">
+<meta property="og:url" content="https://plus.maths.org/information-errors">
+<meta property="og:title" content="Information is noisy">
+<meta property="og:description" content="When you transmit information long-distance there is always a chance that some of it gets mangled and arrives at the other end corrupted. Luckily, there are clever ways of encoding information which ensure a tiny error rate, even when your communication channel is prone to errors.">
+<meta property="og:image" content="https://plus.maths.org/sites/default/files/abstractpics/5/20_mar_2015_-_1733/mistake_icon.jpg">
+<meta property="og:image" content="https://plus.maths.org/sites/default/files/mistake_frontpage.jpg">
+<meta property="article:publisher" content="https://www.facebook.com/plusmagazine/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:description" content="When you transmit information long-distance there is always a chance that some of it gets mangled and arrives at the other end corrupted. Luckily, there are clever ways of encoding information which ensure a tiny error rate, even when your communication channel is prone to errors.">
+<meta name="twitter:title" content="Information is noisy">
+<meta name="twitter:site" content="@plusmathsorg">
+<meta name="twitter:image" content="https://plus.maths.org/sites/default/files/abstractpics/5/20_mar_2015_-_1733/mistake_icon.jpg">
+<meta name="Generator" content="Drupal 10 (https://www.drupal.org)">
+<meta name="MobileOptimized" content="width">
+<meta name="HandheldFriendly" content="true">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="https://plus.maths.org/sites/default/files/plus_favicon_0.ico" type="image/vnd.microsoft.icon">
+
+    <title>Information is noisy | plus.maths.org</title>
+    <link rel="stylesheet" media="all" href="./Information is noisy _ plus.maths.org_files/css_AoMfjwPjpAkIrmzYbebmx4nVE5D8_PvQwNw1rGmd9MA.css">
+<link rel="stylesheet" media="all" href="./Information is noisy _ plus.maths.org_files/css_f-eTa9iznXtix7weoxdnqik8QAUe2xriWZ-5TY_orpA.css">
+<link rel="stylesheet" media="all" href="./Information is noisy _ plus.maths.org_files/fancybox.css">
+<link rel="stylesheet" media="all" href="./Information is noisy _ plus.maths.org_files/css_eocFs3uF2JaK9EIhi6sP21UogEhm1sGTe8Z-H6Q7D8Y.css">
+
+    <script type="application/json" data-drupal-selector="drupal-settings-json">{"path":{"baseUrl":"\/","pathPrefix":"","currentPath":"node\/6316","currentPathIsAdmin":false,"isFront":false,"currentLanguage":"en"},"pluralDelimiter":"\u0003","suppressDeprecationErrors":true,"ajaxPageState":{"libraries":"eJyNlG1u5CAMhi-UhlWlPQ9ywCHu8JEFs5309IVkZqfaH06kCITfB-zYBuOhlE3FZHEwKd0Ii3rMHyWPxsanWTtQEMFvTKY0Y8YGhjVFjFzG1dfy_uv999vb5JO5SXplTlEADGQrySkyUMQsMBYb4qUoZ0Ivedl1rZsWmnIO9gQ2PCMwXjj3wJnY41W40oVzGe8Xgu2U_iRedKkhQN5Ot1D0LeUCtqRMX70y_qx-FMBJJ-26nlMOwCxW-SALb2ISW-A3qRN2_UiyQLUuqIK8l2iu3gvMn5pYcpHRkXgxypIqt09CPLVAKOoVxHKVrTAGPWWIlqLTZ5f2wfcsnLIMk5RvpiBFVgvmCCLyl_Cz6D5egnSNz2569KXNdQU_Qstm3-vxWZfYOU9fOMwenOrD2PtDwwfcB5eS86j_PYLqf8PQnCyNVAW5rn2VQlLHNDxDUxMUfK0MhCmTdT9MM0SzTen-srjKGCfM7mWi9jBZaq_NbtJ7-A9PBSGbRf_8PcULBhwDxXZp_GhKGY6SHtHsyVL7OIZkq8dvjo4_sA","theme":"plus2025","theme_token":null},"ajaxTrustedUrl":[],"matomo":{"disableCookies":true,"trackColorbox":false,"trackMailto":true},"google_analytics":{"account":"G-SXC2XSWRLT","trackOutbound":true,"trackMailto":true,"trackTel":true,"trackDownload":true,"trackDownloadExtensions":"7z|aac|arc|arj|asf|asx|avi|bin|csv|doc(x|m)?|dot(x|m)?|exe|flv|gif|gz|gzip|hqx|jar|jpe?g|js|mp(2|3|4|e?g)|mov(ie)?|msi|msp|pdf|phps|png|ppt(x|m)?|pot(x|m)?|pps(x|m)?|ppam|sld(x|m)?|thmx|qtm?|ra(m|r)?|sea|sit|tar|tgz|torrent|txt|wav|wma|wmv|wpd|xls(x|m|b)?|xlt(x|m)|xlam|xml|z|zip"},"mathjax":{"config_type":1,"config":{"loader":{"load":["[tex]\/textmacros"]},"tex":{"inlineMath":[["$","$"],["\\(","\\)"]],"packages":{"[+]":["textmacros"]}}}},"search_autocomplete":{"articles_title":{"source":"\/callback\/articles","selector":".view-articles #edit-title","minChars":3,"maxSuggestions":10,"autoSubmit":true,"autoRedirect":true,"theme":"minimal","filters":["q","title"],"noResult":{"group":{"group_id":"no_results"},"label":"No results found for [search-phrase]. Click to perform full search.","value":"[search-phrase]","link":""},"moreResults":{"group":{"group_id":"more_results"},"label":"View all results for [search-phrase].","value":"[search-phrase]","link":""}},"collections_title":{"source":"\/callback\/collections","selector":".view-collections #edit-title","minChars":3,"maxSuggestions":10,"autoSubmit":true,"autoRedirect":true,"theme":"minimal","filters":["q","title"],"noResult":{"group":{"group_id":"no_results"},"label":"No results found for [search-phrase]. Click to perform full search.","value":"[search-phrase]","link":""},"moreResults":{"group":{"group_id":"more_results"},"label":"View all results for [search-phrase].","value":"[search-phrase]","link":""}},"search_api_block":{"source":"\/callback\/nodes","selector":".region-search-pane input[type=\u0022search\u0022]","minChars":3,"maxSuggestions":10,"autoSubmit":true,"autoRedirect":true,"theme":"minimal","filters":["q","title"],"noResult":{"group":{"group_id":"no_results"},"label":"No results found for [search-phrase]. Click to perform full search.","value":"[search-phrase]","link":""},"moreResults":{"group":{"group_id":"more_results"},"label":"View all results for [search-phrase].","value":"[search-phrase]","link":""}}},"cookies":{"cookiesjsr":{"config":{"cookie":{"name":"cookiesjsr","expires":31536000000,"domain":"","sameSite":"Lax","secure":false},"library":{"libBasePath":"https:\/\/cdn.jsdelivr.net\/gh\/jfeltkamp\/cookiesjsr@1\/dist","libPath":"https:\/\/cdn.jsdelivr.net\/gh\/jfeltkamp\/cookiesjsr@1\/dist\/cookiesjsr.min.js","scrollLimit":0},"callback":{"method":"post","url":"\/index%2Ephp\/cookies\/consent\/callback.json","headers":[]},"interface":{"openSettingsHash":"#editCookieSettings","showDenyAll":true,"denyAllOnLayerClose":false,"settingsAsLink":false,"availableLangs":["en"],"defaultLang":"en","groupConsent":false,"cookieDocs":true}},"services":{"functional":{"id":"functional","services":[{"key":"functional","type":"functional","name":"Required functional","info":{"value":"\u003Ctable\u003E\r\n\t\u003Cthead\u003E\r\n\t\t\u003Ctr\u003E\r\n\t\t\t\u003Cth width=\u002215%\u0022\u003ECookie name\u003C\/th\u003E\r\n\t\t\t\u003Cth width=\u002215%\u0022\u003EDefault expiration time\u003C\/th\u003E\r\n\t\t\t\u003Cth\u003EDescription\u003C\/th\u003E\r\n\t\t\u003C\/tr\u003E\r\n\t\u003C\/thead\u003E\r\n\t\u003Ctbody\u003E\r\n\t\t\u003Ctr\u003E\r\n\t\t\t\u003Ctd\u003E\u003Ccode dir=\u0022ltr\u0022 translate=\u0022no\u0022\u003ESSESS\u0026lt;ID\u0026gt;\u003C\/code\u003E\u003C\/td\u003E\r\n\t\t\t\u003Ctd\u003E1 month\u003C\/td\u003E\r\n\t\t\t\u003Ctd\u003EIf you are logged in to this website, a session cookie is required to identify and connect your browser to your user account in the server backend of this website.\u003C\/td\u003E\r\n\t\t\u003C\/tr\u003E\r\n\t\t\u003Ctr\u003E\r\n\t\t\t\u003Ctd\u003E\u003Ccode dir=\u0022ltr\u0022 translate=\u0022no\u0022\u003Ecookiesjsr\u003C\/code\u003E\u003C\/td\u003E\r\n\t\t\t\u003Ctd\u003E1 year\u003C\/td\u003E\r\n\t\t\t\u003Ctd\u003EWhen you visited this website for the first time, you were asked for your permission to use several services (including those from third parties) that require data to be saved in your browser (cookies, local storage). Your decisions about each service (allow, deny) are stored in this cookie and are reused each time you visit this website.\u003C\/td\u003E\r\n\t\t\u003C\/tr\u003E\r\n\t\u003C\/tbody\u003E\r\n\u003C\/table\u003E\r\n","format":"full_html"},"uri":"","needConsent":false}],"weight":1},"tracking":{"id":"tracking","services":[{"key":"analytics","type":"tracking","name":"Google Analytics","info":{"format":"full_html","value":""},"uri":"https:\/\/analytics.google.com\/","needConsent":true}],"weight":10},"video":{"id":"video","services":[{"key":"video","type":"video","name":"Video provided by YouTube, Vimeo","info":{"format":"full_html","value":""},"uri":"","needConsent":true}],"weight":40}},"translation":{"_core":{"default_config_hash":"PpB_t3-mnEd5Lckhxc9rfquSMa0CndPslGvJZlcg61E"},"langcode":"en","bannerText":"We use cookies to enhance your experience.","privacyPolicy":"About our cookies","privacyUri":"https:\/\/maths.org\/cookies","imprint":"Imprint","imprintUri":"","cookieDocs":"Cookie details","cookieDocsUri":"\/cookies\/documentation","officialWebsite":"Official website","denyAll":"Deny all","alwaysActive":"Always active","settings":"Cookie settings","acceptAll":"Accept all","requiredCookies":"Required cookies","cookieSettings":"Cookie settings","close":"Close","readMore":"Read more","allowed":"Allowed","denied":"Denied","settingsAllServices":"Settings for all services","saveSettings":"Save","default_langcode":"en","disclaimerText":"All cookie information is subject to change by the service providers. We update this information regularly.","disclaimerTextPosition":"above","processorDetailsLabel":"Processor Company Details","processorLabel":"Company","processorWebsiteUrlLabel":"Company Website","processorPrivacyPolicyUrlLabel":"Company Privacy Policy","processorCookiePolicyUrlLabel":"Company Cookie Policy","processorContactLabel":"Data Protection Contact Details","placeholderAcceptAllText":"Accept All Cookies","functional":{"title":"Functional","details":"Cookies are small text files that are placed by your browser on your device in order to store certain information. Using the information that is stored and returned, a website can recognize that you have previously accessed and visited it using the browser on your end device. We use this information to arrange and display the website optimally in accordance with your preferences. Within this process, only the cookie itself is identified on your device. Personal data is only stored following your express consent or where this is absolutely necessary to enable use the service provided by us and accessed by you."},"tracking":{"title":"Tracking cookies","details":"Marketing cookies come from external advertising companies (\u0022third-party cookies\u0022) and are used to collect information about the websites visited by the user. The purpose of this is to create and display target group-oriented content and advertising for the user."},"video":{"title":"Video","details":"Video sharing services help to add rich media on the site and increase its visibility."}}},"cookiesTexts":{"_core":{"default_config_hash":"PpB_t3-mnEd5Lckhxc9rfquSMa0CndPslGvJZlcg61E"},"langcode":"en","bannerText":"We use cookies to enhance your experience.","privacyPolicy":"About our cookies","privacyUri":"https:\/\/maths.org\/cookies","imprint":"Imprint","imprintUri":"","cookieDocs":"Cookie details","cookieDocsUri":"\/cookies\/documentation","officialWebsite":"Official website","denyAll":"Deny all","alwaysActive":"Always active","settings":"Cookie settings","acceptAll":"Accept all","requiredCookies":"Required cookies","cookieSettings":"Cookie settings","close":"Close","readMore":"Read more","allowed":"Allowed","denied":"Denied","settingsAllServices":"Settings for all services","saveSettings":"Save","default_langcode":"en","disclaimerText":"All cookie information is subject to change by the service providers. We update this information regularly.","disclaimerTextPosition":"above","processorDetailsLabel":"Processor Company Details","processorLabel":"Company","processorWebsiteUrlLabel":"Company Website","processorPrivacyPolicyUrlLabel":"Company Privacy Policy","processorCookiePolicyUrlLabel":"Company Cookie Policy","processorContactLabel":"Data Protection Contact Details","placeholderAcceptAllText":"Accept All Cookies"},"services":{"analytics":{"uuid":"f78438a9-1b72-4cfa-8286-e718f9428096","langcode":"en","status":true,"dependencies":{"enforced":{"module":["cookies_ga"]}},"_core":{"default_config_hash":"kdI8DLFQN2AVW0p7C2m5w9Fp9Cdt4cdvo4wnJHmcKjA"},"id":"analytics","label":"Google Analytics","group":"tracking","info":{"format":"full_html","value":""},"consentRequired":true,"purpose":"","processor":"","processorContact":"","processorUrl":"https:\/\/analytics.google.com\/","processorPrivacyPolicyUrl":"","processorCookiePolicyUrl":"https:\/\/support.google.com\/analytics\/answer\/6004245","placeholderMainText":"This content is blocked because Google Analytics cookies have not been accepted.","placeholderAcceptText":"Only accept Google Analytics cookies"},"functional":{"uuid":"bb6d8921-7107-4e2b-a713-e4491e5e1ea4","langcode":"en","status":true,"dependencies":[],"_core":{"default_config_hash":"N-O3629vb-jExOxfM0FYcfPzEu6QVzgWHMm06jMERLg"},"id":"functional","label":"Required functional","group":"functional","info":{"value":"\u003Ctable\u003E\r\n\t\u003Cthead\u003E\r\n\t\t\u003Ctr\u003E\r\n\t\t\t\u003Cth width=\u002215%\u0022\u003ECookie name\u003C\/th\u003E\r\n\t\t\t\u003Cth width=\u002215%\u0022\u003EDefault expiration time\u003C\/th\u003E\r\n\t\t\t\u003Cth\u003EDescription\u003C\/th\u003E\r\n\t\t\u003C\/tr\u003E\r\n\t\u003C\/thead\u003E\r\n\t\u003Ctbody\u003E\r\n\t\t\u003Ctr\u003E\r\n\t\t\t\u003Ctd\u003E\u003Ccode dir=\u0022ltr\u0022 translate=\u0022no\u0022\u003ESSESS\u0026lt;ID\u0026gt;\u003C\/code\u003E\u003C\/td\u003E\r\n\t\t\t\u003Ctd\u003E1 month\u003C\/td\u003E\r\n\t\t\t\u003Ctd\u003EIf you are logged in to this website, a session cookie is required to identify and connect your browser to your user account in the server backend of this website.\u003C\/td\u003E\r\n\t\t\u003C\/tr\u003E\r\n\t\t\u003Ctr\u003E\r\n\t\t\t\u003Ctd\u003E\u003Ccode dir=\u0022ltr\u0022 translate=\u0022no\u0022\u003Ecookiesjsr\u003C\/code\u003E\u003C\/td\u003E\r\n\t\t\t\u003Ctd\u003E1 year\u003C\/td\u003E\r\n\t\t\t\u003Ctd\u003EWhen you visited this website for the first time, you were asked for your permission to use several services (including those from third parties) that require data to be saved in your browser (cookies, local storage). Your decisions about each service (allow, deny) are stored in this cookie and are reused each time you visit this website.\u003C\/td\u003E\r\n\t\t\u003C\/tr\u003E\r\n\t\u003C\/tbody\u003E\r\n\u003C\/table\u003E\r\n","format":"full_html"},"consentRequired":false,"purpose":"Essential functional cookies to provide general functionality","processor":"","processorContact":"","processorUrl":"","processorPrivacyPolicyUrl":"","processorCookiePolicyUrl":"","placeholderMainText":"This content is blocked because required functional cookies have not been accepted.","placeholderAcceptText":"Only accept required functional cookies"},"video":{"uuid":"c3d8e7a5-af36-4e8c-a379-966d87c71931","langcode":"en","status":true,"dependencies":{"enforced":{"module":["cookies_video"]}},"_core":{"default_config_hash":"iwaHmTJMLoZx7mRsDI0tPU1JgG2K9UHeNOvDNtNKFdI"},"id":"video","label":"Video provided by YouTube, Vimeo","group":"video","info":{"format":"full_html","value":""},"consentRequired":true,"purpose":"","processor":"","processorContact":"","processorUrl":"","processorPrivacyPolicyUrl":"","processorCookiePolicyUrl":"https:\/\/policies.google.com\/privacy","placeholderMainText":"This content is blocked because Video cookies have not been accepted.","placeholderAcceptText":"Only accept Video cookies"}},"groups":{"functional":{"uuid":"dcaa93c3-b9c5-46f6-8c8a-d7e9ec69a8d5","langcode":"en","status":true,"dependencies":[],"_core":{"default_config_hash":"aHm4Q63Ge97tcktTa_qmUqJMir45iyGY2lEvvqPW68g"},"id":"functional","label":"Functional","weight":1,"title":"Functional","details":"Cookies are small text files that are placed by your browser on your device in order to store certain information. Using the information that is stored and returned, a website can recognize that you have previously accessed and visited it using the browser on your end device. We use this information to arrange and display the website optimally in accordance with your preferences. Within this process, only the cookie itself is identified on your device. Personal data is only stored following your express consent or where this is absolutely necessary to enable use the service provided by us and accessed by you."},"marketing":{"uuid":"8496aeb4-29f8-4868-92c6-8bd3a4daa83b","langcode":"en","status":true,"dependencies":[],"_core":{"default_config_hash":"JkP6try0AxX_f4RpFEletep5NHSlVB1BbGw0snW4MO8"},"id":"marketing","label":"Marketing","weight":20,"title":"Marketing","details":"Customer communication and marketing tools."},"performance":{"uuid":"729cc8b4-c0da-40b9-a48d-4b00f106bede","langcode":"en","status":true,"dependencies":[],"_core":{"default_config_hash":"Jv3uIJviBj7D282Qu1ZpEQwuOEb3lCcDvx-XVHeOJpw"},"id":"performance","label":"Performance","weight":30,"title":"Performance Cookies","details":"Performance cookies collect aggregated information about how our website is used. The purpose of this is to improve its attractiveness, content and functionality. These cookies help us to determine whether, how often and for how long particular sub-pages of our website are accessed and which content users are particularly interested in. Search terms, country, region and (where applicable) the city from which the website is accessed are also recorded, as is the proportion of mobile devices that are used to access the website. We use this information to compile statistical reports that help us tailor the content of our website to your needs and optimize our offer."},"social":{"uuid":"5f9ba6dd-f1b2-477e-b20a-0c5739bc40ec","langcode":"en","status":true,"dependencies":[],"_core":{"default_config_hash":"w9uS0Ktbh58ffWxW1ue_MKgB_he6iZPMx2Pc6tN4K4o"},"id":"social","label":"Social Plugins","weight":20,"title":"Social Plugins","details":"Social media widgets provide additional content originally published on third party platforms."},"tracking":{"uuid":"43f43e00-3c39-473b-92a4-80a55f98228c","langcode":"en","status":true,"dependencies":[],"_core":{"default_config_hash":"_gYDe3qoEc6L5uYR6zhu5V-3ARLlyis9gl1diq7Tnf4"},"id":"tracking","label":"Tracking","weight":10,"title":"Tracking cookies","details":"Marketing cookies come from external advertising companies (\u0022third-party cookies\u0022) and are used to collect information about the websites visited by the user. The purpose of this is to create and display target group-oriented content and advertising for the user."},"video":{"uuid":"63e5825f-d470-4423-8b9e-20ea938cd438","langcode":"en","status":true,"dependencies":[],"_core":{"default_config_hash":"w1WnCmP2Xfgx24xbx5u9T27XLF_ZFw5R0MlO-eDDPpQ"},"id":"video","label":"Videos","weight":40,"title":"Video","details":"Video sharing services help to add rich media on the site and increase its visibility."}}},"user":{"uid":0,"permissionsHash":"53b43ab7d9ecce5acf2473a5056675abd7a072c7fa11051a49726d7dc0d2f476"}}</script>
+<script src="./Information is noisy _ plus.maths.org_files/js_OtAPyspL-DhUwQoRrsNl16XcyNTDg6qa4KYf8_WxBZg.js"></script>
+<script src="./Information is noisy _ plus.maths.org_files/cookiesjsr.conf.js" defer=""></script>
+
+  <script src="./Information is noisy _ plus.maths.org_files/textmacros.js" charset="UTF-8"></script><script type="text/javascript" src="./Information is noisy _ plus.maths.org_files/cookiesjsr.min.js"></script><style>:is([id*='google_ads_iframe'],[id*='taboola-'],.taboolaHeight,.taboola-placeholder,#top-ad,#credential_picker_container,#credentials-picker-container,#credential_picker_iframe,[id*='google-one-tap-iframe'],#google-one-tap-popup-container,.google-one-tap__module,.google-one-tap-modal-div,#amp_floatingAdDiv,#ez-content-blocker-container) {display:none!important;min-height:0!important;height:0!important;}</style><style type="text/css">.CtxtMenu_InfoClose {  top:.2em; right:.2em;}
+.CtxtMenu_InfoContent {  overflow:auto; text-align:left; font-size:80%;  padding:.4em .6em; border:1px inset; margin:1em 0px;  max-height:20em; max-width:30em; background-color:#EEEEEE;  white-space:normal;}
+.CtxtMenu_Info.CtxtMenu_MousePost {outline:none;}
+.CtxtMenu_Info {  position:fixed; left:50%; width:auto; text-align:center;  border:3px outset; padding:1em 2em; background-color:#DDDDDD;  color:black;  cursor:default; font-family:message-box; font-size:120%;  font-style:normal; text-indent:0; text-transform:none;  line-height:normal; letter-spacing:normal; word-spacing:normal;  word-wrap:normal; white-space:nowrap; float:none; z-index:201;  border-radius: 15px;                     /* Opera 10.5 and IE9 */  -webkit-border-radius:15px;               /* Safari and Chrome */  -moz-border-radius:15px;                  /* Firefox */  -khtml-border-radius:15px;                /* Konqueror */  box-shadow:0px 10px 20px #808080;         /* Opera 10.5 and IE9 */  -webkit-box-shadow:0px 10px 20px #808080; /* Safari 3 & Chrome */  -moz-box-shadow:0px 10px 20px #808080;    /* Forefox 3.5 */  -khtml-box-shadow:0px 10px 20px #808080;  /* Konqueror */  filter:progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color="gray", Positive="true"); /* IE */}
+</style><style type="text/css">.CtxtMenu_MenuClose {  position:absolute;  cursor:pointer;  display:inline-block;  border:2px solid #AAA;  border-radius:18px;  -webkit-border-radius: 18px;             /* Safari and Chrome */  -moz-border-radius: 18px;                /* Firefox */  -khtml-border-radius: 18px;              /* Konqueror */  font-family: "Courier New", Courier;  font-size:24px;  color:#F0F0F0}
+.CtxtMenu_MenuClose span {  display:block; background-color:#AAA; border:1.5px solid;  border-radius:18px;  -webkit-border-radius: 18px;             /* Safari and Chrome */  -moz-border-radius: 18px;                /* Firefox */  -khtml-border-radius: 18px;              /* Konqueror */  line-height:0;  padding:8px 0 6px     /* may need to be browser-specific */}
+.CtxtMenu_MenuClose:hover {  color:white!important;  border:2px solid #CCC!important}
+.CtxtMenu_MenuClose:hover span {  background-color:#CCC!important}
+.CtxtMenu_MenuClose:hover:focus {  outline:none}
+</style><style type="text/css">.CtxtMenu_Menu {  position:absolute;  background-color:white;  color:black;  width:auto; padding:5px 0px;  border:1px solid #CCCCCC; margin:0; cursor:default;  font: menu; text-align:left; text-indent:0; text-transform:none;  line-height:normal; letter-spacing:normal; word-spacing:normal;  word-wrap:normal; white-space:nowrap; float:none; z-index:201;  border-radius: 5px;                     /* Opera 10.5 and IE9 */  -webkit-border-radius: 5px;             /* Safari and Chrome */  -moz-border-radius: 5px;                /* Firefox */  -khtml-border-radius: 5px;              /* Konqueror */  box-shadow:0px 10px 20px #808080;         /* Opera 10.5 and IE9 */  -webkit-box-shadow:0px 10px 20px #808080; /* Safari 3 & Chrome */  -moz-box-shadow:0px 10px 20px #808080;    /* Forefox 3.5 */  -khtml-box-shadow:0px 10px 20px #808080;  /* Konqueror */}
+.CtxtMenu_MenuItem {  padding: 1px 2em;  background:transparent;}
+.CtxtMenu_MenuArrow {  position:absolute; right:.5em; padding-top:.25em; color:#666666;  font-family: null; font-size: .75em}
+.CtxtMenu_MenuActive .CtxtMenu_MenuArrow {color:white}
+.CtxtMenu_MenuArrow.CtxtMenu_RTL {left:.5em; right:auto}
+.CtxtMenu_MenuCheck {  position:absolute; left:.7em;  font-family: null}
+.CtxtMenu_MenuCheck.CtxtMenu_RTL { right:.7em; left:auto }
+.CtxtMenu_MenuRadioCheck {  position:absolute; left: .7em;}
+.CtxtMenu_MenuRadioCheck.CtxtMenu_RTL {  right: .7em; left:auto}
+.CtxtMenu_MenuInputBox {  padding-left: 1em; right:.5em; color:#666666;  font-family: null;}
+.CtxtMenu_MenuInputBox.CtxtMenu_RTL {  left: .1em;}
+.CtxtMenu_MenuComboBox {  left:.1em; padding-bottom:.5em;}
+.CtxtMenu_MenuSlider {  left: .1em;}
+.CtxtMenu_SliderValue {  position:absolute; right:.1em; padding-top:.25em; color:#333333;  font-size: .75em}
+.CtxtMenu_SliderBar {  outline: none; background: #d3d3d3}
+.CtxtMenu_MenuLabel {  padding: 1px 2em 3px 1.33em;  font-style:italic}
+.CtxtMenu_MenuRule {  border-top: 1px solid #DDDDDD;  margin: 4px 3px;}
+.CtxtMenu_MenuDisabled {  color:GrayText}
+.CtxtMenu_MenuActive {  background-color: #606872;  color: white;}
+.CtxtMenu_MenuDisabled:focus {  background-color: #E8E8E8}
+.CtxtMenu_MenuLabel:focus {  background-color: #E8E8E8}
+.CtxtMenu_ContextMenu:focus {  outline:none}
+.CtxtMenu_ContextMenu .CtxtMenu_MenuItem:focus {  outline:none}
+.CtxtMenu_SelectionMenu {  position:relative; float:left;  border-bottom: none; -webkit-box-shadow:none; -webkit-border-radius:0px; }
+.CtxtMenu_SelectionItem {  padding-right: 1em;}
+.CtxtMenu_Selection {  right: 40%; width:50%; }
+.CtxtMenu_SelectionBox {  padding: 0em; max-height:20em; max-width: none;  background-color:#FFFFFF;}
+.CtxtMenu_SelectionDivider {  clear: both; border-top: 2px solid #000000;}
+.CtxtMenu_Menu .CtxtMenu_MenuClose {  top:-10px; left:-10px}
+</style><style id="MJX-CHTML-styles">
+mjx-container[jax="CHTML"] {
+  line-height: 0;
+}
+
+mjx-container [space="1"] {
+  margin-left: .111em;
+}
+
+mjx-container [space="2"] {
+  margin-left: .167em;
+}
+
+mjx-container [space="3"] {
+  margin-left: .222em;
+}
+
+mjx-container [space="4"] {
+  margin-left: .278em;
+}
+
+mjx-container [space="5"] {
+  margin-left: .333em;
+}
+
+mjx-container [rspace="1"] {
+  margin-right: .111em;
+}
+
+mjx-container [rspace="2"] {
+  margin-right: .167em;
+}
+
+mjx-container [rspace="3"] {
+  margin-right: .222em;
+}
+
+mjx-container [rspace="4"] {
+  margin-right: .278em;
+}
+
+mjx-container [rspace="5"] {
+  margin-right: .333em;
+}
+
+mjx-container [size="s"] {
+  font-size: 70.7%;
+}
+
+mjx-container [size="ss"] {
+  font-size: 50%;
+}
+
+mjx-container [size="Tn"] {
+  font-size: 60%;
+}
+
+mjx-container [size="sm"] {
+  font-size: 85%;
+}
+
+mjx-container [size="lg"] {
+  font-size: 120%;
+}
+
+mjx-container [size="Lg"] {
+  font-size: 144%;
+}
+
+mjx-container [size="LG"] {
+  font-size: 173%;
+}
+
+mjx-container [size="hg"] {
+  font-size: 207%;
+}
+
+mjx-container [size="HG"] {
+  font-size: 249%;
+}
+
+mjx-container [width="full"] {
+  width: 100%;
+}
+
+mjx-box {
+  display: inline-block;
+}
+
+mjx-block {
+  display: block;
+}
+
+mjx-itable {
+  display: inline-table;
+}
+
+mjx-row {
+  display: table-row;
+}
+
+mjx-row > * {
+  display: table-cell;
+}
+
+mjx-mtext {
+  display: inline-block;
+}
+
+mjx-mstyle {
+  display: inline-block;
+}
+
+mjx-merror {
+  display: inline-block;
+  color: red;
+  background-color: yellow;
+}
+
+mjx-mphantom {
+  visibility: hidden;
+}
+
+_::-webkit-full-page-media, _:future, :root mjx-container {
+  will-change: opacity;
+}
+
+mjx-assistive-mml {
+  position: absolute !important;
+  top: 0px;
+  left: 0px;
+  clip: rect(1px, 1px, 1px, 1px);
+  padding: 1px 0px 0px 0px !important;
+  border: 0px !important;
+  display: block !important;
+  width: auto !important;
+  overflow: hidden !important;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+mjx-assistive-mml[display="block"] {
+  width: 100% !important;
+}
+
+mjx-c::before {
+  display: block;
+  width: 0;
+}
+
+.MJX-TEX {
+  font-family: MJXZERO, MJXTEX;
+}
+
+.TEX-B {
+  font-family: MJXZERO, MJXTEX-B;
+}
+
+.TEX-I {
+  font-family: MJXZERO, MJXTEX-I;
+}
+
+.TEX-MI {
+  font-family: MJXZERO, MJXTEX-MI;
+}
+
+.TEX-BI {
+  font-family: MJXZERO, MJXTEX-BI;
+}
+
+.TEX-S1 {
+  font-family: MJXZERO, MJXTEX-S1;
+}
+
+.TEX-S2 {
+  font-family: MJXZERO, MJXTEX-S2;
+}
+
+.TEX-S3 {
+  font-family: MJXZERO, MJXTEX-S3;
+}
+
+.TEX-S4 {
+  font-family: MJXZERO, MJXTEX-S4;
+}
+
+.TEX-A {
+  font-family: MJXZERO, MJXTEX-A;
+}
+
+.TEX-C {
+  font-family: MJXZERO, MJXTEX-C;
+}
+
+.TEX-CB {
+  font-family: MJXZERO, MJXTEX-CB;
+}
+
+.TEX-FR {
+  font-family: MJXZERO, MJXTEX-FR;
+}
+
+.TEX-FRB {
+  font-family: MJXZERO, MJXTEX-FRB;
+}
+
+.TEX-SS {
+  font-family: MJXZERO, MJXTEX-SS;
+}
+
+.TEX-SSB {
+  font-family: MJXZERO, MJXTEX-SSB;
+}
+
+.TEX-SSI {
+  font-family: MJXZERO, MJXTEX-SSI;
+}
+
+.TEX-SC {
+  font-family: MJXZERO, MJXTEX-SC;
+}
+
+.TEX-T {
+  font-family: MJXZERO, MJXTEX-T;
+}
+
+.TEX-V {
+  font-family: MJXZERO, MJXTEX-V;
+}
+
+.TEX-VB {
+  font-family: MJXZERO, MJXTEX-VB;
+}
+
+mjx-stretchy-v mjx-c, mjx-stretchy-h mjx-c {
+  font-family: MJXZERO, MJXTEX-S1, MJXTEX-S4, MJXTEX, MJXTEX-A ! important;
+}
+
+@font-face /* 0 */ {
+  font-family: MJXZERO;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Zero.woff") format("woff");
+}
+
+@font-face /* 1 */ {
+  font-family: MJXTEX;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Main-Regular.woff") format("woff");
+}
+
+@font-face /* 2 */ {
+  font-family: MJXTEX-B;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Main-Bold.woff") format("woff");
+}
+
+@font-face /* 3 */ {
+  font-family: MJXTEX-I;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Math-Italic.woff") format("woff");
+}
+
+@font-face /* 4 */ {
+  font-family: MJXTEX-MI;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Main-Italic.woff") format("woff");
+}
+
+@font-face /* 5 */ {
+  font-family: MJXTEX-BI;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Math-BoldItalic.woff") format("woff");
+}
+
+@font-face /* 6 */ {
+  font-family: MJXTEX-S1;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Size1-Regular.woff") format("woff");
+}
+
+@font-face /* 7 */ {
+  font-family: MJXTEX-S2;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Size2-Regular.woff") format("woff");
+}
+
+@font-face /* 8 */ {
+  font-family: MJXTEX-S3;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Size3-Regular.woff") format("woff");
+}
+
+@font-face /* 9 */ {
+  font-family: MJXTEX-S4;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Size4-Regular.woff") format("woff");
+}
+
+@font-face /* 10 */ {
+  font-family: MJXTEX-A;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_AMS-Regular.woff") format("woff");
+}
+
+@font-face /* 11 */ {
+  font-family: MJXTEX-C;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Calligraphic-Regular.woff") format("woff");
+}
+
+@font-face /* 12 */ {
+  font-family: MJXTEX-CB;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Calligraphic-Bold.woff") format("woff");
+}
+
+@font-face /* 13 */ {
+  font-family: MJXTEX-FR;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Fraktur-Regular.woff") format("woff");
+}
+
+@font-face /* 14 */ {
+  font-family: MJXTEX-FRB;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Fraktur-Bold.woff") format("woff");
+}
+
+@font-face /* 15 */ {
+  font-family: MJXTEX-SS;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_SansSerif-Regular.woff") format("woff");
+}
+
+@font-face /* 16 */ {
+  font-family: MJXTEX-SSB;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_SansSerif-Bold.woff") format("woff");
+}
+
+@font-face /* 17 */ {
+  font-family: MJXTEX-SSI;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_SansSerif-Italic.woff") format("woff");
+}
+
+@font-face /* 18 */ {
+  font-family: MJXTEX-SC;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Script-Regular.woff") format("woff");
+}
+
+@font-face /* 19 */ {
+  font-family: MJXTEX-T;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Typewriter-Regular.woff") format("woff");
+}
+
+@font-face /* 20 */ {
+  font-family: MJXTEX-V;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Vector-Regular.woff") format("woff");
+}
+
+@font-face /* 21 */ {
+  font-family: MJXTEX-VB;
+  src: url("https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Vector-Bold.woff") format("woff");
+}
+</style></head>
+  <body class="path-node page-node-type-article colour_scheme-red full-path--information-errors">
+        <a href="https://plus.maths.org/information-errors#main-content" class="visually-hidden focusable skip-link">
+      Skip to main content
+    </a>
+    
+      <div class="dialog-off-canvas-main-canvas" data-off-canvas-main-canvas="">
+    <div class="layout-container">
+  <div id="pre-header">
+    
+  </div>
+
+  <header role="banner" id="header">
+        <div data-component-id="plus2025:region" class="region region-header">
+        
+<div data-test="" id="block-plus2025-sitebranding" class="block block-system block-system-branding-block">
+  
+    
+
+    
+<div data-component-id="plus2025:system_branding_block" class="branding_block">
+  <div class="show">
+          <a href="https://plus.maths.org/" rel="home" class="site-logo">
+        <img src="./Information is noisy _ plus.maths.org_files/plus_logo_0.svg" alt="Home">
+      </a>
+      </div>
+
+  <div class="tell">
+          <div class="site-name">
+        <a href="https://plus.maths.org/" rel="home">plus.maths.org</a>
+      </div>
+    
+      </div>
+</div>
+</div>
+
+<div data-test="" id="block-header-search-form" class="hide-on-small block block-block-content block-block-content4f91b775-912a-4943-ae82-123bfccc0be9">
+  
+    
+
+      
+                                  <div class="field field--name-body field--type-text-with-summary field--label-hidden field__item"><form id="header-search-form" action="https://plus.maths.org/search" data-once="form-updated" data-drupal-form-fields="search-pane-input">
+  <label for="search-pane-input" class="hidden">Search articles, podcasts, etc.</label>
+
+  <input id="header-search-pane-input" type="search" placeholder="Search articles, podcasts, etc." name="text">
+
+  <button type="submit" class="button">
+    <span class="material-icons">search</span>
+  </button>
+</form></div>
+            
+
+      </div>
+<nav role="navigation" aria-labelledby="block-plus2025-bootplus-menu-secondary-menu-menu" data-component-id="plus2025:system_menu_block" class="hide-on-small menu-horizontal block block-menu navigation menu--secondary-menu">
+
+            
+  <h2 class="visually-hidden" id="block-plus2025-bootplus-menu-secondary-menu-menu">Secondary menu</h2>
+  
+
+                  
+  <menu data-component-id="plus2025:menu" aria-orientation="horizontal" style="--path: themes/custom/plus2025/components/navigation/menu;">
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/favourites">
+          <span>My list</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/about-plus">
+          <span>About Plus</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/plus-sponsors">
+          <span>Sponsors</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/subscribe-plus">
+          <span>Subscribe</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/contact-us">
+          <span>Contact Us</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/user/login">
+          <span>Log in</span>
+  
+    </a>
+  
+  </li>
+
+      </menu>
+
+
+
+  </nav>
+
+<div data-test="" id="block-plus2025-menutoggle-2" class="block block-block-content block-block-content06635716-6a4c-47da-a333-bfa4a863452b">
+  
+    
+
+      
+                                  <div class="field field--name-body field--type-text-with-summary field--label-hidden field__item"><button id="menu-toggle" title="Show / hide main menu">
+  <span class="visually-hidden">Menu</span>
+  <!--<drupal-media data-entity-type="media" data-entity-uuid="9bf33525-6978-40a5-a108-bfa21ffc51e2">&nbsp;</drupal-media>-->
+  <img src="./Information is noisy _ plus.maths.org_files/menu.svg" alt="menu icon">
+</button></div>
+            
+
+      </div>
+
+  </div>
+
+  </header>
+
+  <div id="nav-container">
+    <div id="primary-nav">
+          <div data-component-id="plus2025:region" class="region region-primary-nav">
+        <nav role="navigation" aria-labelledby="block-plus2025-main-navigation-menu" data-component-id="plus2025:system_menu_block" class="hide-on-small menu-horizontal block block-menu navigation menu--main">
+
+            
+  <h2 class="visually-hidden" id="block-plus2025-main-navigation-menu">Main navigation</h2>
+  
+
+                  
+  <menu data-component-id="plus2025:menu" aria-orientation="horizontal" style="--path: themes/custom/plus2025/components/navigation/menu;">
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/">
+          <span>Home</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/articles">
+          <span>Articles</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/collections">
+          <span>Collections</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/podcasts">
+          <span>Podcasts</span>
+  
+    </a>
+  
+  </li>
+
+          
+  
+<li data-is-expanded="">
+          
+  
+      <button aria-haspopup="menu">
+          <span>More</span>
+  
+      <img src="./Information is noisy _ plus.maths.org_files/caret_down.svg" alt="down icon">
+    </button>
+  
+                
+  <menu data-component-id="plus2025:menu" class="dropdown" aria-orientation="vertical" data-level="1" style="--path: themes/custom/plus2025/components/navigation/menu;">
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/tags/maths-minute">
+          <span>Maths in a minute</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/puzzles">
+          <span>Puzzles</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/videos">
+          <span>Videos</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/tags">
+          <span>Topics and tags</span>
+  
+    </a>
+  
+  </li>
+
+      </menu>
+
+
+  </li>
+
+      </menu>
+
+
+
+  </nav>
+<nav role="navigation" aria-labelledby="block-plus2025-audiences-menu" data-component-id="plus2025:system_menu_block" class="hide-on-small menu-horizontal block block-menu navigation menu--audiences">
+
+      
+  <h2 id="block-plus2025-audiences-menu">For</h2>
+  
+
+        
+
+  <ul data-region="primary_nav" class="menu menu-level-0" aria-orientation="horizontal">
+                  
+        <li class="menu-item">
+                                
+  
+  <div class="menu_link_content menu-link-contentaudiences view-mode-default menu-dropdown menu-dropdown-0 menu-type-default">
+                                    <div class="field field--name-field-image field--type-entity-reference field--label-hidden field__item"><span data-component-id="plus2025:image_formatter">
+      <img loading="lazy" src="./Information is noisy _ plus.maths.org_files/cat-icon-white-2.svg" alt="cat icon" data-component-id="plus2025:image">
+
+  </span>
+</div>
+            
+      </div>
+
+
+
+                    <a href="https://plus.maths.org/everybody" data-drupal-link-system-path="node/8032">Curiosity</a>
+        </li>
+                      
+        <li class="menu-item">
+                                
+  
+  <div class="menu_link_content menu-link-contentaudiences view-mode-default menu-dropdown menu-dropdown-0 menu-type-default">
+                                    <div class="field field--name-field-image field--type-entity-reference field--label-hidden field__item"><span data-component-id="plus2025:image_formatter">
+      <img loading="lazy" src="./Information is noisy _ plus.maths.org_files/newspaper-icon-white.svg" alt="newspaper icon" data-component-id="plus2025:image">
+
+  </span>
+</div>
+            
+      </div>
+
+
+
+                    <a href="https://plus.maths.org/media" data-drupal-link-system-path="node/8029">Media</a>
+        </li>
+                      
+        <li class="menu-item">
+                                
+  
+  <div class="menu_link_content menu-link-contentaudiences view-mode-default menu-dropdown menu-dropdown-0 menu-type-default">
+                                    <div class="field field--name-field-image field--type-entity-reference field--label-hidden field__item"><span data-component-id="plus2025:image_formatter">
+      <img loading="lazy" src="./Information is noisy _ plus.maths.org_files/graduation-icon-white.svg" alt="graduation icon" data-component-id="plus2025:image">
+
+  </span>
+</div>
+            
+      </div>
+
+
+
+                    <a href="https://plus.maths.org/schools" data-drupal-link-system-path="node/8030">Education</a>
+        </li>
+                      
+        <li class="menu-item">
+                                
+  
+  <div class="menu_link_content menu-link-contentaudiences view-mode-default menu-dropdown menu-dropdown-0 menu-type-default">
+                                    <div class="field field--name-field-image field--type-entity-reference field--label-hidden field__item"><span data-component-id="plus2025:image_formatter">
+      <img loading="lazy" src="./Information is noisy _ plus.maths.org_files/briefcase-icon-white.svg" alt="briefcase icon" data-component-id="plus2025:image">
+
+  </span>
+</div>
+            
+      </div>
+
+
+
+                    <a href="https://plus.maths.org/policy-makers" data-drupal-link-system-path="node/8031">Policy</a>
+        </li>
+          </ul>
+
+
+  </nav>
+
+  </div>
+
+    </div>
+      <dialog class="region region-search-pane">
+    <div role="presentation">
+      <button class="close material-icons">
+        <span class="visually-hidden">close</span>
+                <img src="./Information is noisy _ plus.maths.org_files/close.svg" alt="down icon">
+      </button>
+      
+<div data-test="" id="block-search-form" class="block block-block-content block-block-contentf6497e1d-fe3d-4c68-936b-56f072a3e538">
+  
+    
+
+      
+                                  <div class="field field--name-body field--type-text-with-summary field--label-hidden field__item"><form id="search-pane-form" action="https://plus.maths.org/search" data-once="form-updated" data-drupal-form-fields="search-pane-input">
+  <label for="search-pane-input" class="hidden">Search articles, podcasts, etc.</label>
+
+  <input id="search-pane-input" type="search" placeholder="Search articles, podcasts, etc." name="text" class="form-autocomplete ui-autocomplete-input" data-id="search_api_block" data-once="autocomplete" autocomplete="off" autofocus="true">
+
+  <button type="submit" class="button">
+    <span class="material-icons">search</span>
+  </button>
+<ul id="ui-id-1" tabindex="0" class="ui-menu ui-widget ui-widget-content ui-autocomplete ui-front" data-sa-theme="minimal" data-input-ref="search_api_block" style="display: none;"></ul></form></div>
+            
+
+      </div>
+
+<div data-test="" id="block-search-pane-tags" class="block block-block-content block-block-content39d59d9f-7b12-43ff-9050-38869cb27b5d">
+  
+      <h2>Popular topics and tags</h2>
+    
+
+      
+                                  <div class="field field--name-body field--type-text-with-summary field--label-hidden field__item"><div class="tex2jax_process"><div class="text-cols-3"><div><h3>Shapes</h3><ul><li><a href="https://plus.maths.org/tags/geometry">Geometry</a></li><li><a href="https://plus.maths.org/tags/vector">Vectors</a> and <a href="https://plus.maths.org/tags/matrix">matrices</a></li><li><a href="https://plus.maths.org/tags/topology">Topology</a></li><li><a href="https://plus.maths.org/tags/network">Networks</a> and <a href="https://plus.maths.org/tags/graph-theory">graph theory</a></li><li><a href="https://plus.maths.org/tags/fractal">Fractals</a></li></ul></div><div><h3>Numbers</h3><ul><li><a href="https://plus.maths.org/tags/number-theory">Number theory</a></li><li><a href="https://plus.maths.org/tags/arithmetic">Arithmetic</a></li><li><a href="https://plus.maths.org/tags/prime-number">Prime numbers</a></li><li><a href="https://plus.maths.org/tags/fermats-last-theorem">Fermat's last theorem</a></li><li><a href="https://plus.maths.org/tags/cryptography">Cryptography</a></li></ul></div><div><h3>Computing and information</h3><ul><li><a href="https://plus.maths.org/tags/quantum-computing">Quantum computing</a></li><li><a href="https://plus.maths.org/tags/complexity">Complexity</a></li><li><a href="https://plus.maths.org/tags/information-theory">Information theory</a></li><li><a href="https://plus.maths.org/tags/artificial-intelligence">Artificial intelligence</a> and <a href="https://plus.maths.org/tags/machine-learning">machine learning</a></li><li><a href="https://plus.maths.org/tags/algorithm">Algorithm</a></li></ul></div><div><h3>Data and probability</h3><ul><li><a href="https://plus.maths.org/tags/statistics">Statistics</a></li><li><a href="https://plus.maths.org/tags/probability">Probability</a> and <a href="https://plus.maths.org/tags/uncertainty">uncertainty</a></li><li><a href="https://plus.maths.org/tags/randomness">Randomness</a></li></ul></div><div><h3>Abstract structures</h3><ul><li><a href="https://plus.maths.org/tags/symmetry">Symmetry</a></li><li><a href="https://plus.maths.org/tags/algebra">Algebra</a> and <a href="https://plus.maths.org/tags/group-theory">group theory</a></li><li><a href="https://plus.maths.org/tags/vector">Vectors</a> and <a href="https://plus.maths.org/tags/matrix">matrices</a></li></ul></div><div><h3>Physics</h3><ul><li><a href="https://plus.maths.org/tags/fluid-dynamics">Fluid dynamics</a></li><li><a href="https://plus.maths.org/tags/quantum-physics">Quantum physics</a></li><li><a href="https://plus.maths.org/tags/general-relativity">General relativity</a>, <a href="https://plus.maths.org/tags/gravity">gravity</a> and <a href="https://plus.maths.org/tags/black-hole">black holes</a></li><li><a href="https://plus.maths.org/tags/entropy">Entropy</a> and <a href="https://plus.maths.org/tags/thermodynamics">thermodynamics</a></li><li><a href="https://plus.maths.org/tags/string-theory">String theory</a> and <a href="https://plus.maths.org/tags/quantum-gravity">quantum gravity</a></li></ul></div><div><h3>Arts, humanities and sport</h3><ul><li><a href="https://plus.maths.org/tags/history-mathematics">History</a> and <a href="https://plus.maths.org/tags/philosophy-mathematics">philosophy of mathematics</a></li><li><a href="https://plus.maths.org/tags/mathematics-and-art">Art</a> and <a href="https://plus.maths.org/tags/mathematics-and-music">Music</a></li><li><a href="https://plus.maths.org/tags/mathematics-and-language">Language</a></li><li><a href="https://plus.maths.org/tags/mathematics-sport">Sport</a></li></ul></div><div><h3>Logic, proof and strategy</h3><ul><li><a href="https://plus.maths.org/tags/logic">Logic</a></li><li><a href="https://plus.maths.org/tags/proof">Proof</a></li><li><a href="https://plus.maths.org/tags/game-theory">Game theory</a></li></ul></div><div><h3>Calculus and analysis</h3><ul><li><a href="https://plus.maths.org/tags/differential-equation">Differential equations</a></li><li><a href="https://plus.maths.org/tags/calculus">Calculus</a></li></ul></div><div><h3>Towards applications</h3><ul><li><a href="https://plus.maths.org/tags/mathematical-modelling">Mathematical modelling</a></li><li><a href="https://plus.maths.org/tags/dynamical-system">Dynamical systems</a> and <a href="https://plus.maths.org/tags/chaos">Chaos</a></li></ul></div><div><h3>Applications</h3><ul><li><a href="https://plus.maths.org/tags/medicine-and-health">Medicine and health</a></li><li><a href="https://plus.maths.org/tags/epidemiology">Epidemiology</a></li><li><a href="https://plus.maths.org/tags/biology">Biology</a></li><li><a href="https://plus.maths.org/tags/financial-mathematics">Economics and finance</a></li><li><a href="https://plus.maths.org/tags/engineering">Engineering</a> and <a href="https://plus.maths.org/tags/architecture">architecture</a></li><li><a href="https://plus.maths.org/tags/weather-forecasting">Weather forecasting</a></li><li><a href="https://plus.maths.org/tags/mathematics-and-climate-change">Climate change</a></li></ul></div><div><h3>Understanding of mathematics</h3><ul><li><a href="https://plus.maths.org/tags/public-understanding-mathematics">Public understanding of mathematics</a></li><li><a href="https://plus.maths.org/tags/mathematics-education">Education</a></li></ul></div><div><h3>Get your maths quickly</h3><ul><li><a href="https://plus.maths.org/tags/maths-minute">Maths in a minute</a></li></ul></div></div></div></div>
+            
+
+      </div>
+
+    </div>
+  </dialog>
+
+  </div>
+
+  <div id="mobile-nav">
+    
+  <div data-component-id="plus2025:slide_in_pane" class="slide-in from-right">
+            <div data-component-id="plus2025:region" class="region region-mobile-nav">
+        
+<div data-test="" id="block-mobile-search-form" class="block block-block-content block-block-contentf6497e1d-fe3d-4c68-936b-56f072a3e538">
+  
+    
+
+      
+                                  <div class="field field--name-body field--type-text-with-summary field--label-hidden field__item"><form id="search-pane-form" action="https://plus.maths.org/search" data-once="form-updated" data-drupal-form-fields="search-pane-input">
+  <label for="search-pane-input" class="hidden">Search articles, podcasts, etc.</label>
+
+  <input id="search-pane-input" type="search" placeholder="Search articles, podcasts, etc." name="text">
+
+  <button type="submit" class="button">
+    <span class="material-icons">search</span>
+  </button>
+</form></div>
+            
+
+      </div>
+<nav role="navigation" aria-labelledby="block-plus2025-mainmenu-menu" data-component-id="plus2025:system_menu_block" class="block block-menu navigation menu--main">
+
+            
+  <h2 class="visually-hidden" id="block-plus2025-mainmenu-menu">Main menu</h2>
+  
+
+                  
+  <menu data-component-id="plus2025:menu" aria-orientation="horizontal" style="--path: themes/custom/plus2025/components/navigation/menu;">
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/">
+          <span>Home</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/articles">
+          <span>Articles</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/collections">
+          <span>Collections</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/podcasts">
+          <span>Podcasts</span>
+  
+    </a>
+  
+  </li>
+
+          
+  
+<li data-is-expanded="">
+          
+  
+      <button aria-haspopup="menu">
+          <span>More</span>
+  
+      <img src="./Information is noisy _ plus.maths.org_files/caret_down.svg" alt="down icon">
+    </button>
+  
+                
+  <menu data-component-id="plus2025:menu" class="dropdown" aria-orientation="vertical" data-level="1" style="--path: themes/custom/plus2025/components/navigation/menu;">
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/tags/maths-minute">
+          <span>Maths in a minute</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/puzzles">
+          <span>Puzzles</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/videos">
+          <span>Videos</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/tags">
+          <span>Topics and tags</span>
+  
+    </a>
+  
+  </li>
+
+      </menu>
+
+
+  </li>
+
+      </menu>
+
+
+
+  </nav>
+<nav role="navigation" aria-labelledby="block-mobile-nav-audiences-menu" data-component-id="plus2025:system_menu_block" class="block block-menu navigation menu--audiences">
+
+            
+  <h2 class="visually-hidden" id="block-mobile-nav-audiences-menu">Audiences</h2>
+  
+
+        
+
+  <ul data-region="mobile_nav" class="menu menu-level-0" aria-orientation="horizontal">
+                  
+        <li class="menu-item">
+                                
+  
+  <div class="menu_link_content menu-link-contentaudiences view-mode-default menu-dropdown menu-dropdown-0 menu-type-default">
+                                    <div class="field field--name-field-image field--type-entity-reference field--label-hidden field__item"><span data-component-id="plus2025:image_formatter">
+      <img loading="lazy" src="./Information is noisy _ plus.maths.org_files/cat-icon-white-2.svg" alt="cat icon" data-component-id="plus2025:image">
+
+  </span>
+</div>
+            
+      </div>
+
+
+
+                    <a href="https://plus.maths.org/everybody" data-drupal-link-system-path="node/8032">Curiosity</a>
+        </li>
+                      
+        <li class="menu-item">
+                                
+  
+  <div class="menu_link_content menu-link-contentaudiences view-mode-default menu-dropdown menu-dropdown-0 menu-type-default">
+                                    <div class="field field--name-field-image field--type-entity-reference field--label-hidden field__item"><span data-component-id="plus2025:image_formatter">
+      <img loading="lazy" src="./Information is noisy _ plus.maths.org_files/newspaper-icon-white.svg" alt="newspaper icon" data-component-id="plus2025:image">
+
+  </span>
+</div>
+            
+      </div>
+
+
+
+                    <a href="https://plus.maths.org/media" data-drupal-link-system-path="node/8029">Media</a>
+        </li>
+                      
+        <li class="menu-item">
+                                
+  
+  <div class="menu_link_content menu-link-contentaudiences view-mode-default menu-dropdown menu-dropdown-0 menu-type-default">
+                                    <div class="field field--name-field-image field--type-entity-reference field--label-hidden field__item"><span data-component-id="plus2025:image_formatter">
+      <img loading="lazy" src="./Information is noisy _ plus.maths.org_files/graduation-icon-white.svg" alt="graduation icon" data-component-id="plus2025:image">
+
+  </span>
+</div>
+            
+      </div>
+
+
+
+                    <a href="https://plus.maths.org/schools" data-drupal-link-system-path="node/8030">Education</a>
+        </li>
+                      
+        <li class="menu-item">
+                                
+  
+  <div class="menu_link_content menu-link-contentaudiences view-mode-default menu-dropdown menu-dropdown-0 menu-type-default">
+                                    <div class="field field--name-field-image field--type-entity-reference field--label-hidden field__item"><span data-component-id="plus2025:image_formatter">
+      <img loading="lazy" src="./Information is noisy _ plus.maths.org_files/briefcase-icon-white.svg" alt="briefcase icon" data-component-id="plus2025:image">
+
+  </span>
+</div>
+            
+      </div>
+
+
+
+                    <a href="https://plus.maths.org/policy-makers" data-drupal-link-system-path="node/8031">Policy</a>
+        </li>
+          </ul>
+
+
+  </nav>
+<nav role="navigation" aria-labelledby="block-plus2025-secondarymenu-2-menu" data-component-id="plus2025:system_menu_block" class="block block-menu navigation menu--secondary-menu">
+
+            
+  <h2 class="visually-hidden" id="block-plus2025-secondarymenu-2-menu">Secondary menu</h2>
+  
+
+                  
+  <menu data-component-id="plus2025:menu" aria-orientation="horizontal" style="--path: themes/custom/plus2025/components/navigation/menu;">
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/favourites">
+          <span>My list</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/about-plus">
+          <span>About Plus</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/plus-sponsors">
+          <span>Sponsors</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/subscribe-plus">
+          <span>Subscribe</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/contact-us">
+          <span>Contact Us</span>
+  
+    </a>
+  
+  </li>
+
+          
+
+<li>
+    
+  
+      <a href="https://plus.maths.org/user/login">
+          <span>Log in</span>
+  
+    </a>
+  
+  </li>
+
+      </menu>
+
+
+
+  </nav>
+
+  </div>
+    </div>
+
+
+  </div>
+
+  <div id="highlighted">
+    
+  </div>
+
+      <div id="body" data-has-sidebars=" second">
+    <main role="main">
+      <a id="main-content" tabindex="-1"></a>
+      <div class="layout-content">
+            <div data-component-id="plus2025:region" class="region region-content">
+        
+<div data-test="" id="block-plus2025-messages" data-component-id="plus2025:block" class="block block-system block-system-messages-block">
+  
+    
+
+      
+          <div data-drupal-messages-fallback="" class="hidden"></div>
+      </div>
+
+<div data-test="" id="block-plus2025-bootplus-system-main" class="block block-system block-system-main-block">
+  
+    
+
+      
+            
+
+
+
+
+
+<article data-history-node-id="6316" data-component-id="plus2025:node_full" class="node article full" data-is-published="yes" data-type="article" data-view-mode="full">
+
+  <header>
+              <figure>
+                              <div class="field field--name-field-fp-ico field--type-image field--label-hidden field__item"><span data-component-id="plus2025:image_formatter">
+      <span data-component-id="plus2025:image_style">
+  <img loading="lazy" src="./Information is noisy _ plus.maths.org_files/mistake_frontpage.jpg" width="200" height="200" alt="" data-component-id="plus2025:image" class="image-style-small-square">
+
+</span>
+
+  </span>
+</div>
+            
+      </figure>
+      
+    <div class="tell">
+              
+        <h1>
+            <span data-component-id="plus2025:field_inline" class="field field--name-title field--type-string field--label-hidden">Information is noisy</span>
+
+
+        </h1>
+        
+
+        
+      
+                        <footer class="node__meta">
+            
+                        <div class="node__submitted tell">
+              
+                                            <div class="field field--name-field-authors field--type-entity-reference field--label-hidden field__items">
+                  <div class="field__item"><a href="https://plus.maths.org/people/marianne-freiberger" hreflang="en">Marianne Freiberger</a></div>
+              </div>
+      
+              
+                <span data-component-id="plus2025:field_inline" class="field field--name-created field--type-created field--label-hidden"><time datetime="2015-03-24T16:34:31+00:00" title="Tuesday, March 24, 2015 - 16:34" data-component-id="plus2025:time" class="datetime">24  March,  2015</time>
+</span>
+
+
+                            
+              
+            </div>
+          </footer>
+                  </div>
+  </header>
+
+  <div class="node__content">
+                                <div class="field field--name-body field--type-text-with-summary field--label-hidden field__item"><div class="tex2jax_process"><div class="rightimage" style="width: 260px;"><img src="./Information is noisy _ plus.maths.org_files/fqxi_logo.jpg" width="200" height="42" alt="FQXi logo" loading="lazy"></div>
+
+
+<p><em>This article is part of our <a href="https://plus.maths.org/content/information-about-information">Information about information project</a>, run <a href="https://plus.maths.org/content/information-about-information#fqxi">in collaboration with FQXi</a>. Click <a href="https://plus.maths.org/content/can-you-measure-information">here</a> to find out about other ways of measuring information.  </em></p>
+<br class="brclear">
+<hr>
+
+<p>Our channels of communication aren't perfect. Whether you send a message by email or by smoke signal, there's always the chance that some random interference mangles it up on the way. Surprisingly though, you can always reduce the error rate to nearly zero, simply by choosing a clever way of encoding the message.</p>
+
+<h3>Flipping bits</h3>
+<div class="rightimage" style="width: 300px;"><img src="./Information is noisy _ plus.maths.org_files/mistake.jpg" width="300" height="212" alt="Bits" loading="lazy"><p>How do you cope with errors?</p></div>
+
+<p>To get a feel for this, imagine you want to transmit the outcome of
+a coin flip to me via some long-distance communication channel, writing a 0 for heads and  a 1 for tails. You know there's a chance that a 0 will get
+changed  into a 1 on the way, and vice versa. Can you come up with a code that is
+secure against such <em>bit flipping</em>? You might try using two bits per
+outcome, writing 00 for heads and 11 for tails. If a 01 or a 10
+arrives at the other end, then I will know that an error has
+happened. But I won't know which of the two bits was flipped, so I
+can't deduce whether you originally sent a 00 or a 11.</p>
+
+<p>Let's instead try a code using three bits; 000 for heads and 111 for
+tails. If I  see a sequence that isn't one of those two I
+won't only know that there has been an error. Assuming that only one
+bit per three can be flipped, I will also know what triple
+was the original: if the erroneous string has two 0s then the
+original was 000, otherwise it was 111. Such a way of encoding, which
+secures against errors, is called an <em>error correcting code</em>. 
+</p>
+
+<p>The example illustrates an important idea. You can get to
+grips with errors by introducing <em>redundancy</em>: extra symbols
+that reduce the chance that an error corrupts the 
+message. "This idea shows up all over the place," says <a href="http://scottaaronson.com/">Scott Aaronson</a>, a computer scientist at the Massachusetts Institute of Technology.    "The
+English language, or any other language, has lots of redundancy
+built into it. If you miss one little piece of what I said you can
+still understand the sentence. This is a property of human languages:
+we don't maximally compress the information for a good reason."
+</p>
+
+
+<h3>Errors versus redundancy</h3>
+
+<p>Just how error-proof can you make things using such error-correcting codes? In our example above the error rate would be zero if we could we sure that the 
+ channel only
+ever flips one bit per block of three. In reality things aren't
+that predictable: you might know that your channel flips one bit per three
+<em>on average</em>, but this doesn't mean
+that it can't occasionally change a 000 standing for heads into a
+011, leaving the receiver none the wiser as to what the intended
+message was. 
+ You might look for  a
+cleverer code to guard against this, but the point is that whatever code you use, there's still a chance
+of ambiguity, leading to an error in the decoded message at the other end.</p>
+
+<p>It seems that to reduce that chance, all you can do is  add more redundancy. This would also
+ make your transmission much less efficient since you need more bits
+to transmit a single symbol. It also puts you in
+danger of entering an arms race. If I ask you to produce a code that
+reduces the error rate to some small number, you need to add a certain
+amount of redundancy, if I reduce my required error rate further, you
+need to add more redundancy, an even  smaller error rate requires even
+more redundancy, and so on, beyond all limits. A near-zero error rate would then require a near-infinite amount of redundancy, which means near-zero efficiency.
+</p>
+<div class="leftimage" style="width: 300px;"><img src="./Information is noisy _ plus.maths.org_files/radio.png" width="300" height="225" alt="Radio" loading="lazy"><p>Radio transmissions can be noisy.</p></div>
+
+
+
+<p>In the earlier days of long-distance communication this was indeed what people thought: when you're dealing with a noisy channel, you have no choice but trade your error rate for redundancy. In 1948, however, the mathematician <a href="http://www-history.mcs.st-and.ac.uk/Biographies/Shannon.html">Claude  Shannon</a> proved them wrong. In his ground-breaking  <em><a href="http://cm.bell-labs.com/cm/ms/what/shannonday/shannon1948.pdf">Mathematical theory of communication</a></em> Shannon showed that given any error rate, no matter how small,  it's possible to find a code that produces this tiny error rate and enables you to transmit messages at a transmission rate that is only limited by the channel's capacity. This result is known as
+Shannon's <em>noisy channel coding theorem</em>. It shows that near-error-free transmission doesn't lead to near-zero efficiency. </p>
+
+<p>If you have read the <a href="https://plus.maths.org/content/information-birth-bit">previous article</a>, you won't be surprised to hear that the noisy channel theorem involves the entropy of the source that produces the information (such as a coin flipping machine). Loosely speaking, the entropy measures the average amount of information carried by a symbol produced by the machine. Adding redundancy to a message reduces the amount of information per symbol and therefore lowers the entropy. What Shannon showed is that once the entropy is below some critical value, a code with an  arbitrarily small rate of decoding error can always be found.</p>
+
+<h3>Finding the best code</h3>
+
+<p>How do you find that magic code?  Unfortunately, Shannon doesn't tell us.  "Shannon didn't give a single concrete example of what code you
+would use," says Aaronson. His proof merely shows that if you pick a code at
+random from a set of suitable candidate codes, then with overwhelming
+probability that code will do. It's quite an amazing result, but not a
+very useful one. "Picking a code at random would not be
+computationally efficient. You might need a prohibitive amount of
+computational power to decode it." But Shannon wasn't concerned with
+that; his aim was to see what could be done with noisy channels in principle.</p>
+
+<p>Which brings us right up to date. "A lot  of the research in information theory in the 60-plus years
+since Shannon's paper, you can think of as an attempt to make Shannon's
+result explicit: trying to come up with an explicit error correcting
+code that is able to transmit information at close to the [maximal] rate that
+Shannon's theoretical construction  gives you," says Aaronson. "There
+has been a lot of progress, especially in the last twenty-five
+years. There are now codes that can be encoded and decoded very
+efficiently and come close to [Shannon's limit]. These codes have major applications. They are used in CDs, in
+sending messages to space probes, etc. They are used all over the place
+in electrical engineering."</p>
+
+<p>Shannon's ideas have been hugely influential, but his way of measuring information has a curious feature. The entropy measures the average information of a symbol produced by a particular  information source. It tells us nothing about the information contained in one string of symbols produced by the source compared to another.  Surely there must be a way of measuring that too? Find out more in the <a href="https://plus.maths.org/content/information-complexity">next article</a>.</p>
+
+<hr>
+
+<h3>About this article</h3>
+
+<p><a href="https://plus.maths.org/content/people/index.html#marianne">Marianne Freiberger</a> is co-editor of <em>Plus</em>.   She would like to thank <a href="http://scottaaronson.com/">Scott Aaronson</a>, a computer scientist at the Massachusetts Institute of Technology, for a very useful conversation about information. And she recommends the book <a href="http://jim-stone.staff.shef.ac.uk/BookInfoTheory/InfoTheoryBookMain.html">Information Theory: A Tutorial Introduction</a> by James V. Stone as a mathematical introduction to the subject.</p></div></div>
+            
+  <div class="node__links" data-component-id="plus2025:links__node">
+          <div data-component-id="plus2025:links">
+        <ul class="links inline"><li><a href="https://plus.maths.org/user/login?destination=/comment/reply/node/6316/comment_node_article%23comment-form">Log in</a> or <a href="https://plus.maths.org/user/register?destination=/comment/reply/node/6316/comment_node_article%23comment-form">register</a> to post comments</li></ul>  </div>
+  </div>
+<section data-component-id="plus2025:field__comment" class="field field--name-comment-node-article field--type-comment field--label-above comment-wrapper">
+  
+  
+
+  </section>
+
+    </div>
+</article>
+
+      </div>
+
+  </div>
+
+      </div>    </main>
+
+    
+          <aside class="second" role="complementary">
+                            <div data-component-id="plus2025:region" class="region region-sidebar-second">
+        
+<div data-test="" class="views-element-container block block-views block-views-blockrelated-tags-block-1" id="block-plus2025-views-block-related-tags">
+  
+      <h2>Read more about...</h2>
+    
+
+      
+          <div data-component-id="plus2025:container">
+    <div data-component-id="plus2025:views_view" class="view view-related-tags view-id-related_tags view-display-id-block_1 js-view-dom-id-353a29034727f04f8f9e3ea655189d1bf9f8be2a1edb71704ccbfaa791193a0e">
+    
+        
+            
+          <div class="view-content">
+        <div data-component-id="plus2025:views_view_unformatted">
+            <div class="card padding views-row"><div class="views-field views-field-name"><span class="field-content"><a href="https://plus.maths.org/tags/error-correcting-code" hreflang="en">error-correcting code</a></span></div></div>
+          <div class="card padding views-row"><div class="views-field views-field-name"><span class="field-content"><a href="https://plus.maths.org/tags/information-theory" hreflang="en">Information theory</a></span></div></div>
+          <div class="card padding views-row"><div class="views-field views-field-name"><span class="field-content"><a href="https://plus.maths.org/tags/computer-science" hreflang="en">computer science</a></span></div></div>
+          <div class="card padding views-row"><div class="views-field views-field-name"><span class="field-content"><a href="https://plus.maths.org/tags/information-about-information" hreflang="en">information about information</a></span></div></div>
+  </div>
+
+      </div>
+    
+                      </div>
+
+</div>
+
+      </div>
+
+<div data-test="" id="block-pocast-cta-in-sidebar" class="block block-block-content block-block-contentee5a1008-e5e6-421d-a66c-c68255987cf2">
+  
+      <h2>Our Podcast: Maths on the Move</h2>
+    
+
+      
+                                  <div class="field field--name-body field--type-text-with-summary field--label-hidden field__item"><div class="card padding">
+  <p style="margin-top: 0;">
+   Our <a href="https://plus.maths.org/podcasts"><em>Maths on the Move</em> podcast</a> brings you the latest news from the world of maths, plus interviews and discussions with leading mathematicians and scientists about the maths that is changing our lives. </p>
+
+  <div class="wp-block-buttons" style="font-size: 0.9em;">
+    <div class="wp-block-button">
+      <a class="button wp-element-button" href="https://podcasts.apple.com/us/podcast/maths-on-the-move/id263456080" target="_blank" rel="noreferrer noopener" title="Apple Podcasts">
+        Apple Podcasts</a></div>
+
+    <div class="wp-block-button">
+      <a class="button wp-element-button" href="https://open.spotify.com/show/7uCdcgk4YRtw1MyVAU2j9j" target="_blank" rel="noreferrer noopener">
+        Spotify</a></div>
+
+    <div class="wp-block-button">
+      <a class="button wp-element-button" href="https://plusmathsorg.podbean.com/" target="_blank" rel="noreferrer noopener">
+        Podbean</a></div>
+  </div>
+</div></div>
+            
+
+      </div>
+
+<div data-test="" id="block-socials-cta-in-sidebar" class="block block-block-content block-block-content0c2a0c84-c834-4bc8-8d3e-a49b2db64940">
+  
+      <h2>Plus delivered to you</h2>
+    
+
+      
+                                  <div class="field field--name-body field--type-text-with-summary field--label-hidden field__item"><div class="card padding">
+  <img src="./Information is noisy _ plus.maths.org_files/Plus_newsletter-a663aa5457a00baba2d4418195575b55-39bd0b.jpeg" style="float: left;  margin: 0 16px 8px 0; border: solid 1px #cecece;">
+  <p style="margin-top: 0;">Keep up to date with <em>Plus</em> by <a href="https://plus.maths.org/content/subscribe-plus" target="blank">subscribing to our newsletter</a> or following <em>Plus</em> on <a href="http://twitter.com/plusmathsorg" target="blank">X</a> or <a href="https://bsky.app/profile/plusmaths.bsky.social" target="blank">Bluesky</a>. </p>
+  <div style="clear: both;"></div>
+</div></div>
+            
+
+      </div>
+
+  </div>
+
+      </aside>
+      </div>
+
+      <footer role="contentinfo">
+          <div data-component-id="plus2025:region" class="region region-footer">
+        
+<div data-test="" id="block-plus2025-universityofcambridgelogo" class="block block-block-content block-block-content22db734c-7e2e-47dc-b27f-2b91015447f0">
+  
+    
+
+      
+                                <div class="field field--name-field-image field--type-entity-reference field--label-hidden field__item"><span data-component-id="plus2025:image_formatter">
+      <span data-component-id="plus2025:image_style">
+  <img loading="lazy" src="./Information is noisy _ plus.maths.org_files/University_of_Cambridge_white_logo.png" width="500" height="104" alt="University of Cambridge logo" data-component-id="plus2025:image" class="image-style-medium">
+
+</span>
+
+  </span>
+</div>
+            
+      </div>
+
+<div data-test="" id="block-footer-text" class="block block-block-content block-block-content560c4e70-b018-4dcc-a020-a505114afbb4">
+  
+    
+
+      
+                                  <div class="field field--name-body field--type-text-with-summary field--label-hidden field__item"><div class="tex2jax_process"><p><em>Plus </em>is part of the family of activities in the Millennium Mathematics Project.<br>Copyright © 1997 - 2026. University of Cambridge. All rights reserved.</p><p><a href="https://plus.maths.org/terms-use-and-notices">Terms</a></p></div></div>
+            
+
+      </div>
+
+  </div>
+
+    </footer>
+  
+      <div id="post-footer">
+          <div data-component-id="plus2025:region" class="region region-post-footer">
+        
+<div data-test="" id="block-plus2025-cookiesui" class="block block-cookies block-cookies-ui-block">
+  
+    
+
+      
+          <div id="cookiesjsr"><div class="cookiesjsr--app"><div class="cookiesjsr-banner active"><div class="cookiesjsr-banner--info"><span class="cookiesjsr-banner--text">We use cookies to enhance your experience.</span><ul class="cookiesjsr-links cookiesjsr-banner--links links--row"><li><a href="https://maths.org/cookies" target="_blank" rel="noopener noreferrer">About our cookies</a></li><li><a href="https://plus.maths.org/cookies/documentation" target="_blank">Cookie details</a></li></ul></div><div class="cookiesjsr-banner--action"><button class="cookiesjsr-btn cookiesjsr-settings">Cookie settings</button><button class="cookiesjsr-btn important denyAll">Deny all</button><button class="cookiesjsr-btn important allowAll">Accept all</button></div></div></div></div>
+
+      </div>
+
+  </div>
+
+    </div>
+  
+</div>
+  </div>
+
+    
+    <script src="./Information is noisy _ plus.maths.org_files/immediate.js"></script>
+<script src="./Information is noisy _ plus.maths.org_files/js_PdQZDrlboRvAPE9bPKYfiV2TaLQrYy1aLG05NOm21vk.js"></script>
+<script src="./Information is noisy _ plus.maths.org_files/cookiesjsr-preloader.min.js" defer=""></script>
+<script src="./Information is noisy _ plus.maths.org_files/js_7T9zqbc6l7_feHCJ8T0o_SW_oDGP4p8fgi1zmmj0A_M.js"></script>
+<script src="./Information is noisy _ plus.maths.org_files/google_analytics.js" type="text/plain" id="cookies_ga_ga" data-cookieconsent="analytics"></script>
+<script src="./Information is noisy _ plus.maths.org_files/js_a4B1yL5QeQFTa2GwDPyoJK3Z-H7NAKFwc5LOmqbQ-R4.js"></script>
+<script src="./Information is noisy _ plus.maths.org_files/tex-mml-chtml.js"></script>
+<script src="./Information is noisy _ plus.maths.org_files/js_l11LT0pqYLjXoIq3bz_bZAEpPUP2SoPbxukOsrv-7PA.js"></script>
+<script src="./Information is noisy _ plus.maths.org_files/fancybox.umd.js"></script>
+<script src="./Information is noisy _ plus.maths.org_files/js_2H-k3HlCJS3k0FtgeBr_IaaDqMrGJyx_2hvVj1iJ164.js"></script>
+
+  
+
+<div id="drupal-live-announce" class="visually-hidden" aria-live="polite" aria-busy="false"></div><div role="status" aria-live="assertive" aria-relevant="additions" class="ui-helper-hidden-accessible"></div><div id="drupal-modal" class="ui-front" style="display: none;"></div></body></html>

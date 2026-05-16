@@ -1,0 +1,2 @@
+/* @license GPL-2.0-or-later https://www.drupal.org/licensing/faq */
+(function(Drupal){Drupal.behaviors.pwc_core_matomo={attach:function(context,settings){let searchTimeout=null;const searchInput=document.querySelector('.region-search-pane input[type="search"]');searchInput.addEventListener('input',(event)=>{if(typeof _paq==='undefined')return;clearTimeout(searchTimeout);searchTimeout=setTimeout(()=>{_paq.push(['trackEvent','Search','Search input text',searchInput.value]);},500);});}};})(Drupal);;
