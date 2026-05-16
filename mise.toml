@@ -1,0 +1,4 @@
+[tools]
+copilot = "latest"
+just = "latest"
+python = "latest"
