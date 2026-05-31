@@ -849,19 +849,19 @@ Running models locally eliminates API costs entirely. Quality of locally-runnabl
 | Feature | Claude Code | Aider | OpenCode | Cline | Continue.dev | Goose | Gemini CLI | OpenHands | Cursor | Windsurf |
 |---------|-------------|-------|----------|-------|--------------|-------|------------|-----------|--------|----------|
 | **Interface** | CLI | CLI | TUI | VS Code / CLI | VS Code / JetBrains | CLI + Desktop | CLI | Web / CLI | IDE | IDE |
-| **Agentic file editing** | ✅ Full | ✅ Full | ✅ Full | ✅ Full | ✅ Partial | ✅ Full | ✅ Full | ✅ Full | ✅ Full | ✅ Full |
-| **Multi-file context** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (1M tokens) | ✅ | ✅ | ✅ |
-| **Shell execution** | ✅ | ✅ | ✅ | ✅ | ✅ Agent mode | ✅ | ✅ | ✅ (sandboxed) | ✅ Yolo mode | ✅ |
-| **Web search** | ✅ | ❌ | Partial | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Browser use** | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ |
-| **MCP support** | ✅ Native | ❌ | ✅ | ✅ | Partial | ✅ | ✅ | ✅ Config | ❌ | ❌ |
-| **Custom hooks/automation** | ✅ Skills+Hooks | ❌ | Limited | `.clinerules` | config.yaml | Extensions | Settings | Limited | `.cursorrules` | Limited |
-| **OpenRouter** | ❌ | ✅ | ✅ | ✅ | ✅ | Likely | ❌ | ✅ | ❌ | ❌ |
-| **Local LLMs** | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ | ❌ | ❌ |
-| **Open source** | ❌ | ✅ MIT | ✅ MIT | ✅ MIT | ✅ Apache-2 | ✅ Apache-2 | ✅ Apache-2 | ✅ MIT | ❌ | ❌ |
-| **Git integration** | ✅ | ✅ Auto-commit | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Agentic file editing** | Yes (full) | Yes (full) | Yes (full) | Yes (full) | Yes (partial) | Yes (full) | Yes (full) | Yes (full) | Yes (full) | Yes (full) |
+| **Multi-file context** | Yes | Yes | Yes | Yes | Yes | Yes | Yes (1M tokens) | Yes | Yes | Yes |
+| **Shell execution** | Yes | Yes | Yes | Yes | Yes (agent mode) | Yes | Yes | Yes (sandboxed) | Yes (yolo mode) | Yes |
+| **Web search** | Yes | No | Partial | Yes | No | Yes | Yes | Yes | Yes | Yes |
+| **Browser use** | Yes | No | No | Yes | No | No | No | Yes | No | No |
+| **MCP support** | Yes (native) | No | Yes | Yes | Partial | Yes | Yes | Yes (config) | No | No |
+| **Custom hooks/automation** | Yes (skills+hooks) | No | Limited | `.clinerules` | config.yaml | Extensions | Settings | Limited | `.cursorrules` | Limited |
+| **OpenRouter** | No | Yes | Yes | Yes | Yes | Likely | No | Yes | No | No |
+| **Local LLMs** | No | Yes | Yes | Yes | Yes | Yes | No | Yes | No | No |
+| **Open source** | No | Yes (MIT) | Yes (MIT) | Yes (MIT) | Yes (Apache-2) | Yes (Apache-2) | Yes (Apache-2) | Yes (MIT) | No | No |
+| **Git integration** | Yes | Yes (auto-commit) | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes |
 | **Cost model** | Max plan or API | API only | API only | API only | API only | API only | Free tier + API | API only | $20/mo + API | $15/mo |
-| **Self-hosted option** | ❌ | N/A | N/A | N/A | N/A | N/A | N/A | ✅ | ❌ | ❌ |
+| **Self-hosted option** | No | N/A | N/A | N/A | N/A | N/A | N/A | Yes | No | No |
 
 ---
 
@@ -921,7 +921,7 @@ These are ballpark figures using 2025 pricing, which changes frequently:
 **Anthropic Claude 3.5 Sonnet:**
 - Input: ~$3/million tokens
 - Output: ~$15/million tokens
-- Heavy usage estimate: (150M × $3 + 15M × $15) / 1M ≈ **$450 + $225 = ~$675/month**
+- Heavy usage estimate: (150M × $3 + 15M × $15) / 1M ~= **$450 + $225 = ~$675/month**
 - *This is why the Max plan at $100/month is excellent value for heavy users.*
 
 **Anthropic Claude 3 Haiku:**

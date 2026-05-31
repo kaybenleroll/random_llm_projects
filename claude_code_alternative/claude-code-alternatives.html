@@ -1,0 +1,2586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claude Code Alternatives: A Comprehensive Survey of AI Coding
+Agents in 2026</title>
+  <style>
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+--nav-h: 56px;
+--sidebar-w: 320px;
+--sidebar-min: 240px;
+--sidebar-max: 520px;
+--accent: #2563eb;
+--accent-dark: #1d4ed8;
+--bg: #f9fafb;
+--surface: #ffffff;
+--border: #e5e7eb;
+--text: #111827;
+--muted: #6b7280;
+--code-bg: #1e1e2e;
+--radius: 6px;
+--font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+--font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", ui-monospace, monospace;
+}
+html { font-size: 16px; scroll-behavior: smooth; }
+body {
+font-family: var(--font-sans);
+color: var(--text);
+background: var(--bg);
+line-height: 1.7;
+}
+
+.navbar {
+position: fixed;
+top: 0; left: 0; right: 0;
+height: var(--nav-h);
+background: var(--accent);
+color: #fff;
+display: flex;
+align-items: center;
+padding: 0 1.5rem;
+z-index: 100;
+box-shadow: 0 2px 8px rgba(0,0,0,.18);
+gap: 1rem;
+}
+.navbar-brand {
+font-size: 1.05rem;
+font-weight: 700;
+letter-spacing: -.01em;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+flex: 1;
+}
+.navbar-meta {
+font-size: .8rem;
+opacity: .75;
+white-space: nowrap;
+}
+
+.layout {
+display: flex;
+margin-top: var(--nav-h);
+min-height: calc(100vh - var(--nav-h));
+}
+
+.sidebar {
+width: clamp(var(--sidebar-min), var(--sidebar-w), var(--sidebar-max));
+min-width: var(--sidebar-min);
+max-width: var(--sidebar-max);
+flex-shrink: 0;
+position: sticky;
+top: var(--nav-h);
+height: calc(100vh - var(--nav-h));
+overflow-y: auto;
+overflow-x: hidden;
+background: var(--surface);
+border-right: 1px solid var(--border);
+padding: 1.25rem 0;
+}
+.sidebar-resizer {
+width: 10px;
+flex: 0 0 10px;
+cursor: col-resize;
+background: linear-gradient(to right, transparent 0, transparent 40%, var(--border) 40%, var(--border) 60%, transparent 60%, transparent 100%);
+user-select: none;
+touch-action: none;
+}
+.layout.is-resizing,
+.layout.is-resizing * {
+cursor: col-resize;
+user-select: none;
+}
+.sidebar-heading {
+font-size: .7rem;
+font-weight: 700;
+text-transform: uppercase;
+letter-spacing: .08em;
+color: var(--muted);
+padding: 0 1.25rem .5rem;
+}
+.sidebar-tools {
+padding: 0 1.25rem .75rem;
+}
+.math-mode-btn {
+width: 100%;
+border: 1px solid var(--border);
+background: #f8fafc;
+color: #334155;
+border-radius: 6px;
+padding: .4rem .55rem;
+font-size: .75rem;
+line-height: 1.2;
+cursor: pointer;
+transition: background .15s, color .15s, border-color .15s;
+}
+.math-mode-btn:hover,
+.math-mode-btn:focus {
+background: #eff6ff;
+color: var(--accent);
+border-color: #bfdbfe;
+}
+
+#TOC {
+font-size: .83rem;
+}
+#TOC ul {
+list-style: none;
+padding: 0;
+}
+#TOC > ul { padding: 0; }
+#TOC li { line-height: 1.4; }
+#TOC a {
+display: block;
+padding: .3rem 1.25rem;
+color: var(--muted);
+text-decoration: none;
+border-left: 2px solid transparent;
+transition: color .15s, border-color .15s, background .15s;
+}
+#TOC a:hover {
+color: var(--accent);
+background: #eff6ff;
+border-left-color: var(--accent);
+}
+
+#TOC ul ul a { padding-left: 2rem; font-size: .78rem; }
+#TOC ul ul ul a { padding-left: 2.75rem; font-size: .75rem; }
+#TOC li.has-toggle > .toc-toggle {
+margin-right: .2rem;
+vertical-align: middle;
+}
+#TOC li.has-toggle > a.toc-link-inline {
+display: inline-block;
+padding-left: 0;
+border-left: none;
+vertical-align: middle;
+}
+#TOC li.has-toggle.toc-depth-2 > .toc-toggle { margin-left: 2rem; }
+#TOC li.has-toggle.toc-depth-3 > .toc-toggle { margin-left: 2.75rem; }
+#TOC li.has-toggle > ul {
+width: 100%;
+}
+
+.toc-toggle {
+background: none;
+border: none;
+padding: 0 .3em 0 0;
+margin: 0;
+cursor: pointer;
+color: #9399b2;
+font-size: 1em;
+line-height: 1;
+vertical-align: middle;
+outline: none;
+transition: color .15s;
+}
+.toc-toggle:focus,
+.toc-toggle:hover {
+color: var(--accent);
+}
+.toc-arrow {
+display: inline-block;
+transition: transform .15s;
+}
+.toc-toggle.expanded .toc-arrow {
+transform: rotate(90deg);
+}
+.toc-toggle.collapsed .toc-arrow {
+transform: rotate(0deg);
+}
+
+.content {
+flex: 1;
+min-width: 0;
+padding: 2.5rem clamp(1.25rem, 5vw, 3.5rem);
+max-width: 860px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+font-weight: 700;
+line-height: 1.25;
+margin-top: 2em;
+margin-bottom: .6em;
+color: var(--text);
+scroll-margin-top: calc(var(--nav-h) + 1rem);
+}
+h1 { font-size: 2rem; margin-top: 0; }
+h2 { font-size: 1.45rem; border-bottom: 1px solid var(--border); padding-bottom: .35em; }
+h3 { font-size: 1.15rem; }
+h4 { font-size: 1rem; }
+p { margin-bottom: 1rem; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+strong { font-weight: 650; }
+em { font-style: italic; }
+hr {
+border: none;
+border-top: 1px solid var(--border);
+margin: 2.5rem 0;
+}
+
+table {
+width: 100%;
+border-collapse: collapse;
+font-size: .88rem;
+margin: 1.5rem 0;
+background: var(--surface);
+border-radius: var(--radius);
+overflow: hidden;
+box-shadow: 0 1px 3px rgba(0,0,0,.08);
+}
+th {
+background: #f3f4f6;
+font-weight: 650;
+text-align: left;
+padding: .6rem .9rem;
+border-bottom: 2px solid var(--border);
+white-space: nowrap;
+}
+td {
+padding: .55rem .9rem;
+border-bottom: 1px solid var(--border);
+vertical-align: top;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #f9fafb; }
+
+code {
+font-family: var(--font-mono);
+font-size: .85em;
+background: #f3f4f6;
+color: #be185d;
+padding: .15em .4em;
+border-radius: 3px;
+}
+pre {
+background: var(--code-bg);
+color: #cdd6f4;
+border-radius: var(--radius);
+padding: 1.1rem 1.25rem;
+overflow-x: auto;
+margin: 1.25rem 0;
+font-size: .83rem;
+line-height: 1.6;
+box-shadow: inset 0 1px 4px rgba(0,0,0,.3);
+}
+pre code {
+background: transparent;
+color: inherit;
+padding: 0;
+font-size: inherit;
+}
+
+blockquote {
+border-left: 4px solid var(--accent);
+margin: 1.5rem 0;
+padding: .75rem 1.25rem;
+background: #eff6ff;
+border-radius: 0 var(--radius) var(--radius) 0;
+color: #1e3a5f;
+font-style: italic;
+}
+
+ul, ol {
+padding-left: 1.75rem;
+margin-bottom: 1rem;
+}
+li { margin-bottom: .3rem; }
+
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+background-color: #232629;
+color: #7a7c7d;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #7a7c7d; padding-left: 4px; }
+div.sourceCode
+{ color: #cfcfc2; background-color: #232629; }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span { color: #cfcfc2; } 
+code span.al { color: #95da4c; background-color: #4d1f24; font-weight: bold; } 
+code span.an { color: #3f8058; } 
+code span.at { color: #2980b9; } 
+code span.bn { color: #f67400; } 
+code span.bu { color: #7f8c8d; } 
+code span.cf { color: #fdbc4b; font-weight: bold; } 
+code span.ch { color: #3daee9; } 
+code span.cn { color: #27aeae; font-weight: bold; } 
+code span.co { color: #7a7c7d; } 
+code span.cv { color: #7f8c8d; } 
+code span.do { color: #a43340; } 
+code span.dt { color: #2980b9; } 
+code span.dv { color: #f67400; } 
+code span.er { color: #da4453; text-decoration: underline; } 
+code span.ex { color: #0099ff; font-weight: bold; } 
+code span.fl { color: #f67400; } 
+code span.fu { color: #8e44ad; } 
+code span.im { color: #27ae60; } 
+code span.in { color: #c45b00; } 
+code span.kw { color: #cfcfc2; font-weight: bold; } 
+code span.op { color: #cfcfc2; } 
+code span.ot { color: #27ae60; } 
+code span.pp { color: #27ae60; } 
+code span.re { color: #2980b9; background-color: #153042; } 
+code span.sc { color: #3daee9; } 
+code span.ss { color: #da4453; } 
+code span.st { color: #f44f4f; } 
+code span.va { color: #27aeae; } 
+code span.vs { color: #da4453; } 
+code span.wa { color: #da4453; } 
+
+.code-tabs {
+margin: 1.25rem 0;
+border-radius: var(--radius);
+overflow: hidden;
+border: 1px solid rgba(255,255,255,.08);
+}
+.code-tab-bar {
+display: flex;
+background: #16161f;
+border-bottom: 1px solid rgba(255,255,255,.08);
+padding: 0 .5rem;
+gap: .15rem;
+}
+.code-tab-btn {
+padding: .45rem 1rem;
+background: transparent;
+border: none;
+border-bottom: 2px solid transparent;
+color: #9399b2;
+font-family: var(--font-mono);
+font-size: .78rem;
+cursor: pointer;
+transition: color .15s, border-color .15s;
+white-space: nowrap;
+}
+.code-tab-btn:hover { color: #cdd6f4; }
+.code-tab-btn.active { color: #89b4fa; border-bottom-color: #89b4fa; }
+.code-tab-panel { display: none; }
+.code-tab-panel.active { display: block; }
+.code-tab-panel > div.sourceCode > pre {
+margin: 0;
+border-radius: 0;
+box-shadow: none;
+}
+
+.code-details {
+margin: 1.25rem 0;
+}
+.code-details > div.sourceCode {
+margin: 0;
+}
+.code-details > div.sourceCode > pre {
+margin: 0;
+border-radius: 0 0 var(--radius) var(--radius);
+box-shadow: inset 0 1px 4px rgba(0,0,0,.3);
+}
+.code-summary {
+display: flex;
+align-items: center;
+gap: .5rem;
+padding: .4rem .85rem;
+background: #16161f;
+color: #9399b2;
+font-family: var(--font-mono);
+font-size: .78rem;
+cursor: pointer;
+border-radius: var(--radius) var(--radius) 0 0;
+list-style: none;
+user-select: none;
+}
+.code-summary::-webkit-details-marker { display: none; }
+.code-summary::before {
+content: '▶';
+font-size: .6rem;
+transition: transform .15s;
+flex-shrink: 0;
+}
+details[open] .code-summary::before { transform: rotate(90deg); }
+details:not([open]) .code-details > div.sourceCode > pre {
+border-radius: 0;
+}
+
+@media (max-width: 768px) {
+.layout {
+display: block;
+}
+.sidebar {
+display: block;
+position: static;
+width: 100%;
+min-width: 0;
+max-width: none;
+height: auto;
+border-right: none;
+border-bottom: 1px solid var(--border);
+padding: .75rem 0;
+}
+.sidebar-heading {
+padding-bottom: .25rem;
+}
+#TOC a {
+padding-top: .4rem;
+padding-bottom: .4rem;
+}
+.sidebar-resizer { display: none; }
+.navbar-meta { display: none; }
+.content {
+max-width: 100%;
+padding-top: 1.25rem;
+}
+}
+
+@media print {
+.navbar, .sidebar, .sidebar-resizer { display: none; }
+.content { padding: 0; max-width: 100%; }
+}
+
+code span.fu { color: #c792ea !important; } 
+</style>
+  
+</head>
+<body>
+
+  <nav class="navbar">
+    <span class="navbar-brand">Claude Code Alternatives: A Comprehensive
+Survey of AI Coding Agents in 2026</span>
+
+    <span class="navbar-meta">May 2026</span>
+
+  </nav>
+
+  <div class="layout">
+
+    <aside class="sidebar">
+      <p class="sidebar-heading">Contents</p>
+      <div class="sidebar-tools">
+        <button id="math-mode-toggle" class="math-mode-btn" type="button">Switch math renderer</button>
+      </div>
+      <div id="TOC" aria-label="Table of contents"><ul>
+<li><a href="#claude-code-alternatives-a-comprehensive-survey-of-ai-coding-agents-in-2026" id="toc-claude-code-alternatives-a-comprehensive-survey-of-ai-coding-agents-in-2026">Claude
+Code Alternatives: A Comprehensive Survey of AI Coding Agents in
+2026</a>
+<ul>
+<li><a href="#introduction" id="toc-introduction">Introduction</a></li>
+<li><a href="#the-ai-coding-agent-taxonomy" id="toc-the-ai-coding-agent-taxonomy">The AI Coding Agent
+Taxonomy</a></li>
+<li><a href="#part-i-cli-native-tools" id="toc-part-i-cli-native-tools">Part I: CLI-Native Tools</a>
+<ul>
+<li><a href="#aider" id="toc-aider">Aider</a></li>
+<li><a href="#opencode" id="toc-opencode">OpenCode</a></li>
+<li><a href="#goose-by-block" id="toc-goose-by-block">Goose (by
+Block)</a></li>
+<li><a href="#gemini-cli-by-google" id="toc-gemini-cli-by-google">Gemini
+CLI (by Google)</a></li>
+<li><a href="#plandex" id="toc-plandex">Plandex</a></li>
+<li><a href="#swe-agent" id="toc-swe-agent">SWE-agent</a></li>
+<li><a href="#mentat" id="toc-mentat">Mentat</a></li>
+<li><a href="#qwen-code-and-kimi-cli" id="toc-qwen-code-and-kimi-cli">Qwen Code and Kimi CLI</a></li>
+</ul></li>
+<li><a href="#part-ii-ide-extensions-and-hybrid-tools" id="toc-part-ii-ide-extensions-and-hybrid-tools">Part II: IDE Extensions
+and Hybrid Tools</a>
+<ul>
+<li><a href="#cline-formerly-claude-engineer" id="toc-cline-formerly-claude-engineer">Cline (formerly Claude
+Engineer)</a></li>
+<li><a href="#continue.dev" id="toc-continue.dev">Continue.dev</a></li>
+</ul></li>
+<li><a href="#part-iii-dedicated-ai-ides" id="toc-part-iii-dedicated-ai-ides">Part III: Dedicated AI IDEs</a>
+<ul>
+<li><a href="#cursor" id="toc-cursor">Cursor</a></li>
+<li><a href="#windsurf-by-codeium" id="toc-windsurf-by-codeium">Windsurf
+(by Codeium)</a></li>
+<li><a href="#zed-ai" id="toc-zed-ai">Zed AI</a></li>
+</ul></li>
+<li><a href="#part-iv-cloud-and-web-platform-agents" id="toc-part-iv-cloud-and-web-platform-agents">Part IV: Cloud and Web
+Platform Agents</a>
+<ul>
+<li><a href="#openhands-formerly-opendevin" id="toc-openhands-formerly-opendevin">OpenHands (formerly
+OpenDevin)</a></li>
+<li><a href="#devin-by-cognition-ai" id="toc-devin-by-cognition-ai">Devin (by Cognition AI)</a></li>
+</ul></li>
+<li><a href="#part-v-commercial-ai-coding-assistants" id="toc-part-v-commercial-ai-coding-assistants">Part V: Commercial AI
+Coding Assistants</a>
+<ul>
+<li><a href="#github-copilot-with-agent-mode" id="toc-github-copilot-with-agent-mode">GitHub Copilot with Agent
+Mode</a></li>
+<li><a href="#amazon-q-developer-formerly-codewhisperer" id="toc-amazon-q-developer-formerly-codewhisperer">Amazon Q Developer
+(formerly CodeWhisperer)</a></li>
+<li><a href="#jetbrains-ai-assistant" id="toc-jetbrains-ai-assistant">JetBrains AI Assistant</a></li>
+<li><a href="#tabnine" id="toc-tabnine">Tabnine</a></li>
+<li><a href="#supermaven" id="toc-supermaven">Supermaven</a></li>
+</ul></li>
+<li><a href="#part-vi-cross-cutting-analysis" id="toc-part-vi-cross-cutting-analysis">Part VI: Cross-Cutting
+Analysis</a>
+<ul>
+<li><a href="#provider-flexibility-analysis" id="toc-provider-flexibility-analysis">Provider Flexibility
+Analysis</a></li>
+<li><a href="#feature-comparison-matrix" id="toc-feature-comparison-matrix">Feature Comparison Matrix</a></li>
+<li><a href="#extensibility-deep-dive" id="toc-extensibility-deep-dive">Extensibility Deep Dive</a></li>
+<li><a href="#cost-analysis" id="toc-cost-analysis">Cost
+Analysis</a></li>
+</ul></li>
+<li><a href="#recommendations" id="toc-recommendations">Recommendations</a>
+<ul>
+<li><a href="#if-you-want-the-closest-cli-experience-to-claude-code" id="toc-if-you-want-the-closest-cli-experience-to-claude-code">If you
+want the closest CLI experience to Claude Code</a></li>
+<li><a href="#if-you-want-the-best-ide-integrated-alternative" id="toc-if-you-want-the-best-ide-integrated-alternative">If you want the
+best IDE-integrated alternative</a></li>
+<li><a href="#if-cost-is-the-primary-constraint" id="toc-if-cost-is-the-primary-constraint">If cost is the primary
+constraint</a></li>
+<li><a href="#if-mcp-server-investments-are-critical" id="toc-if-mcp-server-investments-are-critical">If MCP server
+investments are critical</a></li>
+<li><a href="#if-you-need-extensibility-similar-to-claude-codes-skillshooks" id="toc-if-you-need-extensibility-similar-to-claude-codes-skillshooks">If
+you need extensibility similar to Claude Code’s skills+hooks</a></li>
+<li><a href="#migration-strategy" id="toc-migration-strategy">Migration
+strategy</a></li>
+</ul></li>
+<li><a href="#appendix-verified-research-findings" id="toc-appendix-verified-research-findings">Appendix: Verified Research
+Findings</a></li>
+<li><a href="#references" id="toc-references">References</a></li>
+</ul></li>
+</ul></div>
+
+    </aside>
+
+    <div class="sidebar-resizer" aria-hidden="true" title="Drag to resize sidebar"></div>
+
+    <main class="content">
+<h1 id="claude-code-alternatives-a-comprehensive-survey-of-ai-coding-agents-in-2026">Claude
+Code Alternatives: A Comprehensive Survey of AI Coding Agents in
+2026</h1>
+<h2 id="introduction">Introduction</h2>
+<p>Claude Code has established itself as one of the most capable agentic
+coding tools available: it runs entirely in the terminal, takes
+high-level natural-language instructions, autonomously edits multiple
+files, executes shell commands, runs tests, and iterates until the task
+is done. Its superpowers system — skills, hooks, and MCP server support
+— allows deep customisation of its workflow. For users on the Max plan
+(~$100/month for unlimited usage), the economics are excellent for heavy
+usage. But the plan landscape for AI tools changes rapidly, and a
+prudent engineer should understand the full landscape of alternatives
+before needing them.</p>
+<p>This document surveys the entire landscape of AI coding agents
+available as of mid-2026: open-source CLI tools, IDE extensions,
+dedicated AI IDEs, cloud platform agents, and commercial assistants. For
+each, it covers architecture, provider flexibility, MCP/extensibility
+support, and realistic cost.</p>
+<p><strong>A note on methodology:</strong> This report was produced
+using an adversarial deep-research process (108 research agents, 26
+sources fetched, 25 factual claims verified via 3-agent voting). Claims
+that failed verification — particularly specific GitHub star counts and
+token-volume figures from aggregator blog posts — are excluded or
+clearly caveated. Where specific figures are cited without a “verified”
+note, they come from training data (accurate as of approximately August
+2025) and may have changed.</p>
+<p><strong>How to read this document:</strong> If you want the fastest
+path to a conclusion, jump to the <a href="#feature-comparison-matrix">Feature Comparison Matrix</a>, the <a href="#provider-flexibility-analysis">Provider Flexibility Analysis</a>,
+and the <a href="#recommendations">Recommendations</a>. The deep-dive
+sections are there for when you need to evaluate a specific tool
+seriously.</p>
+<hr />
+<h2 id="the-ai-coding-agent-taxonomy">The AI Coding Agent Taxonomy</h2>
+<p>Before comparing tools, it helps to understand the four distinct
+categories that have emerged. This taxonomy comes from Artificial
+Analysis’s coding agent classification (verified):</p>
+<p><strong>CLI Tools</strong> run entirely in the terminal. They take
+instructions, edit files, run commands, and loop autonomously. This is
+the category Claude Code belongs to. Other members: Aider, Gemini CLI,
+Goose, OpenCode, Qwen Code, Kimi CLI, Codex (OpenAI).</p>
+<p><strong>IDE Extensions</strong> augment an existing editor (primarily
+VS Code or JetBrains). They have full access to the editor’s language
+server, refactoring tools, and UI, but are less suitable for scripted or
+headless workflows. Members: Cline, Continue.dev, GitHub Copilot, Amazon
+Q Developer, Tabnine, JetBrains AI Assistant.</p>
+<p><strong>Dedicated AI IDEs</strong> are entire editors rebuilt around
+AI-first workflows. They typically fork VS Code and add deeper AI
+integration than an extension permits. Members: Cursor, Windsurf.</p>
+<p><strong>Cloud Platform Agents</strong> run primarily in the cloud or
+a sandboxed environment (Docker). They expose a web UI or API and are
+designed for longer-running autonomous tasks, often with their own
+execution environments. Members: OpenHands, Devin, Manus, Jules,
+Genie.</p>
+<p>A Claude Code user primarily cares about the CLI tools category, but
+the IDE and cloud categories contain tools capable enough to be worth
+understanding as alternatives — especially if your workflow includes
+time in an editor.</p>
+<hr />
+<h2 id="part-i-cli-native-tools">Part I: CLI-Native Tools</h2>
+<h3 id="aider">Aider</h3>
+<p><strong>What it is:</strong> Aider is the most mature and
+architecturally similar open-source alternative to Claude Code. It is a
+terminal-based pair-programming tool that works directly with your
+existing git repository, takes natural-language instructions,
+autonomously edits multiple files, and commits changes.</p>
+<p><strong>Author and licence:</strong> Created by Paul Gauthier. MIT
+licence. Open source at <code>github.com/Aider-AI/aider</code>.</p>
+<p><strong>Community size:</strong> Approximately 45,300 GitHub stars as
+of May 2026 (verified by the deep-research process). This is among the
+largest in the open-source CLI coding agent category.</p>
+<p><strong>Architecture:</strong> Aider is written in Python and uses
+the <code>litellm</code> library as its LLM abstraction layer, which
+means it can talk to virtually any LLM provider that litellm supports.
+The editing mechanism is based on unified diffs: the model is asked to
+produce a git-style diff, which Aider then applies to the working tree
+and automatically commits. This is a deliberate design choice — unified
+diffs are compact and less error-prone for the model to produce than
+rewriting entire files. Aider supports several edit formats depending on
+the task and model:</p>
+<ul>
+<li><strong>diff</strong> — the default, produces unified diffs</li>
+<li><strong>whole</strong> — the model rewrites the entire file (less
+efficient, sometimes more reliable for small files)</li>
+<li><strong>architect mode</strong> — a two-step process where one model
+plans the changes and a second cheaper model applies them, reducing
+cost</li>
+</ul>
+<p><strong>Installation:</strong></p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install aider-chat</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># or with uv</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> tool install aider-chat</span></code></pre></div>
+<p><strong>LLM provider support:</strong> Aider supports all major
+providers via litellm, including:</p>
+<ul>
+<li>Anthropic (Claude family — Claude 3.5 Sonnet, Claude 3 Opus,
+etc.)</li>
+<li>OpenAI (GPT-4o, o1, o3)</li>
+<li>Google (Gemini 2.5 Pro via Vertex AI or AI Studio)</li>
+<li>AWS Bedrock</li>
+<li>Azure OpenAI</li>
+<li>OpenRouter (verified — full setup documented at
+<code>aider.chat/docs/llms/openrouter.html</code>)</li>
+<li>Ollama for local models</li>
+<li>LM Studio</li>
+<li>Groq, Mistral, Cohere, and many others</li>
+</ul>
+<p><strong>OpenRouter setup (verified):</strong></p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">OPENROUTER_API_KEY</span><span class="op">=</span>sk-or-...</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">aider</span> <span class="at">--model</span> openrouter/anthropic/claude-3.5-sonnet</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># or any OpenRouter-hosted model:</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="ex">aider</span> <span class="at">--model</span> openrouter/deepseek/deepseek-chat</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="ex">aider</span> <span class="at">--model</span> openrouter/google/gemini-2.5-pro</span></code></pre></div>
+<p><strong>Local LLM setup (Ollama):</strong></p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Start Ollama with a coding model first</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ollama</span> pull qwen2.5-coder:32b</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Then run Aider</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="ex">aider</span> <span class="at">--model</span> ollama/qwen2.5-coder:32b</span></code></pre></div>
+<p><strong>Agentic capabilities:</strong> Aider can run shell commands
+via the <code>/run</code> command and in <code>--auto-run</code> mode
+will execute suggested commands automatically. It maintains a context of
+added files and can be instructed to add more mid-session. It supports
+<code>/web</code> for fetching URLs into context and can integrate with
+test runners. The workflow is: add files to context → give instruction →
+model proposes diffs → Aider applies and commits → repeat.</p>
+<p><strong>Git integration:</strong> Every accepted change is
+automatically committed. This is tightly integrated — you can see the
+full history of AI changes in <code>git log</code>. There is also an
+<code>--auto-commits</code> flag to control this behaviour.</p>
+<p><strong>Shell execution:</strong> Via
+<code>/run &lt;command&gt;</code> or <code>--auto-run</code>. Aider can
+also be configured with <code>--test-cmd</code> to run tests
+automatically after each change.</p>
+<p><strong>MCP support:</strong> As of August 2025, Aider did not have
+native MCP server support. This is a meaningful gap compared to Claude
+Code. Check the Aider changelog for current status, as the project moves
+quickly.</p>
+<p><strong>Extensibility:</strong> Aider has limited plugin architecture
+compared to Claude Code. Configuration is via
+<code>.aider.conf.yml</code> and environment variables. There is no
+equivalent to Claude Code’s skills or hooks system. What it lacks in
+extensibility it compensates for in simplicity and reliability.</p>
+<p><strong>Modes:</strong></p>
+<ul>
+<li><strong>code</strong> — the default mode, edits files</li>
+<li><strong>architect</strong> — planning model + editing model
+split</li>
+<li><strong>ask</strong> — ask questions about code without editing</li>
+<li><strong>help</strong> — help with Aider itself</li>
+</ul>
+<p><strong>Cost model:</strong> Open source, free to use. You pay only
+for the LLM API calls you make. With Claude 3.5 Sonnet via Anthropic
+API, a typical coding session might cost $0.50–$3.00 depending on
+context size and number of changes. With OpenRouter you can route to
+cheaper models.</p>
+<p><strong>Strengths:</strong> - Most CLI-native and architecturally
+similar to Claude Code of all open-source options - Excellent git
+integration — every change is tracked - Wide provider support via
+litellm - OpenRouter support is well-documented and works reliably -
+Mature, battle-tested codebase with high benchmark performance -
+Supports local LLMs via Ollama - Very low overhead — just Python and an
+API key</p>
+<p><strong>Weaknesses:</strong> - No MCP support (as of mid-2025) - No
+skills/hooks system — less extensible than Claude Code - Context
+management is manual (you explicitly <code>/add</code> files) - Less
+capable at long multi-step autonomous tasks compared to Claude Code - No
+built-in web search or browser use</p>
+<hr />
+<h3 id="opencode">OpenCode</h3>
+<p><strong>What it is:</strong> OpenCode is a terminal UI (TUI) coding
+agent built by the SST/Anomaly team (the same people behind the SST
+serverless framework). It is written in Go and presents a rich
+interactive terminal interface while supporting a very wide range of LLM
+providers.</p>
+<p><strong>Author and licence:</strong> Built by the SST/Anomaly team.
+Open source at <code>github.com/sst/opencode</code>.</p>
+<p><strong>Community size and activity:</strong> Very actively developed
+— version 1.15.13 was released on May 30, 2026, with 815 total releases
+indicating extremely rapid iteration (verified). This is one of the most
+actively maintained tools in the space.</p>
+<p><strong>Architecture:</strong> OpenCode is a Go binary with a full
+TUI (terminal user interface) built using the Bubble Tea framework. It
+integrates with the AI SDK and Models.dev for LLM provider abstraction.
+It also supports Language Server Protocol (LSP) for code intelligence,
+meaning it can provide type-aware, semantically accurate code context
+rather than just raw file contents. Multi-session support allows you to
+maintain separate contexts for different tasks.</p>
+<p><strong>Installation:</strong></p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># via npm (cross-platform)</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install <span class="at">-g</span> opencode-ai</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># or directly via binary release</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-fsSL</span> https://opencode.ai/install <span class="kw">|</span> <span class="fu">bash</span></span></code></pre></div>
+<p><strong>LLM provider support:</strong> OpenCode supports 75+ LLM
+endpoints (verified) including:</p>
+<ul>
+<li>Anthropic (Claude family)</li>
+<li>OpenAI</li>
+<li>Google (Gemini via AI Studio or Vertex)</li>
+<li>AWS Bedrock</li>
+<li>Azure OpenAI</li>
+<li>OpenRouter</li>
+<li>Ollama (local models)</li>
+<li>LM Studio</li>
+<li>Grok (xAI)</li>
+<li>And many more via the AI SDK / Models.dev integration</li>
+</ul>
+<p>This is the broadest provider flexibility of any CLI tool in the
+category.</p>
+<p><strong>OpenRouter and Ollama:</strong> Both confirmed as supported
+providers. Configuration is via a
+<code>~/.config/opencode/config.json</code> or project-level config.</p>
+<p><strong>Agentic capabilities:</strong> OpenCode can read and edit
+files, run shell commands, and iterate autonomously. The TUI provides a
+chat interface that feels more like a dedicated application than a REPL.
+LSP integration means it can navigate symbol definitions, find
+references, and understand project structure at the type level.</p>
+<p><strong>MCP support:</strong> OpenCode supports MCP servers. This is
+a significant advantage over Aider for users who have invested in an MCP
+ecosystem.</p>
+<p><strong>Cost model:</strong> Open source, free to use. API costs
+only.</p>
+<p><strong>Strengths:</strong> - Broadest LLM provider support of any
+CLI tool (75+ endpoints verified) - Rich TUI with a more polished
+interactive experience than most CLI tools - LSP integration for
+semantic code understanding - MCP support - Extremely active development
+- Built in Go — fast, single binary, no Python dependency hell</p>
+<p><strong>Weaknesses:</strong> - Relatively new compared to Aider —
+less battle-tested - TUI approach is slightly less scriptable than a
+pure REPL like Aider - Smaller community than Aider - Documentation less
+mature than older tools</p>
+<hr />
+<h3 id="goose-by-block">Goose (by Block)</h3>
+<p><strong>What it is:</strong> Goose is an open-source, on-device AI
+coding agent developed by Block (formerly Square, the company associated
+with Jack Dorsey). It is available as both a CLI and a desktop
+application. Its primary differentiator is an extensions system with
+native MCP support.</p>
+<p><strong>Author and licence:</strong> Developed by Block, Inc. Apache
+2.0 licence. Open source at <code>github.com/block/goose</code>.</p>
+<p><strong>Community size:</strong> Community size was disputed in the
+research verification process — a claim of ~45,800 stars failed the
+adversarial check, and the actual figure from primary sources could not
+be independently confirmed. The project has significant corporate
+backing from Block.</p>
+<p><strong>Architecture:</strong> Goose runs on-device, meaning all
+execution happens locally on your machine (the LLM calls go to wherever
+you configure, including local Ollama). It uses a toolkit/extension
+system where each extension provides a set of tools that the agent can
+use. This is philosophically similar to MCP but is Goose’s own format.
+Goose also supports MCP servers as first-class inputs to the extension
+system, meaning your existing MCP server investments carry over.</p>
+<p><strong>Installation:</strong></p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># macOS</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="ex">brew</span> install block/tap/goose</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co"># or via install script</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-fsSL</span> https://github.com/block/goose/releases/latest/download/install.sh <span class="kw">|</span> <span class="fu">bash</span></span></code></pre></div>
+<p><strong>LLM provider support:</strong> Goose is model-agnostic and
+supports multiple provider configurations simultaneously. Supported
+providers include Anthropic, OpenAI, Google, Groq, Ollama, and others.
+It does not lock you to a single provider and allows per-task model
+configuration.</p>
+<p><strong>Local LLM support:</strong> Confirmed support for Ollama. The
+claim about this was partially refuted in the adversarial verification
+(a blog post’s description was unverified), but the architectural design
+of Goose makes local LLM support a core feature — the on-device
+philosophy would be undermined by requiring cloud-only models.</p>
+<p><strong>Agentic capabilities:</strong> Goose can edit files, run
+shell commands, use its extension system to call external tools, and
+iterate autonomously on tasks. It has a particularly strong story for
+DevOps and infrastructure tasks.</p>
+<p><strong>MCP support:</strong> Native MCP integration is listed as a
+core feature. The specific claim about this was refuted (1-2 vote) from
+a blog source, suggesting the blog description was imprecise or
+outdated. Check the official Block documentation for current MCP
+status.</p>
+<p><strong>Extensions:</strong> The extension system is the key
+differentiator. Extensions are tools the agent can use — analogous to
+MCP servers but in Goose’s format. Built-in extensions include file
+operations, developer tools, and system access.</p>
+<p><strong>Strengths:</strong> - Strong corporate backing from Block —
+less likely to be abandoned - On-device execution philosophy — good for
+privacy - Extension system analogous to MCP - Desktop app available for
+non-terminal users - Apache 2.0 licence - Model flexibility</p>
+<p><strong>Weaknesses:</strong> - Extension ecosystem smaller than MCP’s
+broader ecosystem - Specific feature claims from secondary sources were
+unreliable — verify current status from primary docs - Less pure CLI
+tool than Aider — the desktop app orientation means some rough edges in
+headless terminal use - Star count uncertain</p>
+<hr />
+<h3 id="gemini-cli-by-google">Gemini CLI (by Google)</h3>
+<p><strong>What it is:</strong> Gemini CLI is Google’s open-source
+terminal AI agent, released in mid-2025. It is powered by the Gemini
+model family and includes generous free tier access via Google AI
+Studio, making it effectively zero-cost for moderate usage.</p>
+<p><strong>Author and licence:</strong> Google DeepMind. Apache 2.0
+licence. Open source at
+<code>github.com/google-gemini/gemini-cli</code>.</p>
+<p><strong>Community size:</strong> Gemini CLI saw extremely rapid
+adoption after launch — it became one of the fastest-growing GitHub
+repositories in history within weeks of release. Specific star counts
+from secondary sources were not verified by this research process, but
+the viral adoption is not in dispute.</p>
+<p><strong>Architecture:</strong> Gemini CLI is a Node.js-based CLI
+agent. It uses Gemini 2.5 Pro by default, which provides up to a 1
+million token context window — the largest of any CLI coding tool. This
+means you can load entire codebases into context rather than managing
+file additions manually.</p>
+<p><strong>Installation:</strong></p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install <span class="at">-g</span> @google/gemini-cli</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ex">gemini</span></span></code></pre></div>
+<p><strong>LLM provider support:</strong> Gemini CLI is primarily
+designed for Google’s Gemini models. It is not model-agnostic in the
+same way as Aider or OpenCode. The primary models available are Gemini
+2.5 Pro and Gemini 2.5 Flash.</p>
+<p><strong>Free tier:</strong> This is the headline feature. The Gemini
+CLI free tier via Google AI Studio provides generous API quotas at no
+cost. For moderate usage, you may pay nothing beyond your time. This
+makes it the most cost-effective option for users who cannot afford API
+costs for heavy usage.</p>
+<p><strong>MCP support:</strong> Gemini CLI supports MCP servers, making
+it one of the few CLI tools with confirmed MCP integration alongside
+Claude Code. Configuration is via a <code>~/.gemini/settings.json</code>
+file.</p>
+<p><strong>Extensions:</strong> Gemini CLI has an extensions mechanism
+that allows adding capabilities beyond the default file editing and
+shell execution.</p>
+<p><strong>Agentic capabilities:</strong> Gemini CLI can read and edit
+files, run shell commands, search the web, and iterate autonomously. The
+1M context window means it is uniquely capable at tasks involving
+entire-codebase understanding.</p>
+<p><strong>Cost model:</strong> Free tier available via Google AI Studio
+(rate-limited). For heavier usage, Gemini 2.5 Pro API pricing
+applies.</p>
+<p><strong>Strengths:</strong> - Effectively free for moderate usage - 1
+million token context window — can load entire codebases - MCP support -
+Open source (Apache 2.0) - Google backing means long-term support likely
+- Very active development</p>
+<p><strong>Weaknesses:</strong> - Locked to Gemini models — no
+OpenRouter or third-party model support - Gemini models, while capable,
+may not match Claude’s code quality for your specific use cases - Less
+battle-tested than Aider - Node.js dependency - Free tier is
+rate-limited; heavy usage requires paid API</p>
+<hr />
+<h3 id="plandex">Plandex</h3>
+<p><strong>What it is:</strong> Plandex is an open-source CLI agent with
+a distinctive planning-first approach. Rather than immediately executing
+changes, it plans multi-file, multi-step tasks and builds up pending
+changes for user review before applying.</p>
+<p><strong>Author and licence:</strong> Created by Evan Conrad. MIT
+licence. Open source at <code>github.com/plandex-ai/plandex</code>.</p>
+<p><strong>Architecture:</strong> Plandex is written in Go and uses a
+client-server architecture. The server can be run locally or self-hosted
+on a cloud provider. Changes are accumulated in a “pending changes”
+buffer that you can review, modify, or reject before applying to the
+working tree. This makes Plandex the most review-oriented tool in the
+category — it assumes you want to understand what’s happening before it
+happens.</p>
+<p><strong>Installation:</strong></p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Install client</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-sL</span> https://plandex.ai/install.sh <span class="kw">|</span> <span class="fu">bash</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Use cloud server (free tier available)</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="ex">plandex</span> sign-in</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Or self-host the server</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="ex">docker-compose</span> up <span class="at">-d</span>  <span class="co"># with the plandex-server repo</span></span></code></pre></div>
+<p><strong>LLM provider support:</strong> Plandex supports OpenAI models
+directly and OpenAI-compatible APIs, which includes many providers.
+OpenRouter support via the OpenAI-compatible endpoint is possible.</p>
+<p><strong>Self-hosting:</strong> A key differentiator — you can run the
+entire Plandex server yourself, meaning no data leaves your
+infrastructure.</p>
+<p><strong>Agentic capabilities:</strong> Plandex is specifically
+designed for large, multi-step tasks: “implement this feature across 20
+files.” Its planning mechanism handles long sequences of related changes
+better than tools that tackle each change independently.</p>
+<p><strong>Strengths:</strong> - Planning-first approach is excellent
+for large refactors - Self-hosting option for data sovereignty - Review
+buffer means less risk of unexpected changes - Good at long-horizon
+multi-file tasks</p>
+<p><strong>Weaknesses:</strong> - Planning overhead makes it slower for
+quick edits - Less interactive than Aider or OpenCode - Client-server
+architecture adds complexity - LLM provider support less broad than
+Aider/OpenCode - Smaller community</p>
+<hr />
+<h3 id="swe-agent">SWE-agent</h3>
+<p><strong>What it is:</strong> SWE-agent is a research tool from
+Princeton NLP lab, designed primarily for automated software engineering
+on GitHub issues. It achieves high scores on the SWE-bench benchmark. It
+is less a daily-driver tool and more a demonstration of what autonomous
+agents can accomplish on discrete bug-fix tasks.</p>
+<p><strong>Author and licence:</strong> Princeton NLP group. MIT
+licence. <code>github.com/SWE-agent/SWE-agent</code>.</p>
+<p><strong>Architecture:</strong> SWE-agent uses a Docker-based
+sandboxed environment. The Agent-Computer Interface (ACI) pattern it
+introduces provides structured tools for file navigation, editing, and
+execution in a way that is particularly suited for benchmark tasks.</p>
+<p><strong>Intended use:</strong> Automated bug-fixing on GitHub issues,
+especially in batch/CI contexts. Not designed for interactive
+development sessions.</p>
+<p><strong>Strengths:</strong> - Extremely high benchmark performance -
+Docker sandboxing for safe execution - Good for automated CI/CD
+pipelines</p>
+<p><strong>Weaknesses:</strong> - Not a daily driver — requires Docker,
+not interactive - Research-oriented design means rough UX edges - Slower
+than interactive tools - Not designed for the ad-hoc, exploratory coding
+sessions that Claude Code excels at</p>
+<hr />
+<h3 id="mentat">Mentat</h3>
+<p><strong>What it is:</strong> Mentat is a Python-based CLI coding tool
+that was an early entrant in the space. It takes a conversational
+approach to code editing with explicit context management.</p>
+<p><strong>Status:</strong> As of mid-2025, development activity had
+slowed compared to its initial burst. It remains functional but has been
+largely superseded by Aider and newer tools.</p>
+<p><strong>Note:</strong> For new users, Aider is a better choice in the
+same category — more active, more features, larger community.</p>
+<hr />
+<h3 id="qwen-code-and-kimi-cli">Qwen Code and Kimi CLI</h3>
+<p><strong>What they are:</strong> These are CLI coding agents from
+Chinese AI labs — Qwen Code from Alibaba’s Qwen team and Kimi CLI from
+Moonshot AI. Both are classified alongside Claude Code and Aider as CLI
+tools by Artificial Analysis’s taxonomy. Both are positioned as
+competitive alternatives particularly for users who want model diversity
+or prefer models strong at certain programming languages.</p>
+<p><strong>Provider flexibility:</strong> Qwen Code uses Qwen models
+(strong at code, particularly multilingual/non-English codebases). Kimi
+CLI uses Kimi’s models with a very long context window.</p>
+<p><strong>Note:</strong> These tools were not covered by the
+deep-research verification process. Treat specific capability claims
+with appropriate scepticism until you test them directly.</p>
+<hr />
+<h2 id="part-ii-ide-extensions-and-hybrid-tools">Part II: IDE Extensions
+and Hybrid Tools</h2>
+<h3 id="cline-formerly-claude-engineer">Cline (formerly Claude
+Engineer)</h3>
+<p><strong>What it is:</strong> Cline is an open-source autonomous
+coding agent that operates primarily as a VS Code extension. It is
+model-agnostic, OpenRouter-compatible, and one of the most capable
+agentic tools available for IDE-based workflows. A CLI mode (Cline CLI
+2.0) has been released, moving it toward hybrid territory.</p>
+<p><strong>Author and licence:</strong> Open source at
+<code>github.com/cline/cline</code>. MIT licence.</p>
+<p><strong>Community size:</strong> Approximately 62,300 GitHub stars
+(verified, May 2026). This makes it one of the most popular tools in the
+entire AI coding agent space, not just this subcategory.</p>
+<p><strong>Architecture:</strong> Cline runs as a VS Code extension and
+has deep access to the VS Code API — language servers, the file system,
+the integrated terminal, and the browser (via Puppeteer integration). It
+operates in two modes:</p>
+<ul>
+<li><strong>Plan mode</strong> — Cline analyses the task and produces a
+plan before executing</li>
+<li><strong>Act mode</strong> — Cline executes changes directly</li>
+</ul>
+<p>This Plan/Act split allows you to review the strategy before any
+files are modified.</p>
+<p><strong>LLM provider support:</strong> Cline is model-agnostic. It
+supports:</p>
+<ul>
+<li>Anthropic (Claude family)</li>
+<li>OpenAI (GPT-4o, o1)</li>
+<li>Google (Gemini)</li>
+<li>AWS Bedrock</li>
+<li>Vertex AI</li>
+<li>OpenRouter (verified — listed on OpenRouter’s works-with-openrouter
+page)</li>
+<li>Ollama for local models</li>
+<li>LM Studio</li>
+<li>Any OpenAI-compatible API endpoint</li>
+</ul>
+<p><strong>OpenRouter setup:</strong></p>
+<pre><code>In VS Code: Open Cline extension settings
+API Provider: OpenRouter
+API Key: sk-or-...
+Model: anthropic/claude-3.5-sonnet (or any OpenRouter model)</code></pre>
+<p><strong>Agentic capabilities:</strong> Cline can:</p>
+<ul>
+<li>Read and edit any file in the workspace</li>
+<li>Execute shell commands in the integrated terminal</li>
+<li>Create and delete files/directories</li>
+<li>Use the browser (view pages, click, type, screenshot)</li>
+<li>Run searches across the codebase</li>
+<li>Read error output and iterate automatically</li>
+</ul>
+<p><strong>Browser use</strong> is a standout capability — Cline can
+actually open a browser, navigate to a URL, interact with a web page,
+and read the results. This enables tasks like: “go to this API docs page
+and implement the integration.”</p>
+<p><strong>MCP support:</strong> Cline supports MCP servers.
+Configuration is via the Cline settings JSON. This means your existing
+MCP server investments (filesystem servers, database servers, custom
+tools) are portable to Cline.</p>
+<p><strong>Extensibility:</strong> Beyond MCP, Cline has a system prompt
+customisation capability and supports <code>.clinerules</code> files
+(analogous to <code>.cursorrules</code> or Claude Code’s
+<code>CLAUDE.md</code>) for project-specific behaviour.</p>
+<p><strong>CLI mode (Cline CLI 2.0):</strong> The standalone CLI mode
+makes Cline usable outside VS Code. This is a recent addition and may
+not have full feature parity with the VS Code extension yet, but the
+trajectory is toward a full CLI-native experience.</p>
+<p><strong>Cost model:</strong> Open source, free. API costs only. Using
+OpenRouter you can route to cheaper models for lower-cost tasks.</p>
+<p><strong>Strengths:</strong> - Extremely capable agentic tool — one of
+the best - Model-agnostic with OpenRouter support verified - Browser use
+capability is unique among open-source tools - MCP support - Plan/Act
+mode for controlled execution - Very large and active community -
+Growing CLI support</p>
+<p><strong>Weaknesses:</strong> - Primarily an IDE extension — less
+suitable for terminal-first workflows - Requires VS Code (for the full
+extension feature set) - Browser use capability means it can have
+unintended side effects if not supervised - Less scriptable than pure
+CLI tools</p>
+<hr />
+<h3 id="continue.dev">Continue.dev</h3>
+<p><strong>What it is:</strong> Continue.dev is an open-source AI coding
+assistant for VS Code and JetBrains IDEs. It combines autocomplete,
+chat, and agent capabilities in a single extension, with deep
+configurability via a YAML config file.</p>
+<p><strong>Author and licence:</strong> Open source at
+<code>github.com/continuedev/continue</code>. Apache 2.0 licence.</p>
+<p><strong>Architecture:</strong> Continue.dev is structured around
+three core features:</p>
+<ol type="1">
+<li><strong>Autocomplete</strong> — inline code completions as you
+type</li>
+<li><strong>Chat</strong> — conversational interface about code, with
+codebase context</li>
+<li><strong>Agent</strong> — agentic mode that edits files based on
+instructions</li>
+</ol>
+<p>Configuration lives in <code>~/.continue/config.yaml</code> and can
+specify different models for different features (e.g., a fast local
+model for autocomplete, a more capable cloud model for agent tasks).</p>
+<p><strong>LLM provider support:</strong> Continue.dev has one of the
+broadest provider lists:</p>
+<ul>
+<li>Anthropic, OpenAI, Google</li>
+<li>OpenRouter</li>
+<li>Ollama (confirmed at localhost:11434 by default, remote connections
+via <code>apiBase</code>)</li>
+<li>LM Studio, llama.cpp</li>
+<li>Groq, Together AI, Replicate</li>
+<li>Self-hosted models via any OpenAI-compatible endpoint</li>
+</ul>
+<p><strong>Ollama setup (verified):</strong></p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ~/.continue/config.yaml</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">models</span><span class="kw">:</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">title</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;Local Qwen Coder&quot;</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">provider</span><span class="kw">:</span><span class="at"> ollama</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">model</span><span class="kw">:</span><span class="at"> qwen2.5-coder:32b</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="co">    # For remote Ollama:</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="co">    # apiBase: http://192.168.1.100:11434</span></span></code></pre></div>
+<p><strong>Agent mode:</strong> Continue.dev’s agent mode allows it to
+make multi-file edits based on instructions. Tool support depends on the
+underlying model — models must support function/tool calling. Note: some
+models that claim tool support may not work reliably in agent mode (this
+was partially corroborated in the research, though the specific claim
+was refuted as too broad).</p>
+<p><strong>Extensibility:</strong> Continue.dev supports a block system
+where community-built extensions (“blocks”) add new context providers,
+tools, and model configurations. This is effectively a plugin
+marketplace for the IDE assistant workflow.</p>
+<p><strong>Strengths:</strong> - Best-in-class for IDE users who want
+full local LLM support - Works in both VS Code and JetBrains - Highly
+configurable via config.yaml - Autocomplete + chat + agent in one
+package - OpenRouter and Ollama support confirmed - Open source, Apache
+2.0</p>
+<p><strong>Weaknesses:</strong> - No CLI mode — purely IDE-integrated -
+Agent mode quality depends heavily on the model’s tool-calling
+capabilities - Less capable at long agentic chains than Cline or Claude
+Code - JetBrains support is less mature than VS Code</p>
+<hr />
+<h2 id="part-iii-dedicated-ai-ides">Part III: Dedicated AI IDEs</h2>
+<h3 id="cursor">Cursor</h3>
+<p><strong>What it is:</strong> Cursor is a VS Code fork with deep AI
+integration baked into every layer of the editor. It has become one of
+the most widely adopted commercial AI coding tools, with a large user
+base and reported ARR in the hundreds of millions as of mid-2025.</p>
+<p><strong>Company:</strong> Anysphere, Inc. Private company,
+significant VC backing.</p>
+<p><strong>Pricing:</strong></p>
+<ul>
+<li><strong>Free</strong> — limited completions and requests per
+month</li>
+<li><strong>Pro</strong> — ~$20/month — unlimited completions, 500 fast
+requests/month (uses the best available models)</li>
+<li><strong>Business</strong> — ~$40/user/month — team features, admin
+controls, SOC 2 compliance</li>
+</ul>
+<p><strong>Architecture:</strong> Cursor extends VS Code with AI
+capabilities at multiple layers: inline completions, a chat sidebar, and
+Composer (the agent mode). It maintains a shadow workspace where it can
+test proposed changes before applying them.</p>
+<p><strong>LLM models available:</strong> Cursor Pro gives access to
+Claude 3.5 Sonnet, GPT-4o, o1, Gemini 2.5 Pro, and Cursor’s own
+fine-tuned models. Users can also configure their own API key for direct
+provider access.</p>
+<p><strong>Agent mode (Composer):</strong> Composer is Cursor’s
+multi-file agentic mode. It accepts a task, proposes a plan, and
+executes changes across multiple files. It can run terminal commands in
+Yolo mode (automatic execution without prompting). Yolo mode effectively
+turns Cursor’s agent into a Claude Code-like autonomous operator.</p>
+<p><strong>Context mechanisms:</strong></p>
+<ul>
+<li><code>@codebase</code> — full codebase semantic search</li>
+<li><code>@docs</code> — pull in documentation from URLs</li>
+<li><code>@web</code> — web search integration</li>
+<li><code>@file</code>, <code>@folder</code> — explicit file/folder
+references</li>
+<li><code>@git</code> — reference git history and diffs</li>
+</ul>
+<p><strong>Rules:</strong> Cursor supports <code>.cursorrules</code>
+files at the project root (and global rules) that provide persistent
+instructions to the AI — similar to Claude Code’s <code>CLAUDE.md</code>
+pattern.</p>
+<p><strong>Provider flexibility:</strong> Limited. While Cursor allows
+“BYO API key” (bring your own Anthropic/OpenAI key), it is not natively
+designed for OpenRouter or arbitrary providers. The product is optimised
+for the models it bundles.</p>
+<p><strong>Strengths:</strong> - Polished, deeply integrated AI coding
+experience - Composer agent mode is very capable - Semantic codebase
+indexing enables large-codebase context - Large community, extensive
+documentation, many tutorials - Tab completion is best-in-class -
+$20/month Pro is reasonable for moderate usage</p>
+<p><strong>Weaknesses:</strong> - IDE-bound — not a CLI tool - Limited
+model flexibility — not OpenRouter compatible - Proprietary — you are
+dependent on Anysphere remaining a going concern and maintaining pricing
+- Heavier than a terminal tool — requires a full VS Code instance</p>
+<hr />
+<h3 id="windsurf-by-codeium">Windsurf (by Codeium)</h3>
+<p><strong>What it is:</strong> Windsurf is an AI-first IDE built by
+Codeium, positioned as a direct competitor to Cursor. Its standout
+feature is the Cascade agent, which uses “Flow” — a system that
+maintains contextual awareness across an entire coding session rather
+than treating each interaction as independent.</p>
+<p><strong>Company:</strong> Codeium, Inc. Significant VC backing. Note:
+acquisition discussions with OpenAI were reported in mid-2025; verify
+current ownership before committing to this tool long-term.</p>
+<p><strong>Pricing:</strong></p>
+<ul>
+<li><strong>Free</strong> — limited credits per month</li>
+<li><strong>Pro</strong> — ~$15/month</li>
+<li><strong>Team</strong> — per-user enterprise pricing</li>
+</ul>
+<p><strong>Architecture:</strong> Windsurf is a fork of VS Code (similar
+to Cursor). The Cascade agent is its agentic component. Flow awareness
+means Cascade can reference earlier context in the session without
+explicit re-prompting — it maintains a “memory” of what it has done and
+seen.</p>
+<p><strong>LLM models:</strong> Windsurf uses its own model serving
+infrastructure (Codeium’s). It offers multiple models and allows some
+degree of model selection in higher tiers.</p>
+<p><strong>Provider flexibility:</strong> Like Cursor, Windsurf is
+primarily designed around its own model serving rather than OpenRouter
+or arbitrary providers. There is some BYO API key support but it is not
+the primary use case.</p>
+<p><strong>Strengths:</strong> - Cascade agent with Flow awareness is a
+genuinely differentiated capability - Generally slightly cheaper than
+Cursor - Autocomplete is excellent (Codeium was originally an
+autocomplete specialist) - Clean, polished IDE experience</p>
+<p><strong>Weaknesses:</strong> - IDE-bound - Ownership uncertainty
+(potential OpenAI acquisition) creates long-term risk - Less model
+flexibility than Cursor - Smaller community than Cursor - Less
+documentation and tutorials</p>
+<hr />
+<h3 id="zed-ai">Zed AI</h3>
+<p><strong>What it is:</strong> Zed is a high-performance code editor
+written in Rust, designed for speed and minimal latency. Its AI
+integration (Zed AI) brings Claude as the default model into this fast
+editor experience.</p>
+<p><strong>Architecture:</strong> Zed is not a VS Code fork — it is a
+ground-up implementation in Rust with native GPU acceleration. This
+makes it significantly faster than Electron-based editors (VS Code,
+Cursor, Windsurf). AI features are integrated via an assistant
+panel.</p>
+<p><strong>LLM models:</strong> Zed uses Claude models (Anthropic) by
+default. It also supports configuring alternative backends.</p>
+<p><strong>Pricing:</strong> Zed editor is free and open source. Zed AI
+usage has a free tier and credits system.</p>
+<p><strong>Strengths:</strong> - Extraordinarily fast editor — the best
+performance of any AI-integrated editor - Open source editor core -
+Clean, focused design</p>
+<p><strong>Weaknesses:</strong> - AI capabilities are less developed
+than Cursor or Windsurf - Smaller plugin/extension ecosystem
+(incompatible with VS Code extensions) - Agentic mode is less mature -
+Primarily macOS and Linux (Windows support in progress)</p>
+<hr />
+<h2 id="part-iv-cloud-and-web-platform-agents">Part IV: Cloud and Web
+Platform Agents</h2>
+<h3 id="openhands-formerly-opendevin">OpenHands (formerly
+OpenDevin)</h3>
+<p><strong>What it is:</strong> OpenHands is a highly capable
+open-source AI software engineer designed to solve complex software
+engineering tasks autonomously. It is the open-source project that most
+directly competes with commercial cloud agents like Devin.</p>
+<p><strong>Author and licence:</strong> All Hands AI. MIT licence.
+<code>github.com/OpenHands/OpenHands</code>.</p>
+<p><strong>Community size:</strong> Approximately 74,800–75,500 GitHub
+stars (verified range, May 2026). One of the largest open-source AI
+coding projects by community size.</p>
+<p><strong>Architecture:</strong> OpenHands runs in a Docker container
+with a sandboxed execution environment. This is the key architectural
+difference from CLI tools — it doesn’t run directly on your machine; it
+runs in an isolated environment with full access to the shell,
+filesystem, and browser within that sandbox. This makes it safer for
+autonomous long-running tasks but adds Docker as a dependency.</p>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li><strong>Web UI</strong> — the primary interface, a browser-based
+chat with the agent</li>
+<li><strong>CLI</strong> — a lightweight binary available at
+<code>github.com/OpenHands/OpenHands-CLI</code> (verified as existing,
+~191 stars)</li>
+<li><strong>API</strong> — programmable access for CI/CD
+integration</li>
+</ul>
+<p><strong>Installation:</strong></p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Via Docker (recommended)</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> pull docker.all-hands.dev/all-hands-ai/runtime:0.39-nikolaik</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Lightweight CLI binary (for terminal-first use)</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install openhands-cli</span></code></pre></div>
+<p><strong>LLM provider support:</strong> OpenHands supports multiple
+LLM providers via litellm, including Anthropic, OpenAI, Google, and
+others.</p>
+<p><strong>MCP support:</strong> OpenHands supports MCP server
+configuration (verified). Both command-based stdio servers (via
+<code>uvx</code> or <code>npx</code>) and URL-based remote MCP servers
+are supported:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;mcpServers&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;fetch&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;command&quot;</span><span class="fu">:</span> <span class="st">&quot;uvx&quot;</span><span class="fu">,</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;args&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;mcp-server-fetch&quot;</span><span class="ot">]</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">},</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;notion&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;url&quot;</span><span class="fu">:</span> <span class="st">&quot;https://mcp.notion.com/mcp&quot;</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>Note: the specific claim that OpenHands “natively discovers MCP tools
+automatically” was refuted in our adversarial verification. MCP is
+supported as a configuration option but may require explicit setup.</p>
+<p><strong>Strengths:</strong> - Very capable at complex, long-horizon
+tasks — closest open-source equivalent to Devin - Docker sandboxing
+means it can’t accidentally break your host system - MCP configuration
+support - Massive community and active development - Web UI is more
+accessible than CLI tools</p>
+<p><strong>Weaknesses:</strong> - Requires Docker — heavier than CLI
+tools - Primarily a cloud/web platform — less suitable for quick
+interactive sessions - Slower to start up than CLI tools (Docker
+container spin-up) - Not a terminal-first tool despite having a CLI
+option</p>
+<hr />
+<h3 id="devin-by-cognition-ai">Devin (by Cognition AI)</h3>
+<p><strong>What it is:</strong> Devin was the first high-profile “AI
+software engineer” capable of autonomously solving complex GitHub issues
+end-to-end. It is a commercial cloud product.</p>
+<p><strong>Pricing:</strong> Enterprise pricing, reportedly expensive
+(thousands per month for teams). Not a realistic Claude Code replacement
+for individual developers on cost grounds.</p>
+<p><strong>Strengths:</strong> - Very capable for long-horizon
+autonomous tasks - Well-integrated with GitHub workflows</p>
+<p><strong>Weaknesses:</strong> - Very expensive — out of range for
+individual developer use - Fully proprietary — no control over the stack
+- Not a CLI tool</p>
+<hr />
+<h2 id="part-v-commercial-ai-coding-assistants">Part V: Commercial AI
+Coding Assistants</h2>
+<h3 id="github-copilot-with-agent-mode">GitHub Copilot with Agent
+Mode</h3>
+<p><strong>What it is:</strong> GitHub Copilot is Microsoft/GitHub’s AI
+coding assistant. It has evolved from autocomplete-only to include chat
+and an agent mode (Copilot Workspace) capable of implementing GitHub
+issues.</p>
+<p><strong>Pricing:</strong></p>
+<ul>
+<li><strong>Individual</strong> — $10/month or $100/year</li>
+<li><strong>Business</strong> — $19/user/month</li>
+<li><strong>Enterprise</strong> — $39/user/month</li>
+</ul>
+<p><strong>LLM provider:</strong> GitHub Copilot is powered by OpenAI
+models and GitHub’s own fine-tuned models. It is locked to the
+Microsoft/OpenAI ecosystem.</p>
+<p><strong>OpenRouter support:</strong> The claim that GitHub Copilot
+supports OpenRouter was explicitly refuted in our adversarial
+verification (1-2 vote). It does not support third-party providers.</p>
+<p><strong>Agent mode (Copilot Workspace):</strong> Allows Copilot to
+plan and implement changes for a GitHub issue, proposing a series of
+file edits for review. Less fully autonomous than Claude Code but more
+controlled.</p>
+<p><strong>Strengths:</strong> - Deep GitHub integration — issues, PRs,
+code review - Well-integrated with VS Code and GitHub.com - $10/month is
+the most affordable commercial option - Enterprise features and security
+compliance</p>
+<p><strong>Weaknesses:</strong> - Not OpenRouter-compatible — locked to
+Microsoft/OpenAI - Agent mode is less capable than Claude Code, Cline,
+or Cursor’s Composer - Less suited for non-GitHub workflows -
+Autocomplete quality has been surpassed by Cursor and Windsurf</p>
+<hr />
+<h3 id="amazon-q-developer-formerly-codewhisperer">Amazon Q Developer
+(formerly CodeWhisperer)</h3>
+<p><strong>What it is:</strong> Amazon Q Developer is AWS’s AI coding
+assistant, with deep integration into the AWS ecosystem. It was
+rebranded from CodeWhisperer in 2024.</p>
+<p><strong>Pricing:</strong></p>
+<ul>
+<li><strong>Free tier</strong> — limited monthly suggestions</li>
+<li><strong>Pro</strong> — $19/user/month</li>
+</ul>
+<p><strong>LLM provider:</strong> Amazon’s own models plus Anthropic
+Claude (via Bedrock integration). Not independently flexible.</p>
+<p><strong>Agentic capabilities:</strong> Amazon Q can perform
+agent-style tasks within AWS console (reviewing resources, suggesting
+fixes) and in IDEs (refactoring, security scanning). Its agent mode is
+most powerful for AWS-specific tasks.</p>
+<p><strong>Strengths:</strong> - Best-in-class for AWS-heavy workflows -
+Security vulnerability scanning - Integrated IAM policy generation</p>
+<p><strong>Weaknesses:</strong> - AWS-focused — less useful for non-AWS
+codebases - Not a general-purpose coding agent - Provider lock-in to
+Amazon/Anthropic</p>
+<hr />
+<h3 id="jetbrains-ai-assistant">JetBrains AI Assistant</h3>
+<p><strong>What it is:</strong> JetBrains AI Assistant is integrated
+into IntelliJ IDEA, PyCharm, WebStorm, GoLand, and all other JetBrains
+IDEs. It provides chat, completion, and basic agentic features.</p>
+<p><strong>Pricing:</strong> Included in JetBrains All Products Pack
+subscription (~$24.90/month) or as a separate AI add-on.</p>
+<p><strong>LLM models:</strong> JetBrains AI Assistant uses multiple
+models under the hood (both their own and third-party). It offers some
+model choice in settings.</p>
+<p><strong>Strengths:</strong> - Best choice if you are already heavily
+invested in JetBrains IDEs - Deep IDE integration (refactoring,
+inspections, test generation) - Supports both local and cloud models in
+newer versions</p>
+<p><strong>Weaknesses:</strong> - Less capable agent mode than Cursor or
+Cline - Tied to JetBrains subscription - JetBrains IDEs are heavier than
+VS Code</p>
+<hr />
+<h3 id="tabnine">Tabnine</h3>
+<p><strong>What it is:</strong> Tabnine is an AI autocomplete tool with
+a long history (one of the first serious AI coding assistants). Its
+focus is primarily on fast, high-quality inline completions rather than
+agentic capabilities.</p>
+<p><strong>Pricing:</strong></p>
+<ul>
+<li><strong>Free</strong> — limited completions with smaller models</li>
+<li><strong>Pro</strong> — ~$12/month</li>
+<li><strong>Enterprise</strong> — custom pricing with self-hosted model
+option</li>
+</ul>
+<p><strong>LLM provider:</strong> Tabnine uses its own models plus
+third-party models (Anthropic, etc.). Enterprise tier supports
+self-hosted deployment for data sovereignty.</p>
+<p><strong>Strengths:</strong> - Very fast completions
+(latency-optimised) - Enterprise self-hosted option — best for
+organisations with strict data policies - Long track record</p>
+<p><strong>Weaknesses:</strong> - Primarily completion-focused — not an
+agentic tool - Less capable for instruction-following tasks - Being
+overtaken by Cursor/Windsurf in completions quality</p>
+<hr />
+<h3 id="supermaven">Supermaven</h3>
+<p><strong>What it is:</strong> Supermaven was a VS Code-focused
+autocomplete tool with a very large context window for completions (300k
+tokens). It was notable for its speed and accuracy.</p>
+<p><strong>Status:</strong> Supermaven was acquired by Cursor in late
+2024/early 2025. It is no longer an independent product. Cursor has
+integrated Supermaven’s technology into its tab completion. If
+Supermaven was your tool of choice, Cursor is now its natural
+successor.</p>
+<hr />
+<h2 id="part-vi-cross-cutting-analysis">Part VI: Cross-Cutting
+Analysis</h2>
+<h3 id="provider-flexibility-analysis">Provider Flexibility
+Analysis</h3>
+<p>A critical factor for Claude Code users concerned about API costs is
+whether an alternative tool is model-agnostic — allowing you to route
+requests to cheaper models, local models, or whichever provider has the
+best current pricing.</p>
+<h4 id="openrouter-compatibility">OpenRouter Compatibility</h4>
+<p>OpenRouter is a unified API gateway that provides access to hundreds
+of models from dozens of providers under a single API key, with
+pay-per-token pricing and no monthly subscription.</p>
+<table>
+<colgroup>
+<col style="width: 18%" />
+<col style="width: 60%" />
+<col style="width: 21%" />
+</colgroup>
+<thead>
+<tr>
+<th>Tool</th>
+<th>OpenRouter Support</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Aider</td>
+<td><strong>Yes (verified)</strong></td>
+<td>Full setup at aider.chat/docs/llms/openrouter.html</td>
+</tr>
+<tr>
+<td>Cline</td>
+<td><strong>Yes (verified)</strong></td>
+<td>Listed on OpenRouter works-with-openrouter page</td>
+</tr>
+<tr>
+<td>OpenCode</td>
+<td><strong>Yes (verified)</strong></td>
+<td>75+ endpoints including OpenRouter</td>
+</tr>
+<tr>
+<td>Continue.dev</td>
+<td><strong>Yes</strong></td>
+<td>Via OpenRouter provider in config.yaml</td>
+</tr>
+<tr>
+<td>Goose</td>
+<td>Likely</td>
+<td>Supports custom API endpoints</td>
+</tr>
+<tr>
+<td>Plandex</td>
+<td>Partial</td>
+<td>Via OpenAI-compatible endpoint</td>
+</tr>
+<tr>
+<td>OpenHands</td>
+<td>Yes</td>
+<td>Via litellm provider abstraction</td>
+</tr>
+<tr>
+<td>Cursor</td>
+<td><strong>No</strong></td>
+<td>BYO key supports direct providers only</td>
+</tr>
+<tr>
+<td>Windsurf</td>
+<td>No</td>
+<td>Codeium’s own model serving</td>
+</tr>
+<tr>
+<td>GitHub Copilot</td>
+<td><strong>No (refuted claim)</strong></td>
+<td>Locked to Microsoft/OpenAI</td>
+</tr>
+<tr>
+<td>Gemini CLI</td>
+<td>No</td>
+<td>Locked to Gemini models</td>
+</tr>
+<tr>
+<td>Amazon Q</td>
+<td>No</td>
+<td>Locked to Amazon/Anthropic</td>
+</tr>
+<tr>
+<td>JetBrains AI</td>
+<td>Partial</td>
+<td>Some model flexibility in enterprise</td>
+</tr>
+<tr>
+<td>Tabnine</td>
+<td>No</td>
+<td>Own models</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Conclusion:</strong> For OpenRouter flexibility, the
+open-source CLI tools (Aider, Cline, OpenCode, Continue.dev) are your
+best options. Commercial IDE tools are generally locked to their own
+ecosystems.</p>
+<h4 id="local-llm-support-ollama-lm-studio">Local LLM Support (Ollama /
+LM Studio)</h4>
+<p>Running models locally eliminates API costs entirely. Quality of
+locally-runnable models has improved dramatically — Qwen2.5-Coder 32B,
+DeepSeek Coder V2, and Mistral Codestral are serious coding models
+available locally.</p>
+<table>
+<colgroup>
+<col style="width: 18%" />
+<col style="width: 25%" />
+<col style="width: 34%" />
+<col style="width: 21%" />
+</colgroup>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Ollama</th>
+<th>LM Studio</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Aider</td>
+<td><strong>Yes</strong></td>
+<td><strong>Yes</strong></td>
+<td>Via litellm</td>
+</tr>
+<tr>
+<td>Cline</td>
+<td><strong>Yes</strong></td>
+<td><strong>Yes</strong></td>
+<td>Native provider options</td>
+</tr>
+<tr>
+<td>OpenCode</td>
+<td><strong>Yes (verified)</strong></td>
+<td><strong>Yes</strong></td>
+<td>75+ endpoints</td>
+</tr>
+<tr>
+<td>Continue.dev</td>
+<td><strong>Yes (verified)</strong></td>
+<td><strong>Yes</strong></td>
+<td>localhost:11434 default</td>
+</tr>
+<tr>
+<td>Goose</td>
+<td><strong>Yes</strong></td>
+<td>Yes</td>
+<td>On-device focus</td>
+</tr>
+<tr>
+<td>Plandex</td>
+<td>Partial</td>
+<td>Partial</td>
+<td>Via OpenAI-compatible API</td>
+</tr>
+<tr>
+<td>OpenHands</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Via litellm</td>
+</tr>
+<tr>
+<td>Cursor</td>
+<td>No</td>
+<td>No</td>
+<td>Cloud models only</td>
+</tr>
+<tr>
+<td>Windsurf</td>
+<td>No</td>
+<td>No</td>
+<td>Cloud models only</td>
+</tr>
+<tr>
+<td>GitHub Copilot</td>
+<td>No</td>
+<td>No</td>
+<td>Cloud only</td>
+</tr>
+<tr>
+<td>Gemini CLI</td>
+<td>No</td>
+<td>No</td>
+<td>Gemini models only</td>
+</tr>
+<tr>
+<td>Zed AI</td>
+<td>Partial</td>
+<td>No</td>
+<td>Some local model config</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Best tools for local LLMs:</strong> Aider, Cline, OpenCode,
+Continue.dev, and Goose are all first-class options for local model
+use.</p>
+<p><strong>Recommended local models for coding (as of
+2025-2026):</strong></p>
+<ul>
+<li><strong>Qwen2.5-Coder:32b</strong> — best general coding performance
+locally, fits in 24-32GB VRAM</li>
+<li><strong>DeepSeek Coder V2</strong> — excellent at complex reasoning
+tasks</li>
+<li><strong>Mistral Codestral</strong> — fast, good for completions</li>
+<li><strong>Llama 3.1:70b</strong> — good general-purpose if VRAM
+allows</li>
+<li><strong>Phi-3.5-MoE</strong> — very efficient for limited
+hardware</li>
+</ul>
+<hr />
+<h3 id="feature-comparison-matrix">Feature Comparison Matrix</h3>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 8%" />
+<col style="width: 12%" />
+<col style="width: 6%" />
+<col style="width: 9%" />
+<col style="width: 6%" />
+<col style="width: 12%" />
+<col style="width: 6%" />
+<col style="width: 11%" />
+<col style="width: 10%" />
+<col style="width: 7%" />
+<col style="width: 9%" />
+</colgroup>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Claude Code</th>
+<th>Aider</th>
+<th>OpenCode</th>
+<th>Cline</th>
+<th>Continue.dev</th>
+<th>Goose</th>
+<th>Gemini CLI</th>
+<th>OpenHands</th>
+<th>Cursor</th>
+<th>Windsurf</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Interface</strong></td>
+<td>CLI</td>
+<td>CLI</td>
+<td>TUI</td>
+<td>VS Code / CLI</td>
+<td>VS Code / JetBrains</td>
+<td>CLI + Desktop</td>
+<td>CLI</td>
+<td>Web / CLI</td>
+<td>IDE</td>
+<td>IDE</td>
+</tr>
+<tr>
+<td><strong>Agentic file editing</strong></td>
+<td>Yes (full)</td>
+<td>Yes (full)</td>
+<td>Yes (full)</td>
+<td>Yes (full)</td>
+<td>Yes (partial)</td>
+<td>Yes (full)</td>
+<td>Yes (full)</td>
+<td>Yes (full)</td>
+<td>Yes (full)</td>
+<td>Yes (full)</td>
+</tr>
+<tr>
+<td><strong>Multi-file context</strong></td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes (1M tokens)</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><strong>Shell execution</strong></td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes (agent mode)</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes (sandboxed)</td>
+<td>Yes (yolo mode)</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><strong>Web search</strong></td>
+<td>Yes</td>
+<td>No</td>
+<td>Partial</td>
+<td>Yes</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><strong>Browser use</strong></td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr>
+<td><strong>MCP support</strong></td>
+<td>Yes (native)</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Partial</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes (config)</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr>
+<td><strong>Custom hooks/automation</strong></td>
+<td>Yes (skills+hooks)</td>
+<td>No</td>
+<td>Limited</td>
+<td><code>.clinerules</code></td>
+<td>config.yaml</td>
+<td>Extensions</td>
+<td>Settings</td>
+<td>Limited</td>
+<td><code>.cursorrules</code></td>
+<td>Limited</td>
+</tr>
+<tr>
+<td><strong>OpenRouter</strong></td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Likely</td>
+<td>No</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr>
+<td><strong>Local LLMs</strong></td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>No</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr>
+<td><strong>Open source</strong></td>
+<td>No</td>
+<td>Yes (MIT)</td>
+<td>Yes (MIT)</td>
+<td>Yes (MIT)</td>
+<td>Yes (Apache-2)</td>
+<td>Yes (Apache-2)</td>
+<td>Yes (Apache-2)</td>
+<td>Yes (MIT)</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr>
+<td><strong>Git integration</strong></td>
+<td>Yes</td>
+<td>Yes (auto-commit)</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><strong>Cost model</strong></td>
+<td>Max plan or API</td>
+<td>API only</td>
+<td>API only</td>
+<td>API only</td>
+<td>API only</td>
+<td>API only</td>
+<td>Free tier + API</td>
+<td>API only</td>
+<td>$20/mo + API</td>
+<td>$15/mo</td>
+</tr>
+<tr>
+<td><strong>Self-hosted option</strong></td>
+<td>No</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="extensibility-deep-dive">Extensibility Deep Dive</h3>
+<p>One of Claude Code’s most powerful features is its extensibility
+architecture: skills (reusable prompt templates invoked as
+<code>/commands</code>), hooks (shell commands that fire on events like
+tool calls or session start), and MCP servers (external tools exposed
+via a standard protocol). This combination allows you to build a highly
+personalised, automated coding workflow. How do the alternatives
+compare?</p>
+<h4 id="claude-codes-extension-architecture">Claude Code’s Extension
+Architecture</h4>
+<p>For context, Claude Code’s three-layer system works as follows:</p>
+<ol type="1">
+<li><p><strong>Skills</strong> — Markdown files stored in
+<code>~/.claude/skills/</code> that define reusable workflows. When
+invoked as <code>/skill-name</code>, their content is loaded and
+executed. Skills can include checklists, decision trees, and
+instructions for specific types of tasks (debugging, code review, PR
+creation).</p></li>
+<li><p><strong>Hooks</strong> — Shell commands configured in
+<code>settings.json</code> that fire on specific Claude Code events. For
+example: run linting before a commit, post a notification when a session
+ends, validate that tests pass after edits. Hooks are executed by the
+Claude Code harness, not by the AI — this makes them reliable and
+deterministic.</p></li>
+<li><p><strong>MCP Servers</strong> — External processes exposing tools
+via the Model Context Protocol. Claude Code can call these tools as part
+of its reasoning (read from a database, query an external API, access
+browser dev tools, etc.). Any MCP server in the ecosystem
+works.</p></li>
+</ol>
+<h4 id="how-alternatives-compare">How Alternatives Compare</h4>
+<p><strong>Aider:</strong> No equivalent to skills or hooks. No MCP
+support. Configuration via <code>.aider.conf.yml</code> covers model
+settings and preferences but not custom workflows. <em>Least extensible
+of the serious alternatives.</em></p>
+<p><strong>OpenCode:</strong> MCP support confirmed. Some configuration
+of workflows via the config system. No equivalent to Claude Code’s hooks
+system or skills paradigm. <em>Mid-range extensibility.</em></p>
+<p><strong>Cline:</strong> MCP support confirmed.
+<code>.clinerules</code> files provide persistent instructions analogous
+to <code>CLAUDE.md</code>. No hook system. The Plan/Act split provides
+some workflow control but it’s not programmable. <em>Better than average
+but no hooks.</em></p>
+<p><strong>Continue.dev:</strong> The “blocks” system provides a
+plugin-like architecture for adding new context providers and tools.
+Config-driven customisation is deep. No hook system. MCP support via
+tool configuration. <em>Good for IDE users, weaker hook/automation
+story.</em></p>
+<p><strong>Goose:</strong> Native extension system with MCP
+compatibility. The extension architecture is the closest conceptual
+match to Claude Code’s MCP+skills combination, though the format
+differs. No hook system equivalent. <em>Strong extensibility story, but
+different API.</em></p>
+<p><strong>Gemini CLI:</strong> MCP support confirmed. Extensions
+mechanism for adding capabilities. No hook system. <em>Good starting
+point for building a custom workflow.</em></p>
+<p><strong>OpenHands:</strong> MCP configuration support (verified).
+Limited hook/automation equivalent. Primarily designed for single-task
+autonomous execution rather than a persistent, customised workflow.
+<em>Weakest extensibility story.</em></p>
+<h4 id="what-this-means-for-migration">What This Means for
+Migration</h4>
+<p>If you have heavily invested in Claude Code’s superpowers system
+(skills, hooks, MCPs), a complete migration requires rebuilding your
+workflow on whatever alternative you choose. The good news: MCP server
+investments are portable to any MCP-compatible tool (Cline, OpenCode,
+Gemini CLI, Goose, OpenHands). The skills system has no direct
+equivalent in any alternative — the closest analogues are
+<code>.clinerules</code> (Cline), <code>CLAUDE.md</code>-style
+instruction files, or custom system prompts. The hooks system is the
+hardest to replicate — only Claude Code has deterministic shell-command
+hooks that fire on tool events. Alternatives would require wrapping the
+tool in a shell script or using git hooks as a partial substitute.</p>
+<hr />
+<h3 id="cost-analysis">Cost Analysis</h3>
+<p>If you are a heavy Claude Code user currently on the Max plan
+(~$100/month for approximately unlimited usage), what would the same
+usage cost on each alternative?</p>
+<h4 id="defining-heavy-usage">Defining “Heavy Usage”</h4>
+<p>For this analysis, heavy usage means: - ~4-8 hours of active coding
+per day - Typical session: long context (50k-200k tokens input), many
+file edits, running tests - Estimated: ~100-200 million input tokens per
+month, 10-20 million output tokens per month</p>
+<p>These are rough estimates — actual token consumption varies
+enormously by workflow and model.</p>
+<h4 id="api-cost-estimates-direct-provider-as-of-2025">API Cost
+Estimates (Direct Provider, as of 2025)</h4>
+<p>These are ballpark figures using 2025 pricing, which changes
+frequently:</p>
+<p><strong>Anthropic Claude 3.5 Sonnet:</strong> - Input: ~$3/million
+tokens - Output: ~$15/million tokens - Heavy usage estimate: (150M × $3
++ 15M × $15) / 1M ~= <strong>$450 + $225 = ~$675/month</strong> -
+<em>This is why the Max plan at $100/month is excellent value for heavy
+users.</em></p>
+<p><strong>Anthropic Claude 3 Haiku:</strong> - Input: ~$0.25/million
+tokens - Output: ~$1.25/million tokens - Heavy usage estimate:
+~$56/month - <em>Much cheaper but much less capable for complex
+tasks.</em></p>
+<p><strong>OpenAI GPT-4o:</strong> - Input: ~$2.50/million tokens -
+Output: ~$10/million tokens - Heavy usage estimate: ~$525/month</p>
+<p><strong>Google Gemini 2.5 Pro (via AI Studio):</strong> - Free tier:
+generous rate limits (may cover moderate usage at no cost) - Paid tier:
+~$3.50/million tokens input (for &gt;200k context), ~$10.50/million
+output - Heavy usage estimate: ~$680/month at paid tier, <strong>$0 at
+free tier</strong> (rate-limited)</p>
+<p><strong>DeepSeek V3 (via OpenRouter):</strong> - Input:
+~$0.14/million tokens - Output: ~$0.28/million tokens - Heavy usage
+estimate: <strong>~$27/month</strong> - <em>Dramatically cheaper.
+Competitive coding quality for many tasks.</em></p>
+<p><strong>Qwen2.5-Coder (local via Ollama):</strong> - Cost: $0 — no
+API costs - Hardware requirement: 24GB VRAM for the 32B model -
+<em>Effectively free if you have the hardware.</em></p>
+<h4 id="per-tool-cost-summary">Per-Tool Cost Summary</h4>
+<table>
+<colgroup>
+<col style="width: 8%" />
+<col style="width: 28%" />
+<col style="width: 27%" />
+<col style="width: 27%" />
+<col style="width: 9%" />
+</colgroup>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Minimum Monthly Cost</th>
+<th>Heavy Usage (Cloud)</th>
+<th>Heavy Usage (Local)</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Aider + Claude Sonnet</td>
+<td>$0 tool + API</td>
+<td>~$675</td>
+<td>N/A</td>
+<td>Use Haiku for cheaper option</td>
+</tr>
+<tr>
+<td>Aider + DeepSeek (OpenRouter)</td>
+<td>$0 + API</td>
+<td>~$27</td>
+<td>N/A</td>
+<td>Significant quality tradeoff</td>
+</tr>
+<tr>
+<td>Aider + Ollama</td>
+<td>$0</td>
+<td>$0</td>
+<td>GPU hardware cost</td>
+<td>Quality depends on hardware</td>
+</tr>
+<tr>
+<td>OpenCode + DeepSeek</td>
+<td>$0 + API</td>
+<td>~$27</td>
+<td>N/A</td>
+<td>Broadest provider choice</td>
+</tr>
+<tr>
+<td>Cline + OpenRouter</td>
+<td>$0 + API</td>
+<td>Varies by model</td>
+<td>N/A</td>
+<td>Route cheaply via OpenRouter</td>
+</tr>
+<tr>
+<td>Gemini CLI</td>
+<td>$0</td>
+<td>$0 (free tier)</td>
+<td>N/A</td>
+<td>Rate limits apply</td>
+</tr>
+<tr>
+<td>Cursor Pro</td>
+<td>$20/month</td>
+<td>$20/month</td>
+<td>N/A</td>
+<td>Fixed subscription</td>
+</tr>
+<tr>
+<td>Windsurf Pro</td>
+<td>$15/month</td>
+<td>$15/month</td>
+<td>N/A</td>
+<td>Fixed subscription</td>
+</tr>
+<tr>
+<td>GitHub Copilot</td>
+<td>$10/month</td>
+<td>$10/month</td>
+<td>N/A</td>
+<td>Limited agent capabilities</td>
+</tr>
+<tr>
+<td>OpenHands</td>
+<td>$0 tool + API</td>
+<td>Varies</td>
+<td>N/A</td>
+<td>Docker overhead</td>
+</tr>
+</tbody>
+</table>
+<h4 id="cost-migration-strategy">Cost Migration Strategy</h4>
+<p><strong>Scenario 1: Keep Claude-quality results, accept higher
+costs</strong> Use Aider or Cline with direct Anthropic API. Cost:
+~$675/month for heavy usage. This is the worst-case scenario financially
+— you lose the Max plan subsidy.</p>
+<p><strong>Scenario 2: Reduce cost with model diversity</strong> Use
+Aider or OpenCode with OpenRouter, routing to DeepSeek or Qwen for
+routine tasks and Claude/GPT-4o for complex ones. Cost: $50-200/month
+depending on routing strategy. Significant savings, some quality
+tradeoff on simpler models.</p>
+<p><strong>Scenario 3: Go local for routine work, cloud for hard
+tasks</strong> Use Aider or Cline with Ollama (Qwen2.5-Coder:32b) for
+day-to-day coding, escalate to cloud API for complex multi-file
+refactors. Cost: near zero for routine work, occasional API costs for
+hard tasks.</p>
+<p><strong>Scenario 4: Fixed-cost IDE subscription</strong> Move to
+Cursor ($20/month) or Windsurf ($15/month). You lose terminal-native
+workflow but get predictable pricing. Less capable at agentic tasks than
+Claude Code for heavy use cases.</p>
+<p><strong>Scenario 5: Gemini CLI free tier</strong> For
+non-time-sensitive work or as a supplementary tool, Gemini CLI’s free
+tier (Google AI Studio) covers substantial usage. Rate limits apply, but
+for many users this could be zero-cost. Loses model flexibility.</p>
+<hr />
+<h2 id="recommendations">Recommendations</h2>
+<h3 id="if-you-want-the-closest-cli-experience-to-claude-code">If you
+want the closest CLI experience to Claude Code</h3>
+<p><strong>Primary:</strong> Aider — mature, reliable, git-native,
+OpenRouter-supported, local LLM support. Start here. The absence of MCP
+and hooks is a real limitation if you’ve invested heavily in those, but
+the core editing workflow is the most Claude Code-like of any
+open-source tool.</p>
+<p><strong>Secondary:</strong> OpenCode — if you want MCP support and
+broader provider flexibility in a terminal tool, OpenCode is the best
+current option. The TUI differs from a pure REPL but the agent
+capabilities are strong.</p>
+<h3 id="if-you-want-the-best-ide-integrated-alternative">If you want the
+best IDE-integrated alternative</h3>
+<p><strong>Primary:</strong> Cline — model-agnostic,
+OpenRouter-supported, browser use, MCP-compatible, Plan/Act mode. The
+most capable open-source agentic IDE tool available. Its CLI mode is
+improving.</p>
+<p><strong>Secondary:</strong> Continue.dev — if you want best-in-class
+local LLM support and deep IDE integration in VS Code and JetBrains
+simultaneously.</p>
+<p><strong>Commercial option:</strong> Cursor ($20/month) — if you want
+the best polished commercial experience and are comfortable with a VS
+Code workflow. Yolo mode brings it close to Claude Code’s autonomy
+level.</p>
+<h3 id="if-cost-is-the-primary-constraint">If cost is the primary
+constraint</h3>
+<p><strong>Free option:</strong> Gemini CLI — free tier is generous,
+MCP-supported, 1M context window. Quality good for most tasks.</p>
+<p><strong>Ultra-cheap option:</strong> Aider or OpenCode with DeepSeek
+V3 via OpenRouter — approximately $25-30/month for heavy usage with a
+capable (if not Claude-class) model.</p>
+<p><strong>Zero API cost:</strong> Any tool + Ollama with
+Qwen2.5-Coder:32b — requires GPU hardware but then costs nothing per
+query.</p>
+<h3 id="if-mcp-server-investments-are-critical">If MCP server
+investments are critical</h3>
+<p>Tools with confirmed MCP support: Claude Code (native), OpenCode,
+Cline, Gemini CLI, Goose, OpenHands (config). Of these, OpenCode and
+Cline are the strongest alternatives for a daily coding workflow.</p>
+<h3 id="if-you-need-extensibility-similar-to-claude-codes-skillshooks">If
+you need extensibility similar to Claude Code’s skills+hooks</h3>
+<p>The honest answer: no alternative matches Claude Code’s skills+hooks
+system. The closest approximations: - <strong>Skills
+equivalents:</strong> <code>.clinerules</code> (Cline),
+<code>CLAUDE.md</code>-style files, custom system prompts in any tool -
+<strong>Hooks equivalents:</strong> Git hooks, shell wrappers, CI/CD
+tooling — not built into any alternative - <strong>MCP
+equivalents:</strong> Cline, OpenCode, Gemini CLI, Goose all support MCP
+— your server investments are portable</p>
+<h3 id="migration-strategy">Migration strategy</h3>
+<p>Rather than a hard switch, a practical migration path:</p>
+<ol type="1">
+<li><strong>Set up Aider</strong> as a Claude Code complement today. Get
+comfortable with it. It is free to try with Haiku (cheap) or Ollama
+(free).</li>
+<li><strong>Test OpenCode</strong> — its MCP support and provider
+flexibility make it the best tool for a full Claude Code replacement
+once mature.</li>
+<li><strong>Keep Gemini CLI</strong> as a fallback for cost-free work —
+the 1M context window is uniquely useful for codebase analysis
+tasks.</li>
+<li><strong>Invest in OpenRouter</strong> — get an API key. With
+OpenRouter, you’re never locked to a single model again. As model prices
+drop (historically, they do), your costs drop automatically.</li>
+<li><strong>Protect your MCP investments</strong> — build MCP servers in
+preference to tool-specific plugins wherever possible. MCP compatibility
+is growing across the ecosystem.</li>
+</ol>
+<hr />
+<h2 id="appendix-verified-research-findings">Appendix: Verified Research
+Findings</h2>
+<p>The following claims were confirmed via 3-agent adversarial
+verification (each claim reviewed by three independent agents; at least
+2 of 3 must confirm):</p>
+<ol type="1">
+<li><p><strong>Aider has ~45,300 GitHub stars (May 2026) and is a
+terminal-native pair programming agent with confirmed OpenRouter
+support.</strong> (3-0 vote)</p></li>
+<li><p><strong>Cline has ~62,300 GitHub stars (May 2026), is
+OpenRouter-compatible, and primarily operates as a VS Code extension
+with an expanding CLI mode.</strong> (2-1 vote)</p></li>
+<li><p><strong>OpenHands has ~74,800-75,500 GitHub stars (May 2026) and
+is classified as a cloud platform rather than a CLI tool, despite having
+a CLI binary available.</strong> (2-1 vote)</p></li>
+<li><p><strong>OpenHands MCP configuration supports both stdio
+command-based servers (uvx/npx) and URL-based remote MCP
+servers.</strong> (3-0 vote)</p></li>
+<li><p><strong>Continue.dev supports Ollama at localhost:11434 by
+default, with remote Ollama connections via the <code>apiBase</code>
+setting.</strong> (3-0 vote)</p></li>
+<li><p><strong>OpenCode supports 75+ LLM endpoints including OpenRouter
+and Ollama, with version 1.15.13 released May 30, 2026.</strong> (3-0
+vote)</p></li>
+<li><p><strong>The AI coding agent landscape is categorised into CLI
+tools (Claude Code, Aider, Gemini CLI, Goose, OpenCode), IDE extensions
+(Cline, Continue.dev), dedicated IDEs (Cursor, Windsurf), and cloud
+platforms (OpenHands, Devin).</strong> (2-1 vote)</p></li>
+</ol>
+<p><strong>Refuted claims</strong> (excluded from main text): GitHub
+Copilot OpenRouter support (false), specific star counts from blog
+aggregators (unreliable), Aider token volume figures (unverified),
+OpenHands automatic MCP tool discovery (false — config required), Goose
+MCP as a confirmed primary feature from blog sources (unverified).</p>
+<hr />
+<h2 id="references">References</h2>
+<p>Primary sources (verified):</p>
+<ul>
+<li>OpenRouter works-with-openrouter page:
+<code>openrouter.ai/works-with-openrouter</code></li>
+<li>Aider OpenRouter documentation:
+<code>aider.chat/docs/llms/openrouter.html</code></li>
+<li>Continue.dev Ollama guide:
+<code>docs.continue.dev/guides/ollama-guide</code></li>
+<li>OpenHands MCP SDK guide:
+<code>docs.openhands.dev/sdk/guides/mcp</code></li>
+<li>OpenHands MCP settings:
+<code>docs.openhands.dev/openhands/usage/settings/mcp-settings</code></li>
+<li>OpenCode documentation:
+<code>opencode.ai/docs/providers/</code></li>
+<li>OpenCode GitHub: <code>github.com/sst/opencode</code></li>
+<li>Artificial Analysis coding agents taxonomy:
+<code>artificialanalysis.ai/agents/coding</code></li>
+<li>Awesome CLI Coding Agents (bradAGI):
+<code>github.com/bradAGI/awesome-cli-coding-agents</code></li>
+</ul>
+<p>Secondary sources (used for background, not for verified claims):</p>
+<ul>
+<li><code>pinggy.io/blog/top_cli_based_ai_coding_agents/</code></li>
+<li><code>artificialanalysis.ai/agents/coding</code></li>
+<li><code>morphllm.com/comparisons/claude-code-alternatives</code></li>
+<li><code>techbuddies.io/2026/01/22/goose-vs-claude-code-...</code></li>
+<li><code>finout.io/blog/anthropic-api-pricing</code></li>
+<li><code>ksred.com/claude-code-pricing-guide-...</code></li>
+</ul>
+    </main>
+
+  </div>
+
+  <script>
+    // Robust collapsible TOC logic: wait for #TOC, add logging
+    function firstChildByTag(parent, tagName) {
+      var children = parent.children;
+      for (var i = 0; i < children.length; i++) {
+        if (children[i].tagName === tagName) {
+          return children[i];
+        }
+      }
+      return null;
+    }
+
+    function tocDepth(li, tocRoot) {
+      var depth = 0;
+      var node = li;
+      while (node && node !== tocRoot) {
+        if (node.tagName === 'UL') {
+          depth += 1;
+        }
+        node = node.parentElement;
+      }
+      return depth;
+    }
+
+    function makeTOCCollapsible() {
+      var toc = document.getElementById('TOC');
+      if (!toc) { return false; }
+      // Only run once
+      if (toc.classList.contains('collapsible-ready')) { return true; }
+      toc.classList.add('collapsible-ready');
+
+      Array.prototype.forEach.call(toc.querySelectorAll('li'), function (li) {
+        var depth = tocDepth(li, toc);
+        li.classList.add('toc-depth-' + String(depth));
+
+        var sublist = firstChildByTag(li, 'UL');
+        if (sublist && depth >= 1) {
+          var btn = document.createElement('button');
+          btn.setAttribute('type', 'button');
+          btn.className = 'toc-toggle';
+          btn.innerHTML = '<span class="toc-arrow">▶</span>';
+          btn.setAttribute('aria-label', 'Expand/collapse section');
+          var firstLink = firstChildByTag(li, 'A');
+          li.classList.add('has-toggle');
+          if (firstLink) {
+            firstLink.classList.add('toc-link-inline');
+            li.insertBefore(btn, firstLink);
+          } else {
+            li.insertBefore(btn, li.firstChild);
+          }
+          sublist.style.display = 'none';
+          btn.classList.add('collapsed');
+          btn.setAttribute('aria-expanded', 'false');
+          btn.addEventListener('click', function () {
+            var open = sublist.style.display !== 'none';
+            sublist.style.display = open ? 'none' : '';
+            btn.classList.toggle('collapsed', open);
+            btn.classList.toggle('expanded', !open);
+            btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+          });
+        }
+      });
+      console.log('[TOC] Collapsible TOC initialized');
+      return true;
+    }
+
+    // Try on DOMContentLoaded, then poll for late-injected TOC
+    function initTOCWithRetries() {
+      var tries = 0;
+      var maxTries = 20;
+      var interval = setInterval(function () {
+        var done = makeTOCCollapsible();
+        if (done || ++tries > maxTries) clearInterval(interval);
+      }, 200);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initTOCWithRetries);
+    } else {
+      initTOCWithRetries();
+    }
+
+    // Math renderer toggle: switch between generated mathjax/mathml files.
+    (function initMathModeToggle() {
+      var btn = document.getElementById('math-mode-toggle');
+      if (!btn) {
+        return;
+      }
+
+      var path = window.location.pathname || '';
+      var targetPath = '';
+      var label = '';
+
+      if (path.endsWith('.mathml.html')) {
+        targetPath = path.slice(0, -('.mathml.html'.length)) + '.mathjax.html';
+        label = 'Switch to MathJax';
+      } else if (path.endsWith('.mathjax.html')) {
+        targetPath = path.slice(0, -('.mathjax.html'.length)) + '.mathml.html';
+        label = 'Switch to MathML';
+      } else if (path.endsWith('.html')) {
+        targetPath = path.slice(0, -('.html'.length)) + '.mathml.html';
+        label = 'Switch to MathML';
+      }
+
+      if (!targetPath) {
+        btn.style.display = 'none';
+        return;
+      }
+
+      btn.textContent = label;
+      btn.addEventListener('click', function () {
+        window.location.href = targetPath + (window.location.search || '') + (window.location.hash || '');
+      });
+    })();
+
+      // Sidebar resizer logic (existing)
+      var root = document.documentElement;
+      var layout = document.querySelector('.layout');
+      var sidebar = document.querySelector('.sidebar');
+      var resizer = document.querySelector('.sidebar-resizer');
+      var STORAGE_KEY = 'llm_primer_sidebar_width';
+
+      // if (!layout || !sidebar || !resizer) {
+      //   return;
+      // }
+
+
+      function cssPxVar(name, fallback) {
+        var raw = getComputedStyle(root).getPropertyValue(name).trim();
+        var n = parseFloat(raw);
+        return Number.isFinite(n) ? n : fallback;
+      }
+
+      function clamp(value, min, max) {
+        return Math.min(max, Math.max(min, value));
+      }
+
+      function applyWidth(px) {
+        root.style.setProperty('--sidebar-w', px + 'px');
+      }
+
+      var min = cssPxVar('--sidebar-min', 240);
+      var max = cssPxVar('--sidebar-max', 520);
+
+      var saved = parseFloat(localStorage.getItem(STORAGE_KEY) || '');
+      if (Number.isFinite(saved)) {
+        applyWidth(clamp(saved, min, max));
+      }
+
+      var dragging = false;
+
+      function onMove(ev) {
+        if (!dragging) {
+          return;
+        }
+        var next = clamp(ev.clientX, min, max);
+        applyWidth(next);
+      }
+
+      function onUp() {
+        if (!dragging) {
+          return;
+        }
+        dragging = false;
+        layout.classList.remove('is-resizing');
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+        localStorage.setItem(STORAGE_KEY, parseFloat(getComputedStyle(root).getPropertyValue('--sidebar-w')) || min);
+      }
+
+      resizer.addEventListener('pointerdown', function (ev) {
+        dragging = true;
+        layout.classList.add('is-resizing');
+        resizer.setPointerCapture(ev.pointerId);
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onUp);
+      });
+  </script>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var LANG_NAMES = {
+        python: 'Python', r: 'R', julia: 'Julia',
+        bash: 'Shell', sh: 'Shell', text: 'Output', markdown: 'Markdown'
+      };
+
+      function getLang(sourceDiv) {
+        var pre = sourceDiv.querySelector('pre');
+        if (!pre) return 'Code';
+        var classes = Array.prototype.slice.call(pre.classList);
+        for (var i = 0; i < classes.length; i++) {
+          var cls = classes[i];
+          if (cls === 'sourceCode') continue;
+          return LANG_NAMES[cls] || (cls.charAt(0).toUpperCase() + cls.slice(1));
+        }
+        return 'Code';
+      }
+
+      // A <p><strong>…</strong></p> language label inserted by the markdown author
+      function isLangLabel(node) {
+        if (!node || node.nodeType !== Node.ELEMENT_NODE || node.tagName !== 'P') return false;
+        var nonEmpty = Array.prototype.filter.call(node.childNodes, function (n) {
+          return !(n.nodeType === Node.TEXT_NODE && n.textContent.trim() === '');
+        });
+        return nonEmpty.length === 1 && nonEmpty[0].tagName === 'STRONG';
+      }
+
+      function isWhitespace(node) {
+        return node.nodeType === Node.TEXT_NODE && node.textContent.trim() === '';
+      }
+
+      // Two .sourceCode divs are consecutive if only whitespace or lang-label <p> nodes lie between them
+      function areConsecutive(a, b) {
+        var node = a.nextSibling;
+        while (node) {
+          if (node === b) return true;
+          if (isWhitespace(node) || isLangLabel(node)) { node = node.nextSibling; continue; }
+          return false;
+        }
+        return false;
+      }
+
+      function groupConsecutive(divs) {
+        var groups = [];
+        var i = 0;
+        while (i < divs.length) {
+          var run = [divs[i]];
+          while (i + 1 < divs.length && areConsecutive(run[run.length - 1], divs[i + 1])) {
+            i++;
+            run.push(divs[i]);
+          }
+          groups.push(run);
+          i++;
+        }
+        return groups;
+      }
+
+      function makeTabs(run) {
+        var wrapper = document.createElement('div');
+        wrapper.className = 'code-tabs';
+
+        var tabBar = document.createElement('div');
+        tabBar.className = 'code-tab-bar';
+        wrapper.appendChild(tabBar);
+
+        run.forEach(function (div, idx) {
+          var btn = document.createElement('button');
+          btn.className = 'code-tab-btn' + (idx === 0 ? ' active' : '');
+          btn.textContent = getLang(div);
+          btn.setAttribute('data-idx', String(idx));
+          tabBar.appendChild(btn);
+
+          var panel = document.createElement('div');
+          panel.className = 'code-tab-panel' + (idx === 0 ? ' active' : '');
+          panel.setAttribute('data-idx', String(idx));
+          panel.appendChild(div);
+          wrapper.appendChild(panel);
+        });
+
+        tabBar.addEventListener('click', function (e) {
+          var btn = e.target;
+          while (btn && !btn.classList.contains('code-tab-btn')) btn = btn.parentElement;
+          if (!btn) return;
+          var idx = btn.getAttribute('data-idx');
+          Array.prototype.forEach.call(wrapper.querySelectorAll('.code-tab-btn'), function (b) { b.classList.remove('active'); });
+          Array.prototype.forEach.call(wrapper.querySelectorAll('.code-tab-panel'), function (p) { p.classList.remove('active'); });
+          btn.classList.add('active');
+          wrapper.querySelector('.code-tab-panel[data-idx="' + idx + '"]').classList.add('active');
+        });
+
+        return wrapper;
+      }
+
+      function makeCollapsible(div) {
+        var details = document.createElement('details');
+        details.className = 'code-details';
+        details.open = true;
+
+        var summary = document.createElement('summary');
+        summary.className = 'code-summary';
+        summary.textContent = getLang(div);
+        details.appendChild(summary);
+
+        div.parentNode.insertBefore(details, div);
+        details.appendChild(div);
+      }
+
+      function applyTabs(run) {
+        var parent = run[0].parentNode;
+
+        // Collect lang-label <p> nodes immediately preceding each code block in the run
+        var toRemove = [];
+        run.forEach(function (div) {
+          var prev = div.previousSibling;
+          while (prev && isWhitespace(prev)) prev = prev.previousSibling;
+          if (prev && isLangLabel(prev)) toRemove.push(prev);
+        });
+
+        // Insertion point: the label before the first block (if it exists), else the first block
+        var insertionPoint = run[0];
+        if (toRemove.length > 0) {
+          var firstLabel = toRemove[0];
+          // Use firstLabel only if it genuinely precedes run[0]
+          if (firstLabel.compareDocumentPosition(run[0]) & Node.DOCUMENT_POSITION_FOLLOWING) {
+            insertionPoint = firstLabel;
+          }
+        }
+
+        var placeholder = document.createTextNode('');
+        parent.insertBefore(placeholder, insertionPoint);
+        toRemove.forEach(function (el) { el.parentNode.removeChild(el); });
+
+        var widget = makeTabs(run);
+        parent.replaceChild(widget, placeholder);
+      }
+
+      document.addEventListener('DOMContentLoaded', function () {
+        var all = Array.prototype.slice.call(
+          document.querySelectorAll('.content div.sourceCode')
+        );
+        var groups = groupConsecutive(all);
+        groups.forEach(function (run) {
+          if (run.length >= 2) {
+            applyTabs(run);
+          } else {
+            makeCollapsible(run[0]);
+          }
+        });
+      });
+    })();
+  </script>
+
+</body>
+</html>
