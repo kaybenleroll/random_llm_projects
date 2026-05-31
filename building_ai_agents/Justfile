@@ -1,0 +1,134 @@
+# =============================================================================
+# PROJECT CONFIGURATION
+# =============================================================================
+
+PROJECT_NAME         := "ai_agents_comprehensive_primer"
+REFERENCE_MD         := "agent_quick_reference.md"
+MAIN_MD              := PROJECT_NAME + ".md"
+
+OUTPUT_HTML          := PROJECT_NAME + ".html"
+OUTPUT_HTML_MATHML   := PROJECT_NAME + ".mathml.html"
+OUTPUT_HTML_MATHJAX  := PROJECT_NAME + ".mathjax.html"
+OUTPUT_PDF           := PROJECT_NAME + ".pdf"
+
+REF_HTML             := "agent_quick_reference.html"
+
+TEMPLATE             := "/repo/doc_template.html"
+MERMAID_FILTER       := "filters/mermaid-to-image.lua"
+LEGACY_UNICODE_PDF   := PROJECT_NAME + ".unicode.pdf"
+
+TITLE                := "Building Autonomous AI Agents: A Comprehensive Primer"
+AUTHOR               := "May 2026"
+
+# Container configuration
+PWD                  := `pwd`
+REPO_ROOT            := `cd .. && pwd`
+PANDOC_RENDER        := "localhost/pandoc-latex-fonts:latest"
+
+HTML_FLAGS           := "--standalone --embed-resources --toc --toc-depth=3 --syntax-highlighting=breezedark"
+PDF_FLAGS            := "--pdf-engine=xelatex --toc --toc-depth=3 -V geometry:margin=1.2in -V fontsize=11pt -V linestretch=1.25 -V colorlinks=true -V linkcolor=NavyBlue -V urlcolor=NavyBlue -V toc-title=\"Table of Contents\" --include-in-header=pandoc_compact_code.latex"
+
+# =============================================================================
+# DEFAULT TARGET
+# =============================================================================
+
+default:
+  @just --list
+
+# =============================================================================
+# RENDERING TARGETS
+# =============================================================================
+
+# Build all outputs (main document)
+all: main-html main-pdf
+
+# Build all non-primer companion docs
+docs: quick-html
+
+# Backwards-compatible alias
+all-docs: docs
+
+# Backwards-compatible aliases
+html: main-html
+html-mathml: main-html-mathml
+html-mathjax: main-html-mathjax
+pdf: main-pdf
+ref-html: quick-html
+
+# Render main markdown to HTML using pandoc/core container
+main-html:
+  podman run --rm -v "{{REPO_ROOT}}:/repo" -w "/repo/building_ai_agents" {{PANDOC_RENDER}} \
+    {{MAIN_MD}} -o {{OUTPUT_HTML}} \
+    {{HTML_FLAGS}} --template="{{TEMPLATE}}" --mathjax --lua-filter="{{MERMAID_FILTER}}" \
+    --metadata title="{{TITLE}}" \
+    --metadata author="{{AUTHOR}}"
+  @echo "✓ HTML written to {{OUTPUT_HTML}}"
+
+# Render main markdown to HTML (MathML variant)
+main-html-mathml:
+  podman run --rm -v "{{REPO_ROOT}}:/repo" -w "/repo/building_ai_agents" {{PANDOC_RENDER}} \
+    {{MAIN_MD}} -o {{OUTPUT_HTML_MATHML}} \
+    {{HTML_FLAGS}} --template="{{TEMPLATE}}" --mathml --lua-filter="{{MERMAID_FILTER}}" \
+    --metadata title="{{TITLE}}" \
+    --metadata author="{{AUTHOR}}"
+  @echo "✓ MathML HTML written to {{OUTPUT_HTML_MATHML}}"
+
+# Render main markdown to HTML (MathJax variant)
+main-html-mathjax:
+  podman run --rm -v "{{REPO_ROOT}}:/repo" -w "/repo/building_ai_agents" {{PANDOC_RENDER}} \
+    {{MAIN_MD}} -o {{OUTPUT_HTML_MATHJAX}} \
+    {{HTML_FLAGS}} --template="{{TEMPLATE}}" --mathjax --lua-filter="{{MERMAID_FILTER}}" \
+    --metadata title="{{TITLE}}" \
+    --metadata author="{{AUTHOR}}"
+  @echo "✓ MathJax HTML written to {{OUTPUT_HTML_MATHJAX}}"
+
+# Build both HTML math variants for main document
+html-variants: main-html-mathml main-html-mathjax
+
+# Render main markdown to PDF (Unicode-safe via font-enabled image)
+main-pdf:
+  podman run --rm -v "{{REPO_ROOT}}:/repo" -w "/repo/building_ai_agents" {{PANDOC_RENDER}} \
+    {{MAIN_MD}} -o {{OUTPUT_PDF}} \
+    {{PDF_FLAGS}} \
+    --lua-filter="{{MERMAID_FILTER}}" \
+    -V mainfont="DejaVu Serif" -V sansfont="DejaVu Sans" -V monofont="DejaVu Sans Mono" \
+    --metadata title="{{TITLE}}" \
+    --metadata author="{{AUTHOR}}"
+  @echo "✓ PDF written to {{OUTPUT_PDF}}"
+
+# Backwards-compatible alias for historical command
+pdf-unicode:
+  @just main-pdf
+
+# Render quick reference to HTML
+quick-html:
+  podman run --rm -v "{{REPO_ROOT}}:/repo" -w "/repo/building_ai_agents" {{PANDOC_RENDER}} \
+    {{REFERENCE_MD}} -o {{REF_HTML}} \
+    {{HTML_FLAGS}} --template="{{TEMPLATE}}" --lua-filter="{{MERMAID_FILTER}}" \
+    --metadata title="Agent Implementation Quick Reference" \
+    --metadata author="{{AUTHOR}}"
+  @echo "✓ Quick reference HTML written to {{REF_HTML}}"
+
+# =============================================================================
+# CONTAINER MANAGEMENT
+# =============================================================================
+
+# Pull base pandoc image explicitly
+pull-images:
+  podman pull docker.io/pandoc/latex:latest
+
+# Build local pandoc/latex image with broader Unicode font coverage
+build-pdf-image:
+  podman build -t {{PANDOC_RENDER}} -f Dockerfile .
+
+# =============================================================================
+# CLEANING
+# =============================================================================
+
+# Remove all generated output files
+clean:
+  rm -fv {{OUTPUT_HTML}} {{OUTPUT_HTML_MATHML}} {{OUTPUT_HTML_MATHJAX}} {{OUTPUT_PDF}} {{REF_HTML}} {{LEGACY_UNICODE_PDF}}
+  rm -rf .build
+
+# Clean and rebuild everything
+rebuild: clean all docs
