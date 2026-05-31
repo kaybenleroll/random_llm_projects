@@ -101,6 +101,27 @@ letter-spacing: .08em;
 color: var(--muted);
 padding: 0 1.25rem .5rem;
 }
+.sidebar-tools {
+padding: 0 1.25rem .75rem;
+}
+.math-mode-btn {
+width: 100%;
+border: 1px solid var(--border);
+background: #f8fafc;
+color: #334155;
+border-radius: 6px;
+padding: .4rem .55rem;
+font-size: .75rem;
+line-height: 1.2;
+cursor: pointer;
+transition: background .15s, color .15s, border-color .15s;
+}
+.math-mode-btn:hover,
+.math-mode-btn:focus {
+background: #eff6ff;
+color: var(--accent);
+border-color: #bfdbfe;
+}
 
 #TOC {
 font-size: .83rem;
@@ -127,6 +148,49 @@ border-left-color: var(--accent);
 
 #TOC ul ul a { padding-left: 2rem; font-size: .78rem; }
 #TOC ul ul ul a { padding-left: 2.75rem; font-size: .75rem; }
+#TOC li.has-toggle > .toc-toggle {
+margin-right: .2rem;
+vertical-align: middle;
+}
+#TOC li.has-toggle > a.toc-link-inline {
+display: inline-block;
+padding-left: 0;
+border-left: none;
+vertical-align: middle;
+}
+#TOC li.has-toggle.toc-depth-2 > .toc-toggle { margin-left: 2rem; }
+#TOC li.has-toggle.toc-depth-3 > .toc-toggle { margin-left: 2.75rem; }
+#TOC li.has-toggle > ul {
+width: 100%;
+}
+
+.toc-toggle {
+background: none;
+border: none;
+padding: 0 .3em 0 0;
+margin: 0;
+cursor: pointer;
+color: #9399b2;
+font-size: 1em;
+line-height: 1;
+vertical-align: middle;
+outline: none;
+transition: color .15s;
+}
+.toc-toggle:focus,
+.toc-toggle:hover {
+color: var(--accent);
+}
+.toc-arrow {
+display: inline-block;
+transition: transform .15s;
+}
+.toc-toggle.expanded .toc-arrow {
+transform: rotate(90deg);
+}
+.toc-toggle.collapsed .toc-arrow {
+transform: rotate(0deg);
+}
 
 .content {
 flex: 1;
@@ -290,6 +354,78 @@ code span.va { color: #000000; }
 code span.vs { color: #4e9a06; } 
 code span.wa { color: #8f5902; font-weight: bold; font-style: italic; } 
 
+.code-tabs {
+margin: 1.25rem 0;
+border-radius: var(--radius);
+overflow: hidden;
+border: 1px solid rgba(255,255,255,.08);
+}
+.code-tab-bar {
+display: flex;
+background: #16161f;
+border-bottom: 1px solid rgba(255,255,255,.08);
+padding: 0 .5rem;
+gap: .15rem;
+}
+.code-tab-btn {
+padding: .45rem 1rem;
+background: transparent;
+border: none;
+border-bottom: 2px solid transparent;
+color: #9399b2;
+font-family: var(--font-mono);
+font-size: .78rem;
+cursor: pointer;
+transition: color .15s, border-color .15s;
+white-space: nowrap;
+}
+.code-tab-btn:hover { color: #cdd6f4; }
+.code-tab-btn.active { color: #89b4fa; border-bottom-color: #89b4fa; }
+.code-tab-panel { display: none; }
+.code-tab-panel.active { display: block; }
+.code-tab-panel > div.sourceCode > pre {
+margin: 0;
+border-radius: 0;
+box-shadow: none;
+}
+
+.code-details {
+margin: 1.25rem 0;
+}
+.code-details > div.sourceCode {
+margin: 0;
+}
+.code-details > div.sourceCode > pre {
+margin: 0;
+border-radius: 0 0 var(--radius) var(--radius);
+box-shadow: inset 0 1px 4px rgba(0,0,0,.3);
+}
+.code-summary {
+display: flex;
+align-items: center;
+gap: .5rem;
+padding: .4rem .85rem;
+background: #16161f;
+color: #9399b2;
+font-family: var(--font-mono);
+font-size: .78rem;
+cursor: pointer;
+border-radius: var(--radius) var(--radius) 0 0;
+list-style: none;
+user-select: none;
+}
+.code-summary::-webkit-details-marker { display: none; }
+.code-summary::before {
+content: '▶';
+font-size: .6rem;
+transition: transform .15s;
+flex-shrink: 0;
+}
+details[open] .code-summary::before { transform: rotate(90deg); }
+details:not([open]) .code-details > div.sourceCode > pre {
+border-radius: 0;
+}
+
 @media (max-width: 768px) {
 .layout {
 display: block;
@@ -324,7 +460,10 @@ padding-top: 1.25rem;
 .navbar, .sidebar, .sidebar-resizer { display: none; }
 .content { padding: 0; max-width: 100%; }
 }
+
+code span.fu { color: #c792ea !important; } 
 </style>
+  
 </head>
 <body>
 
@@ -333,46 +472,124 @@ padding-top: 1.25rem;
 Beginner&#39;s Landscape</span>
 
     <span class="navbar-meta">May 2026</span>
+
   </nav>
 
   <div class="layout">
 
     <aside class="sidebar">
       <p class="sidebar-heading">Contents</p>
-      <ul>
+      <div class="sidebar-tools">
+        <button id="math-mode-toggle" class="math-mode-btn" type="button">Switch math renderer</button>
+      </div>
+      <div id="TOC" aria-label="Table of contents"><ul>
 <li><a href="#running-llms-locally-a-complete-beginners-landscape" id="toc-running-llms-locally-a-complete-beginners-landscape">Running
 LLMs Locally: A Complete Beginner’s Landscape</a>
 <ul>
-<li><a href="#from-zero-to-your-own-private-ai-stack-with-containers" id="toc-from-zero-to-your-own-private-ai-stack-with-containers">From
-Zero to Your Own Private AI Stack — With Containers</a></li>
-<li><a href="#part-1-what-is-an-llm-really" id="toc-part-1-what-is-an-llm-really">Part 1: What Is an LLM,
-Really?</a></li>
-<li><a href="#part-2-core-concepts-you-need-to-understand" id="toc-part-2-core-concepts-you-need-to-understand">Part 2: Core
-Concepts You Need to Understand</a></li>
-<li><a href="#part-3-the-hardware-reality" id="toc-part-3-the-hardware-reality">Part 3: The Hardware
-Reality</a></li>
-<li><a href="#part-4-the-inference-server-ecosystem" id="toc-part-4-the-inference-server-ecosystem">Part 4: The Inference
-Server Ecosystem</a></li>
-<li><a href="#part-5-containers-why-they-make-sense-here" id="toc-part-5-containers-why-they-make-sense-here">Part 5: Containers —
-Why They Make Sense Here</a></li>
-<li><a href="#part-6-practical-setups" id="toc-part-6-practical-setups">Part 6: Practical Setups</a></li>
-<li><a href="#part-7-choosing-your-models" id="toc-part-7-choosing-your-models">Part 7: Choosing Your
-Models</a></li>
-<li><a href="#part-8-the-openai-compatible-api-why-it-matters" id="toc-part-8-the-openai-compatible-api-why-it-matters">Part 8: The
-OpenAI-Compatible API — Why It Matters</a></li>
-<li><a href="#part-9-rag-giving-your-llm-access-to-your-documents" id="toc-part-9-rag-giving-your-llm-access-to-your-documents">Part 9: RAG
-— Giving Your LLM Access to Your Documents</a></li>
-<li><a href="#part-10-openclaw-ai-on-your-phone-powered-by-your-own-hardware" id="toc-part-10-openclaw-ai-on-your-phone-powered-by-your-own-hardware">Part
-10: OpenClaw — AI on Your Phone, Powered by Your Own Hardware</a></li>
-<li><a href="#part-11-decision-guide" id="toc-part-11-decision-guide">Part 11: Decision Guide</a></li>
-<li><a href="#part-12-what-to-try-first" id="toc-part-12-what-to-try-first">Part 12: What to Try First</a></li>
-<li><a href="#part-13-closing-thoughts" id="toc-part-13-closing-thoughts">Part 13: Closing Thoughts</a></li>
-<li><a href="#reference-quick-command-cheatsheet" id="toc-reference-quick-command-cheatsheet">Reference: Quick-Command
-Cheatsheet</a></li>
-<li><a href="#further-reading" id="toc-further-reading">Further
-Reading</a></li>
+<li><a href="#how-this-guide-is-structured" id="toc-how-this-guide-is-structured">How This Guide Is
+Structured</a></li>
+<li><a href="#before-you-start-beginner-checklist" id="toc-before-you-start-beginner-checklist">Before You Start (Beginner
+Checklist)</a></li>
+<li><a href="#part-1-foundations-you-actually-need" id="toc-part-1-foundations-you-actually-need">Part 1: Foundations You
+Actually Need</a>
+<ul>
+<li><a href="#the-inference-pipeline" id="toc-the-inference-pipeline">The Inference Pipeline</a></li>
 </ul></li>
-</ul>
+<li><a href="#core-concepts-that-drive-day-to-day-decisions" id="toc-core-concepts-that-drive-day-to-day-decisions">Core Concepts
+That Drive Day-to-Day Decisions</a>
+<ul>
+<li><a href="#quantisation" id="toc-quantisation">Quantisation</a></li>
+<li><a href="#gguf" id="toc-gguf">GGUF</a></li>
+<li><a href="#where-model-files-come-from-before-we-go-further" id="toc-where-model-files-come-from-before-we-go-further">Where Model
+Files Come From (Before We Go Further)</a></li>
+<li><a href="#context-window" id="toc-context-window">Context
+Window</a></li>
+<li><a href="#the-kv-cache" id="toc-the-kv-cache">The KV Cache</a></li>
+<li><a href="#temperature-and-sampling" id="toc-temperature-and-sampling">Temperature and Sampling</a></li>
+</ul></li>
+<li><a href="#part-2-hardware-and-runtime-constraints" id="toc-part-2-hardware-and-runtime-constraints">Part 2: Hardware and
+Runtime Constraints</a>
+<ul>
+<li><a href="#cpu-only-inference" id="toc-cpu-only-inference">CPU-Only
+Inference</a></li>
+<li><a href="#nvidia-gpu" id="toc-nvidia-gpu">NVIDIA GPU</a></li>
+<li><a href="#amd-gpu" id="toc-amd-gpu">AMD GPU</a></li>
+<li><a href="#apple-silicon-m-series" id="toc-apple-silicon-m-series">Apple Silicon (M-series)</a></li>
+<li><a href="#multi-machine-and-heterogeneous-setups" id="toc-multi-machine-and-heterogeneous-setups">Multi-Machine and
+Heterogeneous Setups</a></li>
+</ul></li>
+<li><a href="#part-3-inference-stack-options" id="toc-part-3-inference-stack-options">Part 3: Inference Stack
+Options</a>
+<ul>
+<li><a href="#llama.cpp-and-llama-server" id="toc-llama.cpp-and-llama-server">llama.cpp and llama-server</a></li>
+<li><a href="#ollama" id="toc-ollama">Ollama</a></li>
+<li><a href="#localai" id="toc-localai">LocalAI</a></li>
+<li><a href="#vllm" id="toc-vllm">vLLM</a></li>
+<li><a href="#lm-studio" id="toc-lm-studio">LM Studio</a></li>
+<li><a href="#jan" id="toc-jan">Jan</a></li>
+<li><a href="#open-webui" id="toc-open-webui">Open WebUI</a></li>
+<li><a href="#a-comparison-at-a-glance" id="toc-a-comparison-at-a-glance">A Comparison at a Glance</a></li>
+<li><a href="#runtime-layer-why-containers-usually-win" id="toc-runtime-layer-why-containers-usually-win">Runtime Layer: Why
+Containers Usually Win</a></li>
+<li><a href="#docker-vs-podman" id="toc-docker-vs-podman">Docker vs
+Podman</a></li>
+<li><a href="#gpu-access-in-containers" id="toc-gpu-access-in-containers">GPU Access in Containers</a></li>
+</ul></li>
+<li><a href="#part-4-practical-deployment-blueprints" id="toc-part-4-practical-deployment-blueprints">Part 4: Practical
+Deployment Blueprints</a>
+<ul>
+<li><a href="#setup-1-i-want-to-chat-with-a-model-today-minimal-effort" id="toc-setup-1-i-want-to-chat-with-a-model-today-minimal-effort">Setup
+1: “I want to chat with a model today, minimal effort”</a></li>
+<li><a href="#setup-2-i-want-a-coding-assistant-in-vs-code" id="toc-setup-2-i-want-a-coding-assistant-in-vs-code">Setup 2: “I want a
+coding assistant in VS Code”</a></li>
+<li><a href="#setup-3-i-want-a-persistent-api-service-with-podman" id="toc-setup-3-i-want-a-persistent-api-service-with-podman">Setup 3: “I
+want a persistent API service with Podman”</a></li>
+<li><a href="#setup-4-i-want-everything-text-audio-images-agents" id="toc-setup-4-i-want-everything-text-audio-images-agents">Setup 4: “I
+want everything — text, audio, images, agents”</a></li>
+<li><a href="#setup-5-i-want-to-build-ai-agents" id="toc-setup-5-i-want-to-build-ai-agents">Setup 5: “I want to build AI
+agents”</a></li>
+</ul></li>
+<li><a href="#part-5-model-selection-and-operational-decisions" id="toc-part-5-model-selection-and-operational-decisions">Part 5: Model
+Selection and Operational Decisions</a>
+<ul>
+<li><a href="#where-models-live" id="toc-where-models-live">Where Models
+Live</a></li>
+<li><a href="#hugging-face-in-90-seconds-what-it-is-and-why-it-matters" id="toc-hugging-face-in-90-seconds-what-it-is-and-why-it-matters">Hugging
+Face in 90 Seconds (What It Is and Why It Matters)</a></li>
+<li><a href="#how-to-evaluate-a-model-page-before-downloading" id="toc-how-to-evaluate-a-model-page-before-downloading">How to Evaluate
+a Model Page Before Downloading</a></li>
+<li><a href="#model-families-worth-knowing-as-of-may-2026" id="toc-model-families-worth-knowing-as-of-may-2026">Model Families
+Worth Knowing (as of May 2026)</a></li>
+<li><a href="#sizing-guide" id="toc-sizing-guide">Sizing Guide</a></li>
+<li><a href="#beginner-download-workflow-low-regret" id="toc-beginner-download-workflow-low-regret">Beginner Download
+Workflow (Low Regret)</a></li>
+<li><a href="#api-compatibility-layer-keep-this-stable" id="toc-api-compatibility-layer-keep-this-stable">API Compatibility
+Layer (Keep This Stable)</a></li>
+<li><a href="#retrieval-layer-rag-for-private-knowledge" id="toc-retrieval-layer-rag-for-private-knowledge">Retrieval Layer: RAG
+for Private Knowledge</a></li>
+<li><a href="#access-layer-openclaw-for-remote-personal-assistant-workflows" id="toc-access-layer-openclaw-for-remote-personal-assistant-workflows">Access
+Layer: OpenClaw for Remote Personal Assistant Workflows</a></li>
+<li><a href="#what-openclaw-actually-does" id="toc-what-openclaw-actually-does">What OpenClaw Actually
+Does</a></li>
+<li><a href="#setting-it-up" id="toc-setting-it-up">Setting It
+Up</a></li>
+<li><a href="#recommended-models-for-openclaw" id="toc-recommended-models-for-openclaw">Recommended Models for
+OpenClaw</a></li>
+<li><a href="#running-openclaw-on-an-older-laptop-64-gb-ram-6-gb-vram" id="toc-running-openclaw-on-an-older-laptop-64-gb-ram-6-gb-vram">Running
+OpenClaw on an Older Laptop: 64 GB RAM, 6 GB VRAM</a></li>
+<li><a href="#why-you-might-want-this-setup" id="toc-why-you-might-want-this-setup">Why You Might Want This
+Setup</a></li>
+<li><a href="#decision-guide-by-constraint" id="toc-decision-guide-by-constraint">Decision Guide by
+Constraint</a></li>
+<li><a href="#day-starter-path" id="toc-day-starter-path">5-Day Starter
+Path</a></li>
+</ul></li>
+<li><a href="#conclusion" id="toc-conclusion">Conclusion</a></li>
+<li><a href="#appendix-a-quick-command-cheatsheet" id="toc-appendix-a-quick-command-cheatsheet">Appendix A: Quick-Command
+Cheatsheet</a></li>
+<li><a href="#appendix-b-further-reading" id="toc-appendix-b-further-reading">Appendix B: Further Reading</a></li>
+</ul></li>
+</ul></div>
 
     </aside>
 
@@ -381,11 +598,8 @@ Reading</a></li>
     <main class="content">
 <h1 id="running-llms-locally-a-complete-beginners-landscape">Running
 LLMs Locally: A Complete Beginner’s Landscape</h1>
-<h2 id="from-zero-to-your-own-private-ai-stack-with-containers">From
-Zero to Your Own Private AI Stack — With Containers</h2>
-<hr />
+<p>From Zero to Your Own Private AI Stack, With Containers</p>
 <p><em>~7,800 words · May 2026</em></p>
-<hr />
 <p>You have heard the hype. You have used ChatGPT. Now you want to
 understand what it would take to run one of these models yourself — on
 your own hardware, inside your own network, without sending a single
@@ -399,6 +613,18 @@ production-grade, and how to make a considered choice based on your
 hardware and goals.</p>
 <p>We will not prescribe a single solution. We will map the
 territory.</p>
+<h3 id="how-this-guide-is-structured">How This Guide Is Structured</h3>
+<p>To keep this practical, the guide is arranged as one flow:</p>
+<ol type="1">
+<li>Foundations and concepts you need before touching tooling.</li>
+<li>Hardware and runtime constraints that determine what is
+realistic.</li>
+<li>Inference stack options (engines, servers, and UIs).</li>
+<li>Deployment blueprints for common goals.</li>
+<li>Model-selection and operating decisions.</li>
+</ol>
+<p>You can read it linearly or jump directly to the part that matches
+your current bottleneck.</p>
 <h3 id="before-you-start-beginner-checklist">Before You Start (Beginner
 Checklist)</h3>
 <p>If you are completely new, sanity-check these basics first:</p>
@@ -415,8 +641,8 @@ automatically mean all integrations are private.</li>
 </ol>
 <p>If those are true, you are ready.</p>
 <hr />
-<h2 id="part-1-what-is-an-llm-really">Part 1: What Is an LLM,
-Really?</h2>
+<h2 id="part-1-foundations-you-actually-need">Part 1: Foundations You
+Actually Need</h2>
 <p>Before running anything, you need a mental model of what you are
 actually running.</p>
 <p>A large language model is, at its core, a very large file of numbers
@@ -449,8 +675,8 @@ scale. It is the reason GPUs — which are fundamentally matrix
 multiplication accelerators — give you dramatically better performance
 than CPUs alone.</p>
 <hr />
-<h2 id="part-2-core-concepts-you-need-to-understand">Part 2: Core
-Concepts You Need to Understand</h2>
+<h2 id="core-concepts-that-drive-day-to-day-decisions">Core Concepts
+That Drive Day-to-Day Decisions</h2>
 <p>These terms will come up repeatedly. Getting them straight now will
 save you a lot of confusion.</p>
 <h3 id="quantisation">Quantisation</h3>
@@ -530,7 +756,7 @@ limitations.</li>
 <p>When this guide says “download from Hugging Face”, it means: open a
 model page on <code>huggingface.co</code>, choose a compatible file
 (usually GGUF for llama.cpp-class tools), and verify the license and
-model card before use. We will go deeper on this in Part 7.</p>
+model card before use. We will go deeper on this in Part 5.</p>
 <h3 id="context-window">Context Window</h3>
 <p>The context window is the maximum amount of text the model can “see”
 at once — both your input and its own previous output. It is measured in
@@ -555,7 +781,8 @@ creative (often incoherent at extremes). For code generation and factual
 Q&amp;A, use low temperature (0.1–0.4). For creative writing, try
 0.7–1.0.</p>
 <hr />
-<h2 id="part-3-the-hardware-reality">Part 3: The Hardware Reality</h2>
+<h2 id="part-2-hardware-and-runtime-constraints">Part 2: Hardware and
+Runtime Constraints</h2>
 <p>Your hardware determines which models and servers are practical. Here
 is an honest assessment:</p>
 <h3 id="cpu-only-inference">CPU-Only Inference</h3>
@@ -634,8 +861,8 @@ across machines over a network (llama.cpp’s RPC backend, LocalAI’s P2P
 mode, vLLM’s tensor parallelism). This is an advanced use case but worth
 knowing exists.</p>
 <hr />
-<h2 id="part-4-the-inference-server-ecosystem">Part 4: The Inference
-Server Ecosystem</h2>
+<h2 id="part-3-inference-stack-options">Part 3: Inference Stack
+Options</h2>
 <p>This is the heart of the guide. There are many tools, each with a
 different philosophy. We will cover them honestly.</p>
 <p>Command examples in this section may use either Docker or Podman
@@ -971,17 +1198,11 @@ shared interface. Self-hosters who want the full ChatGPT experience.</p>
 </tbody>
 </table>
 <hr />
-<h2 id="part-5-containers-why-they-make-sense-here">Part 5: Containers —
-Why They Make Sense Here</h2>
-<p>If you are new to containers, here is the key insight: <strong>an LLM
-inference server has complex, version-sensitive dependencies</strong>
-(CUDA libraries, ROCm drivers, specific Python versions, compiled
-backends). Installing all of this natively on your machine creates a
-brittle system that is hard to reproduce and harder to undo.</p>
-<p>A container packages the application and all its dependencies into an
-isolated image. You pull the image, run it, and everything works —
-without polluting your host system. When you are done or want to
-upgrade, you remove the container.</p>
+<h3 id="runtime-layer-why-containers-usually-win">Runtime Layer: Why
+Containers Usually Win</h3>
+<p>LLM servers have version-sensitive dependencies (CUDA/ROCm, Python,
+compiled backends). Containers isolate that stack so installs are
+reproducible, easy to replace, and do not pollute your host.</p>
 <h3 id="docker-vs-podman">Docker vs Podman</h3>
 <p><strong>Docker</strong> is the established standard. The Docker
 daemon runs as root in the background, manages images and containers,
@@ -997,15 +1218,14 @@ as easily.</li>
 <li><strong>Daemonless</strong> — no persistent background service. Each
 <code>podman</code> command is a standalone process.</li>
 <li><strong>Docker compatibility</strong> — most Docker commands work
-with <code>podman</code> as a drop-in: <code>alias docker=podman</code>
-is a common setup and works for the vast majority of cases.</li>
+as-is.</li>
 <li><strong>Podman Desktop</strong> — a GUI application that provides a
 Docker Desktop-like experience, available on macOS, Windows, and
 Linux.</li>
 </ul>
-<p>For running LLM inference servers, Docker and Podman are functionally
-equivalent in most scenarios. This guide will use <code>podman</code> in
-examples but every command works equally with <code>docker</code>.</p>
+<p>For local LLM serving, Docker and Podman are equivalent in most
+cases. This guide uses <code>podman</code>; substitute
+<code>docker</code> if preferred.</p>
 <h3 id="gpu-access-in-containers">GPU Access in Containers</h3>
 <p>The one area where containers and GPUs require explicit configuration
 is <strong>device passthrough</strong> — telling the container runtime
@@ -1037,7 +1257,8 @@ acceleration. You can still use containers on Apple Silicon for CPU-only
 workloads, or for services that do not need GPU (like Open WebUI
 connecting to a natively-running Ollama).</p>
 <hr />
-<h2 id="part-6-practical-setups">Part 6: Practical Setups</h2>
+<h2 id="part-4-practical-deployment-blueprints">Part 4: Practical
+Deployment Blueprints</h2>
 <p>Let’s translate theory into working setups for the main use
 cases.</p>
 <p>Quick note before you copy commands: image tags, model names, and CLI
@@ -1098,11 +1319,8 @@ suggestions without lag.</p>
 <hr />
 <h3 id="setup-3-i-want-a-persistent-api-service-with-podman">Setup 3: “I
 want a persistent API service with Podman”</h3>
-<p>Use a Podman systemd service so your inference server starts
-automatically on boot.</p>
-<p>This setup assumes a Linux host with user-level systemd enabled. If
-you are on macOS/Windows, run the container manually or use your
-platform’s startup tooling instead.</p>
+<p>Use a Podman + user-systemd service so your API starts on boot
+(Linux). On macOS/Windows, use your platform startup tooling.</p>
 <div class="sourceCode" id="cb13"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Start the container</span></span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> run <span class="at">-d</span> <span class="dt">\</span></span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--name</span> llm-api <span class="dt">\</span></span>
@@ -1118,16 +1336,15 @@ platform’s startup tooling instead.</p>
 <span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Enable it</span></span>
 <span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> <span class="at">--user</span> enable <span class="at">--now</span> llm-api</span></code></pre></div>
-<p>Now any application on your network can POST to
-<code>http://your-machine:8080/v1/chat/completions</code> using the
-standard OpenAI SDK — with no API key and zero cost per token.</p>
+<p>Any app can now call
+<code>http://your-machine:8080/v1/chat/completions</code> via standard
+OpenAI SDKs.</p>
 <hr />
 <h3 id="setup-4-i-want-everything-text-audio-images-agents">Setup 4: “I
 want everything — text, audio, images, agents”</h3>
 <p>Use <strong>LocalAI</strong> with a persistent volume for models.</p>
-<p>If you are using Podman everywhere else, you can translate the
-<code>docker run</code> examples in LocalAI docs directly to
-<code>podman run</code> for most setups.</p>
+<p><code>docker run</code> examples from LocalAI docs usually translate
+directly to <code>podman run</code>.</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> run <span class="at">-d</span> <span class="dt">\</span></span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--name</span> localai <span class="dt">\</span></span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-p</span> 8080:8080 <span class="dt">\</span></span>
@@ -1145,23 +1362,16 @@ want everything — text, audio, images, agents”</h3>
 <span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a><span class="co"># /v1/chat/completions — text generation</span></span>
 <span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a><span class="co"># /v1/audio/transcriptions — speech to text</span></span>
 <span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a><span class="co"># /v1/embeddings — embeddings for RAG</span></span></code></pre></div>
-<p>LocalAI’s API is a superset of OpenAI’s, so any library that supports
-OpenAI (LangChain, LlamaIndex, AutoGen, OpenAI’s official SDK) works
-against it directly.</p>
+<p>LocalAI’s API is a superset of OpenAI’s, so OpenAI-compatible
+libraries work directly.</p>
 <hr />
 <h3 id="setup-5-i-want-to-build-ai-agents">Setup 5: “I want to build AI
 agents”</h3>
-<p>Agents are LLM-powered programs that can take actions — calling
-tools, searching the web, writing and executing code, or chaining
-multiple model calls together. The key infrastructure requirement is
-<strong>tool calling</strong> (also called function calling) — the
-model’s ability to output structured JSON requesting that a specific
-function be called.</p>
-<p>All modern open models support tool calling when served via an
-OpenAI-compatible API. Your agent framework sends the available tools as
-part of the system prompt in a structured format; the model returns a
-JSON object indicating which tool to call and with what arguments; your
-code executes the tool and returns the result to the model.</p>
+<p>Agents need reliable <strong>tool calling</strong>: model emits
+structured tool requests, your code executes them, and feeds results
+back.</p>
+<p>Most modern instruct models support this behind OpenAI-compatible
+APIs.</p>
 <p>Popular agent frameworks that work against any OpenAI-compatible
 local server:</p>
 <ul>
@@ -1202,7 +1412,8 @@ client-side, meaning you can connect your local LLM to any MCP server
 (filesystem, databases, web browsers, custom APIs) with standardised
 tool definitions.</p>
 <hr />
-<h2 id="part-7-choosing-your-models">Part 7: Choosing Your Models</h2>
+<h2 id="part-5-model-selection-and-operational-decisions">Part 5: Model
+Selection and Operational Decisions</h2>
 <p>The server software is only half the equation. You also need to
 choose which model to run.</p>
 <p>If you only remember one rule: <strong>choose model family first,
@@ -1338,8 +1549,8 @@ trade-off</li>
 </ol>
 <p>Treat model selection as benchmarking, not a one-time decision.</p>
 <hr />
-<h2 id="part-8-the-openai-compatible-api-why-it-matters">Part 8: The
-OpenAI-Compatible API — Why It Matters</h2>
+<h3 id="api-compatibility-layer-keep-this-stable">API Compatibility
+Layer (Keep This Stable)</h3>
 <p>Every tool in this guide speaks (or can speak) the OpenAI Chat
 Completions API. This is important because:</p>
 <ol type="1">
@@ -1381,8 +1592,8 @@ development and switches to GPT-4o in production — same code.</li>
 </tbody>
 </table>
 <hr />
-<h2 id="part-9-rag-giving-your-llm-access-to-your-documents">Part 9: RAG
-— Giving Your LLM Access to Your Documents</h2>
+<h3 id="retrieval-layer-rag-for-private-knowledge">Retrieval Layer: RAG
+for Private Knowledge</h3>
 <p>A base LLM has a training cutoff and no knowledge of your private
 documents. <strong>Retrieval-Augmented Generation (RAG)</strong> solves
 this by:</p>
@@ -1405,37 +1616,22 @@ Ollama), <code>all-minilm-l6-v2</code> (via LocalAI/llama-server),
 the chat interface and it handles the embedding and retrieval
 transparently.</p>
 <hr />
-<h2 id="part-10-openclaw-ai-on-your-phone-powered-by-your-own-hardware">Part
-10: OpenClaw — AI on Your Phone, Powered by Your Own Hardware</h2>
-<p>Everything covered so far has assumed you are sitting in front of
-your machine to interact with your local LLM. OpenClaw breaks that
-assumption. It is a personal AI assistant gateway that lets you talk to
-your locally-running models from anywhere — WhatsApp, Telegram, Slack,
-Discord, or iMessage — through a background daemon that bridges your
-messaging apps to your inference server.</p>
-<p>Think of it as the last mile: your model runs on your hardware, and
-OpenClaw makes it reachable from your phone, your watch, or any chat
-client you already live in.</p>
+<h3 id="access-layer-openclaw-for-remote-personal-assistant-workflows">Access
+Layer: OpenClaw for Remote Personal Assistant Workflows</h3>
+<p>OpenClaw is the “last-mile” gateway: your model runs locally, but you
+can interact through messaging channels (WhatsApp, Telegram, Slack,
+Discord, iMessage).</p>
 <h3 id="what-openclaw-actually-does">What OpenClaw Actually Does</h3>
-<p>OpenClaw runs a persistent local gateway process. When you send a
-message to (for example) a WhatsApp contact or Telegram bot linked to
-your OpenClaw instance, the message is routed to your local Ollama
-backend, the model responds, and the reply arrives back in your chat
-app. The data path is:</p>
+<p>OpenClaw runs a persistent local gateway. Messages are relayed from
+chat apps to your local model backend and returned as replies:</p>
 <pre><code>Your phone -&gt; messaging service -&gt; OpenClaw gateway (your machine) -&gt; Ollama -&gt; model
                                                                                  |
 Your phone &lt;- messaging service &lt;- OpenClaw gateway &lt;----------------------- response</code></pre>
-<p>Beyond simple chat, OpenClaw is a full coding agent platform. It
-integrates with AI coding workflows, ships a bundled web search tool
-(via Ollama’s <code>web_search</code> provider), and supports the Model
-Context Protocol for connecting tools to the model. There is also a
-terminal UI (TUI) for local interaction alongside the messaging
-integrations.</p>
-<p>Critically: the messaging relay goes through the messaging service’s
-own infrastructure (WhatsApp’s servers, Telegram’s API, etc.) but your
-model weights, your conversations, and your agent context all stay on
-your machine. OpenClaw does not operate a cloud inference backend — it
-is purely a bridge.</p>
+<p>It also supports coding-agent workflows, bundled web search, MCP
+tools, and a local TUI.</p>
+<p>Important boundary: message transport still uses each messaging
+provider’s infrastructure, but model execution and assistant state
+remain local.</p>
 <h3 id="setting-it-up">Setting It Up</h3>
 <p>OpenClaw is launched directly through Ollama:</p>
 <div class="sourceCode" id="cb17"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Ollama handles installation, model selection, and daemon startup</span></span>
@@ -1501,17 +1697,10 @@ history, and web search output into the context very quickly.</p>
 </table>
 <h3 id="running-openclaw-on-an-older-laptop-64-gb-ram-6-gb-vram">Running
 OpenClaw on an Older Laptop: 64 GB RAM, 6 GB VRAM</h3>
-<p>This is an interesting and practical constraint. 6 GB of VRAM rules
-out running the recommended models fully on GPU — <code>qwen3.5</code>
-at 11 GB and <code>gemma4</code> at 16 GB both exceed it. But 64 GB of
-system RAM is a significant asset that most guides under-utilise.</p>
-<p>The key technique is <strong>partial GPU offloading</strong> — a
-llama.cpp feature where you load as many transformer layers as will fit
-in VRAM onto the GPU, and run the remaining layers on CPU in RAM.
-Performance is not as fast as full GPU inference, but it is
-substantially faster than CPU-only, because the GPU handles the most
-computationally expensive layers while RAM handles the overflow without
-the VRAM bottleneck.</p>
+<p>6 GB VRAM cannot fully host recommended OpenClaw models, but 64 GB
+RAM is enough for strong partial-offload setups.</p>
+<p>Use <strong>partial GPU offloading</strong>: put as many layers as
+possible on GPU and keep the rest on CPU/RAM.</p>
 <p>llama.cpp’s <code>--n-gpu-layers</code> flag controls how many layers
 go to the GPU. A 7B model has 32 transformer layers; a 13B has 40.</p>
 <p><strong>Practical configuration for a 7B model on 6 GB
@@ -1521,13 +1710,9 @@ VRAM:</strong></p>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--n-gpu-layers</span> 28 <span class="dt">\</span></span>
 <span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--ctx-size</span> 65536 <span class="dt">\</span></span>
 <span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">--port</span> 8080</span></code></pre></div>
-<p>The model weights at Q4_K_M for a 7B model are ~4.5 GB. 28 layers
-will consume around 3.5–4 GB of VRAM, leaving ~1.5–2 GB headroom for the
-KV cache (which grows with context size). The remaining 4 layers run on
-CPU. The 64 GB of RAM means you can hold a <strong>very large context
-window</strong> — the KV cache for 64K context at 7B is roughly 2–4 GB,
-which fits comfortably in RAM even after the OS and other applications
-have their share.</p>
+<p>For a 7B Q4 model (~4.5 GB), <code>--n-gpu-layers 28</code> typically
+uses ~3.5-4 GB VRAM, leaving KV-cache headroom. Remaining layers run on
+CPU. 64 GB RAM is enough for large context KV cache.</p>
 <p>With Ollama, the equivalent is set via an environment variable or a
 Modelfile:</p>
 <div class="sourceCode" id="cb22"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Set GPU layer count globally for Ollama</span></span>
@@ -1543,17 +1728,11 @@ Modelfile:</p>
 <span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a><span class="ex">ollama</span> create my-qwen-laptop <span class="at">-f</span> Modelfile</span>
 <span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a><span class="ex">ollama</span> run my-qwen-laptop</span></code></pre></div>
 <p><strong>What to expect performance-wise:</strong></p>
-<p>On a modern Intel or AMD laptop CPU with 6 GB VRAM doing partial
-offload, a 7B Q4 model will generate roughly 8–15 tokens per second.
-That is readable in real time. Prompt processing (prefilling the
-context) is slower for long contexts, but for interactive use you will
-not notice.</p>
-<p><strong>The 64K context is your superpower here.</strong> Most
-consumer GPU setups are constrained by VRAM for long contexts — the KV
-cache overflows. Your 64 GB RAM means OpenClaw’s agent loops, which
-quickly accumulate large contexts, will run without truncation. You are
-trading raw token speed for context headroom, and for an agent assistant
-that trade is often worth it.</p>
+<p>On modern Intel/AMD laptops with partial offload, 7B Q4 typically
+delivers ~8-15 tok/s. Long-context prefill is slower, but interactive
+chat is usable.</p>
+<p><strong>Your advantage is context headroom.</strong> 64 GB RAM
+absorbs large KV cache growth during long agent loops.</p>
 <p><strong>A concrete setup for this laptop:</strong></p>
 <div class="sourceCode" id="cb23"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Install Ollama natively (not in a container — container GPU passthrough</span></span>
 <span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="co">#    on laptops with integrated+discrete GPU can be tricky)</span></span>
@@ -1571,27 +1750,17 @@ that trade is often worth it.</p>
 <span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Launch OpenClaw against this model</span></span>
 <span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a><span class="ex">ollama</span> launch openclaw <span class="at">--model</span> qwen-laptop</span></code></pre></div>
-<p>The <code>num_thread 8</code> is a suggested starting point — tune it
-to your laptop’s physical core count. More threads help CPU-side layers
-but too many adds overhead; physical core count (not hyperthreads) is
-usually the sweet spot.</p>
+<p><code>num_thread 8</code> is a starting point. Tune toward physical
+core count; too many threads can add overhead.</p>
 <h3 id="why-you-might-want-this-setup">Why You Might Want This
 Setup</h3>
-<p>The appeal of OpenClaw on your own hardware is not performance —
-cloud models will always win there. The appeal is <strong>persistence
-and privacy</strong>: your assistant knows your context, your projects,
-your files, without that data ever touching an external server. You can
-point it at your local filesystem via MCP, connect it to your local
-databases, and give it access to internal tools that could never be
-handed to a cloud API.</p>
-<p>For the laptop scenario specifically, the practical use case is a
-<strong>roaming personal assistant</strong> — you are out with your
-phone, you ask a question via WhatsApp or Telegram, and the answer comes
-from a model running on hardware you own. The 64 GB RAM means the model
-can hold a large conversation history and tool output without forgetting
-context mid-task.</p>
+<p>The main benefit is not raw speed. It is <strong>privacy +
+persistence</strong> with local files, databases, and MCP-connected
+tools.</p>
+<p>For a 64 GB RAM / 6 GB VRAM laptop, this enables a practical roaming
+assistant with large retained context.</p>
 <hr />
-<h2 id="part-11-decision-guide">Part 11: Decision Guide</h2>
+<h3 id="decision-guide-by-constraint">Decision Guide by Constraint</h3>
 <p>Here is how to cut through the options:</p>
 <p><strong>Start here:</strong> Are you on macOS with Apple Silicon? →
 Install Ollama natively. Skip the container complexity for now. Add Open
@@ -1622,7 +1791,7 @@ but modest VRAM (e.g., 6 GB GPU, 64 GB RAM), use partial GPU offloading
 with a 7B model — you get a responsive assistant with a large context
 window at no cloud cost.</p>
 <hr />
-<h2 id="part-12-what-to-try-first">Part 12: What to Try First</h2>
+<h3 id="day-starter-path">5-Day Starter Path</h3>
 <p>Rather than getting lost in choices, here is a concrete sequence for
 a beginner:</p>
 <p><strong>Day 1 — Get something running in 15 minutes:</strong></p>
@@ -1650,7 +1819,7 @@ service so it survives reboots.</p>
 compare quality.</p>
 <p>From there, the path branches based on what you are building.</p>
 <hr />
-<h2 id="part-13-closing-thoughts">Part 13: Closing Thoughts</h2>
+<h2 id="conclusion">Conclusion</h2>
 <p>The local LLM ecosystem has matured faster than almost any other area
 of software in recent memory. Two years ago, running a capable model
 locally required navigating undocumented build systems and arcane CUDA
@@ -1669,7 +1838,7 @@ a one-line configuration change.</p>
 <p>You own the weights. You own the compute. Nothing you type leaves
 your machine.</p>
 <hr />
-<h2 id="reference-quick-command-cheatsheet">Reference: Quick-Command
+<h2 id="appendix-a-quick-command-cheatsheet">Appendix A: Quick-Command
 Cheatsheet</h2>
 <div class="sourceCode" id="cb26"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># === Ollama ===</span></span>
 <span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ollama</span> pull llama3.1:8b            <span class="co"># Download a model</span></span>
@@ -1711,7 +1880,7 @@ Cheatsheet</h2>
 <span id="cb26-38"><a href="#cb26-38" aria-hidden="true" tabindex="-1"></a><span class="st">)</span></span>
 <span id="cb26-39"><a href="#cb26-39" aria-hidden="true" tabindex="-1"></a><span class="st">print(r.choices[0].message.content)</span></span></code></pre></div>
 <hr />
-<h2 id="further-reading">Further Reading</h2>
+<h2 id="appendix-b-further-reading">Appendix B: Further Reading</h2>
 <ul>
 <li><a href="https://github.com/ggml-org/llama.cpp">llama.cpp README</a>
 — the engine under most of this ecosystem</li>
@@ -1733,16 +1902,131 @@ Face GGUF models</a> — browse the model catalogue</li>
   </div>
 
   <script>
-    (function () {
+    // Robust collapsible TOC logic: wait for #TOC, add logging
+    function firstChildByTag(parent, tagName) {
+      var children = parent.children;
+      for (var i = 0; i < children.length; i++) {
+        if (children[i].tagName === tagName) {
+          return children[i];
+        }
+      }
+      return null;
+    }
+
+    function tocDepth(li, tocRoot) {
+      var depth = 0;
+      var node = li;
+      while (node && node !== tocRoot) {
+        if (node.tagName === 'UL') {
+          depth += 1;
+        }
+        node = node.parentElement;
+      }
+      return depth;
+    }
+
+    function makeTOCCollapsible() {
+      var toc = document.getElementById('TOC');
+      if (!toc) { return false; }
+      // Only run once
+      if (toc.classList.contains('collapsible-ready')) { return true; }
+      toc.classList.add('collapsible-ready');
+
+      Array.prototype.forEach.call(toc.querySelectorAll('li'), function (li) {
+        var depth = tocDepth(li, toc);
+        li.classList.add('toc-depth-' + String(depth));
+
+        var sublist = firstChildByTag(li, 'UL');
+        if (sublist && depth >= 1) {
+          var btn = document.createElement('button');
+          btn.setAttribute('type', 'button');
+          btn.className = 'toc-toggle';
+          btn.innerHTML = '<span class="toc-arrow">▶</span>';
+          btn.setAttribute('aria-label', 'Expand/collapse section');
+          var firstLink = firstChildByTag(li, 'A');
+          li.classList.add('has-toggle');
+          if (firstLink) {
+            firstLink.classList.add('toc-link-inline');
+            li.insertBefore(btn, firstLink);
+          } else {
+            li.insertBefore(btn, li.firstChild);
+          }
+          sublist.style.display = 'none';
+          btn.classList.add('collapsed');
+          btn.setAttribute('aria-expanded', 'false');
+          btn.addEventListener('click', function () {
+            var open = sublist.style.display !== 'none';
+            sublist.style.display = open ? 'none' : '';
+            btn.classList.toggle('collapsed', open);
+            btn.classList.toggle('expanded', !open);
+            btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+          });
+        }
+      });
+      console.log('[TOC] Collapsible TOC initialized');
+      return true;
+    }
+
+    // Try on DOMContentLoaded, then poll for late-injected TOC
+    function initTOCWithRetries() {
+      var tries = 0;
+      var maxTries = 20;
+      var interval = setInterval(function () {
+        var done = makeTOCCollapsible();
+        if (done || ++tries > maxTries) clearInterval(interval);
+      }, 200);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initTOCWithRetries);
+    } else {
+      initTOCWithRetries();
+    }
+
+    // Math renderer toggle: switch between generated mathjax/mathml files.
+    (function initMathModeToggle() {
+      var btn = document.getElementById('math-mode-toggle');
+      if (!btn) {
+        return;
+      }
+
+      var path = window.location.pathname || '';
+      var targetPath = '';
+      var label = '';
+
+      if (path.endsWith('.mathml.html')) {
+        targetPath = path.slice(0, -('.mathml.html'.length)) + '.mathjax.html';
+        label = 'Switch to MathJax';
+      } else if (path.endsWith('.mathjax.html')) {
+        targetPath = path.slice(0, -('.mathjax.html'.length)) + '.mathml.html';
+        label = 'Switch to MathML';
+      } else if (path.endsWith('.html')) {
+        targetPath = path.slice(0, -('.html'.length)) + '.mathml.html';
+        label = 'Switch to MathML';
+      }
+
+      if (!targetPath) {
+        btn.style.display = 'none';
+        return;
+      }
+
+      btn.textContent = label;
+      btn.addEventListener('click', function () {
+        window.location.href = targetPath + (window.location.search || '') + (window.location.hash || '');
+      });
+    })();
+
+      // Sidebar resizer logic (existing)
       var root = document.documentElement;
       var layout = document.querySelector('.layout');
       var sidebar = document.querySelector('.sidebar');
       var resizer = document.querySelector('.sidebar-resizer');
       var STORAGE_KEY = 'llm_primer_sidebar_width';
 
-      if (!layout || !sidebar || !resizer) {
-        return;
-      }
+      // if (!layout || !sidebar || !resizer) {
+      //   return;
+      // }
+
 
       function cssPxVar(name, fallback) {
         var raw = getComputedStyle(root).getPropertyValue(name).trim();
@@ -1793,6 +2077,160 @@ Face GGUF models</a> — browse the model catalogue</li>
         resizer.setPointerCapture(ev.pointerId);
         window.addEventListener('pointermove', onMove);
         window.addEventListener('pointerup', onUp);
+      });
+  </script>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var LANG_NAMES = {
+        python: 'Python', r: 'R', julia: 'Julia',
+        bash: 'Shell', sh: 'Shell', text: 'Output', markdown: 'Markdown'
+      };
+
+      function getLang(sourceDiv) {
+        var pre = sourceDiv.querySelector('pre');
+        if (!pre) return 'Code';
+        var classes = Array.prototype.slice.call(pre.classList);
+        for (var i = 0; i < classes.length; i++) {
+          var cls = classes[i];
+          if (cls === 'sourceCode') continue;
+          return LANG_NAMES[cls] || (cls.charAt(0).toUpperCase() + cls.slice(1));
+        }
+        return 'Code';
+      }
+
+      // A <p><strong>…</strong></p> language label inserted by the markdown author
+      function isLangLabel(node) {
+        if (!node || node.nodeType !== Node.ELEMENT_NODE || node.tagName !== 'P') return false;
+        var nonEmpty = Array.prototype.filter.call(node.childNodes, function (n) {
+          return !(n.nodeType === Node.TEXT_NODE && n.textContent.trim() === '');
+        });
+        return nonEmpty.length === 1 && nonEmpty[0].tagName === 'STRONG';
+      }
+
+      function isWhitespace(node) {
+        return node.nodeType === Node.TEXT_NODE && node.textContent.trim() === '';
+      }
+
+      // Two .sourceCode divs are consecutive if only whitespace or lang-label <p> nodes lie between them
+      function areConsecutive(a, b) {
+        var node = a.nextSibling;
+        while (node) {
+          if (node === b) return true;
+          if (isWhitespace(node) || isLangLabel(node)) { node = node.nextSibling; continue; }
+          return false;
+        }
+        return false;
+      }
+
+      function groupConsecutive(divs) {
+        var groups = [];
+        var i = 0;
+        while (i < divs.length) {
+          var run = [divs[i]];
+          while (i + 1 < divs.length && areConsecutive(run[run.length - 1], divs[i + 1])) {
+            i++;
+            run.push(divs[i]);
+          }
+          groups.push(run);
+          i++;
+        }
+        return groups;
+      }
+
+      function makeTabs(run) {
+        var wrapper = document.createElement('div');
+        wrapper.className = 'code-tabs';
+
+        var tabBar = document.createElement('div');
+        tabBar.className = 'code-tab-bar';
+        wrapper.appendChild(tabBar);
+
+        run.forEach(function (div, idx) {
+          var btn = document.createElement('button');
+          btn.className = 'code-tab-btn' + (idx === 0 ? ' active' : '');
+          btn.textContent = getLang(div);
+          btn.setAttribute('data-idx', String(idx));
+          tabBar.appendChild(btn);
+
+          var panel = document.createElement('div');
+          panel.className = 'code-tab-panel' + (idx === 0 ? ' active' : '');
+          panel.setAttribute('data-idx', String(idx));
+          panel.appendChild(div);
+          wrapper.appendChild(panel);
+        });
+
+        tabBar.addEventListener('click', function (e) {
+          var btn = e.target;
+          while (btn && !btn.classList.contains('code-tab-btn')) btn = btn.parentElement;
+          if (!btn) return;
+          var idx = btn.getAttribute('data-idx');
+          Array.prototype.forEach.call(wrapper.querySelectorAll('.code-tab-btn'), function (b) { b.classList.remove('active'); });
+          Array.prototype.forEach.call(wrapper.querySelectorAll('.code-tab-panel'), function (p) { p.classList.remove('active'); });
+          btn.classList.add('active');
+          wrapper.querySelector('.code-tab-panel[data-idx="' + idx + '"]').classList.add('active');
+        });
+
+        return wrapper;
+      }
+
+      function makeCollapsible(div) {
+        var details = document.createElement('details');
+        details.className = 'code-details';
+        details.open = true;
+
+        var summary = document.createElement('summary');
+        summary.className = 'code-summary';
+        summary.textContent = getLang(div);
+        details.appendChild(summary);
+
+        div.parentNode.insertBefore(details, div);
+        details.appendChild(div);
+      }
+
+      function applyTabs(run) {
+        var parent = run[0].parentNode;
+
+        // Collect lang-label <p> nodes immediately preceding each code block in the run
+        var toRemove = [];
+        run.forEach(function (div) {
+          var prev = div.previousSibling;
+          while (prev && isWhitespace(prev)) prev = prev.previousSibling;
+          if (prev && isLangLabel(prev)) toRemove.push(prev);
+        });
+
+        // Insertion point: the label before the first block (if it exists), else the first block
+        var insertionPoint = run[0];
+        if (toRemove.length > 0) {
+          var firstLabel = toRemove[0];
+          // Use firstLabel only if it genuinely precedes run[0]
+          if (firstLabel.compareDocumentPosition(run[0]) & Node.DOCUMENT_POSITION_FOLLOWING) {
+            insertionPoint = firstLabel;
+          }
+        }
+
+        var placeholder = document.createTextNode('');
+        parent.insertBefore(placeholder, insertionPoint);
+        toRemove.forEach(function (el) { el.parentNode.removeChild(el); });
+
+        var widget = makeTabs(run);
+        parent.replaceChild(widget, placeholder);
+      }
+
+      document.addEventListener('DOMContentLoaded', function () {
+        var all = Array.prototype.slice.call(
+          document.querySelectorAll('.content div.sourceCode')
+        );
+        var groups = groupConsecutive(all);
+        groups.forEach(function (run) {
+          if (run.length >= 2) {
+            applyTabs(run);
+          } else {
+            makeCollapsible(run[0]);
+          }
+        });
       });
     })();
   </script>
