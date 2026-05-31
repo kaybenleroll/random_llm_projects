@@ -1,0 +1,57 @@
+---
+title: "Catastrophe ELT Primer Executable Index"
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    toc-location: left
+    number-sections: true
+    template: ../doc_template.html
+    embed-resources: true
+---
+
+## Render Scripts
+
+| Script | Purpose | Inputs | Output |
+|---|---|---|---|
+| `scripts/render_primer.sh` | Render canonical primer with dev/full simulation control | `render.env`, `MODE` | `outputs/elt_primer.html` |
+| `scripts/render_quickstart.sh` | Render quickstart companion | `render.env` | `outputs/primer_quickstart.html` |
+| `scripts/render_index.sh` | Render this executable index | `render.env` | `outputs/executable_index.html` |
+| `scripts/render_all.sh` | Render full package in one command | `render.env`, `MODE` | All three HTML files |
+
+## Just Targets
+
+| Target | Purpose |
+|---|---|
+| `just image-build` | Build container image |
+| `just render-dev-container` | Render package in dev mode |
+| `just render-full-container` | Render package in full mode |
+| `just render-primer-container mode=full` | Render only canonical primer |
+| `just clean` | Remove outputs |
+
+## Primer Section Map (Where to Look)
+
+| Primer Section | Use When | Typical Output |
+|---|---|---|
+| What "ELT" Means in Practice | onboarding readers to terminology | shared language and assumptions |
+| Generating Synthetic ELTs (Why and How) | testing workflows without production data | controlled synthetic ELT tables |
+| OEP and AEP: Choosing the Right Lens | choosing occurrence vs annual risk framing | OEP/AEP points by return period |
+| From ELT to Empirical Distributions | converting row-level ELT to decision distributions | empirical event/annual quantiles and EP/RP tables |
+| End-to-end mini-case: synthetic ELT to treaty outputs | demonstrating full chain for committees | linked OEP/AEP and treaty response outputs |
+| Production Implementation and Governance | release and sign-off readiness | gates, assumptions, checklist, decision template |
+
+## Deterministic Controls
+
+`render.env` controls simulation depth and seeds:
+
+1. `DEV_N_SIMS`
+2. `FULL_N_SIMS`
+3. `SEED_R`
+4. `SEED_PY`
+5. `OUTPUT_DIR`
+
+## Expected Render Sequence
+
+1. Build image once: `just image-build`
+2. Iterate quickly: `just render-dev-container`
+3. Final check: `just render-full-container`
