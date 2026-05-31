@@ -1,0 +1,12 @@
+% Pandoc LaTeX template fragment to make code blocks more compact
+\usepackage{etoolbox}
+% Make code blocks very compact
+\AtBeginEnvironment{Shaded}{%
+  \setlength{\parskip}{0pt}%
+  \setlength{\parindent}{0pt}%
+  \renewcommand{\baselinestretch}{0.95}%
+  \footnotesize% (smaller font than \small)
+}
+% Reduce vertical space before/after code blocks
+\pretocmd{\VerbatimEnvironment}{\vspace{-0.7em}}{}{}
+\apptocmd{\endVerbatimEnvironment}{\vspace{-0.7em}}{}{}
