@@ -1,12 +1,8 @@
 # Running LLMs Locally: A Complete Beginner's Landscape
 
-## From Zero to Your Own Private AI Stack — With Containers
-
----
+From Zero to Your Own Private AI Stack, With Containers
 
 *~7,800 words · May 2026*
-
----
 
 You have heard the hype. You have used ChatGPT. Now you want to understand what it would take to run one of these models yourself — on your own hardware, inside your own network, without sending a single token to a third-party server.
 
@@ -15,6 +11,18 @@ This guide is for you.
 It is written for someone who is new to both large language models (LLMs) and container technology. You will come away knowing what an LLM inference server is, why containers are the right way to run one, which tools exist across the full spectrum from beginner-friendly to production-grade, and how to make a considered choice based on your hardware and goals.
 
 We will not prescribe a single solution. We will map the territory.
+
+### How This Guide Is Structured
+
+To keep this practical, the guide is arranged as one flow:
+
+1. Foundations and concepts you need before touching tooling.
+2. Hardware and runtime constraints that determine what is realistic.
+3. Inference stack options (engines, servers, and UIs).
+4. Deployment blueprints for common goals.
+5. Model-selection and operating decisions.
+
+You can read it linearly or jump directly to the part that matches your current bottleneck.
 
 ### Before You Start (Beginner Checklist)
 
@@ -30,7 +38,7 @@ If those are true, you are ready.
 
 ---
 
-## Part 1: What Is an LLM, Really?
+## Part 1: Foundations You Actually Need
 
 Before running anything, you need a mental model of what you are actually running.
 
@@ -51,7 +59,7 @@ All of this is mathematically just matrix multiplication at enormous scale. It i
 
 ---
 
-## Part 2: Core Concepts You Need to Understand
+## Core Concepts That Drive Day-to-Day Decisions
 
 These terms will come up repeatedly. Getting them straight now will save you a lot of confusion.
 
@@ -86,7 +94,7 @@ Most beginners hit this confusion point early, so let's make it explicit now.
 - **Ollama Library** is a curated model catalogue that wraps model files in simple names like `llama3.2:3b`.
 - **A model page** usually includes: weights, quantised variants, a license, and a model card that explains intended use and limitations.
 
-When this guide says "download from Hugging Face", it means: open a model page on `huggingface.co`, choose a compatible file (usually GGUF for llama.cpp-class tools), and verify the license and model card before use. We will go deeper on this in Part 7.
+When this guide says "download from Hugging Face", it means: open a model page on `huggingface.co`, choose a compatible file (usually GGUF for llama.cpp-class tools), and verify the license and model card before use. We will go deeper on this in Part 5.
 
 ### Context Window
 
@@ -104,7 +112,7 @@ These are parameters you control at inference time. **Temperature** controls ran
 
 ---
 
-## Part 3: The Hardware Reality
+## Part 2: Hardware and Runtime Constraints
 
 Your hardware determines which models and servers are practical. Here is an honest assessment:
 
@@ -150,7 +158,7 @@ If you have multiple machines — say, a beefy workstation and a laptop — seve
 
 ---
 
-## Part 4: The Inference Server Ecosystem
+## Part 3: Inference Stack Options
 
 This is the heart of the guide. There are many tools, each with a different philosophy. We will cover them honestly.
 
@@ -370,11 +378,9 @@ Open WebUI supports multi-user accounts, conversation history, RAG via document 
 
 ---
 
-## Part 5: Containers — Why They Make Sense Here
+### Runtime Layer: Why Containers Usually Win
 
-If you are new to containers, here is the key insight: **an LLM inference server has complex, version-sensitive dependencies** (CUDA libraries, ROCm drivers, specific Python versions, compiled backends). Installing all of this natively on your machine creates a brittle system that is hard to reproduce and harder to undo.
-
-A container packages the application and all its dependencies into an isolated image. You pull the image, run it, and everything works — without polluting your host system. When you are done or want to upgrade, you remove the container.
+LLM servers have version-sensitive dependencies (CUDA/ROCm, Python, compiled backends). Containers isolate that stack so installs are reproducible, easy to replace, and do not pollute your host.
 
 ### Docker vs Podman
 
@@ -384,10 +390,10 @@ A container packages the application and all its dependencies into an isolated i
 
 - **Rootless by default** — containers run as your user, not as root. A compromised container cannot escape and damage the host as easily.
 - **Daemonless** — no persistent background service. Each `podman` command is a standalone process.
-- **Docker compatibility** — most Docker commands work with `podman` as a drop-in: `alias docker=podman` is a common setup and works for the vast majority of cases.
+- **Docker compatibility** — most Docker commands work as-is.
 - **Podman Desktop** — a GUI application that provides a Docker Desktop-like experience, available on macOS, Windows, and Linux.
 
-For running LLM inference servers, Docker and Podman are functionally equivalent in most scenarios. This guide will use `podman` in examples but every command works equally with `docker`.
+For local LLM serving, Docker and Podman are equivalent in most cases. This guide uses `podman`; substitute `docker` if preferred.
 
 ### GPU Access in Containers
 
@@ -426,7 +432,7 @@ macOS containers (via Podman Desktop's VM, or Docker Desktop) do not have direct
 
 ---
 
-## Part 6: Practical Setups
+## Part 4: Practical Deployment Blueprints
 
 Let's translate theory into working setups for the main use cases.
 
@@ -495,9 +501,7 @@ For the VS Code extension that turns llama.cpp's FIM (fill-in-the-middle) capabi
 
 ### Setup 3: "I want a persistent API service with Podman"
 
-Use a Podman systemd service so your inference server starts automatically on boot.
-
-This setup assumes a Linux host with user-level systemd enabled. If you are on macOS/Windows, run the container manually or use your platform's startup tooling instead.
+Use a Podman + user-systemd service so your API starts on boot (Linux). On macOS/Windows, use your platform startup tooling.
 
 ```bash
 # Start the container
@@ -517,7 +521,7 @@ podman generate systemd --name llm-api > ~/.config/systemd/user/llm-api.service
 systemctl --user enable --now llm-api
 ```
 
-Now any application on your network can POST to `http://your-machine:8080/v1/chat/completions` using the standard OpenAI SDK — with no API key and zero cost per token.
+Any app can now call `http://your-machine:8080/v1/chat/completions` via standard OpenAI SDKs.
 
 ---
 
@@ -525,7 +529,7 @@ Now any application on your network can POST to `http://your-machine:8080/v1/cha
 
 Use **LocalAI** with a persistent volume for models.
 
-If you are using Podman everywhere else, you can translate the `docker run` examples in LocalAI docs directly to `podman run` for most setups.
+`docker run` examples from LocalAI docs usually translate directly to `podman run`.
 
 ```bash
 podman run -d \
@@ -547,15 +551,15 @@ podman exec localai local-ai run whisper-base
 # /v1/embeddings — embeddings for RAG
 ```
 
-LocalAI's API is a superset of OpenAI's, so any library that supports OpenAI (LangChain, LlamaIndex, AutoGen, OpenAI's official SDK) works against it directly.
+LocalAI's API is a superset of OpenAI's, so OpenAI-compatible libraries work directly.
 
 ---
 
 ### Setup 5: "I want to build AI agents"
 
-Agents are LLM-powered programs that can take actions — calling tools, searching the web, writing and executing code, or chaining multiple model calls together. The key infrastructure requirement is **tool calling** (also called function calling) — the model's ability to output structured JSON requesting that a specific function be called.
+Agents need reliable **tool calling**: model emits structured tool requests, your code executes them, and feeds results back.
 
-All modern open models support tool calling when served via an OpenAI-compatible API. Your agent framework sends the available tools as part of the system prompt in a structured format; the model returns a JSON object indicating which tool to call and with what arguments; your code executes the tool and returns the result to the model.
+Most modern instruct models support this behind OpenAI-compatible APIs.
 
 Popular agent frameworks that work against any OpenAI-compatible local server:
 
@@ -588,7 +592,7 @@ For agents with tool use, ensure the model you choose has been trained for instr
 
 ---
 
-## Part 7: Choosing Your Models
+## Part 5: Model Selection and Operational Decisions
 
 The server software is only half the equation. You also need to choose which model to run.
 
@@ -670,7 +674,7 @@ Treat model selection as benchmarking, not a one-time decision.
 
 ---
 
-## Part 8: The OpenAI-Compatible API — Why It Matters
+### API Compatibility Layer (Keep This Stable)
 
 Every tool in this guide speaks (or can speak) the OpenAI Chat Completions API. This is important because:
 
@@ -689,7 +693,7 @@ The key endpoints:
 
 ---
 
-## Part 9: RAG — Giving Your LLM Access to Your Documents
+### Retrieval Layer: RAG for Private Knowledge
 
 A base LLM has a training cutoff and no knowledge of your private documents. **Retrieval-Augmented Generation (RAG)** solves this by:
 
@@ -705,15 +709,13 @@ Open WebUI has RAG built in — you can upload documents directly in the chat in
 
 ---
 
-## Part 10: OpenClaw — AI on Your Phone, Powered by Your Own Hardware
+### Access Layer: OpenClaw for Remote Personal Assistant Workflows
 
-Everything covered so far has assumed you are sitting in front of your machine to interact with your local LLM. OpenClaw breaks that assumption. It is a personal AI assistant gateway that lets you talk to your locally-running models from anywhere — WhatsApp, Telegram, Slack, Discord, or iMessage — through a background daemon that bridges your messaging apps to your inference server.
-
-Think of it as the last mile: your model runs on your hardware, and OpenClaw makes it reachable from your phone, your watch, or any chat client you already live in.
+OpenClaw is the "last-mile" gateway: your model runs locally, but you can interact through messaging channels (WhatsApp, Telegram, Slack, Discord, iMessage).
 
 ### What OpenClaw Actually Does
 
-OpenClaw runs a persistent local gateway process. When you send a message to (for example) a WhatsApp contact or Telegram bot linked to your OpenClaw instance, the message is routed to your local Ollama backend, the model responds, and the reply arrives back in your chat app. The data path is:
+OpenClaw runs a persistent local gateway. Messages are relayed from chat apps to your local model backend and returned as replies:
 
 ```
 Your phone -> messaging service -> OpenClaw gateway (your machine) -> Ollama -> model
@@ -721,9 +723,9 @@ Your phone -> messaging service -> OpenClaw gateway (your machine) -> Ollama -> 
 Your phone <- messaging service <- OpenClaw gateway <----------------------- response
 ```
 
-Beyond simple chat, OpenClaw is a full coding agent platform. It integrates with AI coding workflows, ships a bundled web search tool (via Ollama's `web_search` provider), and supports the Model Context Protocol for connecting tools to the model. There is also a terminal UI (TUI) for local interaction alongside the messaging integrations.
+It also supports coding-agent workflows, bundled web search, MCP tools, and a local TUI.
 
-Critically: the messaging relay goes through the messaging service's own infrastructure (WhatsApp's servers, Telegram's API, etc.) but your model weights, your conversations, and your agent context all stay on your machine. OpenClaw does not operate a cloud inference backend — it is purely a bridge.
+Important boundary: message transport still uses each messaging provider's infrastructure, but model execution and assistant state remain local.
 
 ### Setting It Up
 
@@ -774,9 +776,9 @@ OpenClaw is an agentic assistant — it does multi-turn reasoning, uses tools, a
 
 ### Running OpenClaw on an Older Laptop: 64 GB RAM, 6 GB VRAM
 
-This is an interesting and practical constraint. 6 GB of VRAM rules out running the recommended models fully on GPU — `qwen3.5` at 11 GB and `gemma4` at 16 GB both exceed it. But 64 GB of system RAM is a significant asset that most guides under-utilise.
+6 GB VRAM cannot fully host recommended OpenClaw models, but 64 GB RAM is enough for strong partial-offload setups.
 
-The key technique is **partial GPU offloading** — a llama.cpp feature where you load as many transformer layers as will fit in VRAM onto the GPU, and run the remaining layers on CPU in RAM. Performance is not as fast as full GPU inference, but it is substantially faster than CPU-only, because the GPU handles the most computationally expensive layers while RAM handles the overflow without the VRAM bottleneck.
+Use **partial GPU offloading**: put as many layers as possible on GPU and keep the rest on CPU/RAM.
 
 llama.cpp's `--n-gpu-layers` flag controls how many layers go to the GPU. A 7B model has 32 transformer layers; a 13B has 40.
 
@@ -790,7 +792,7 @@ llama-server -m ./qwen2.5-7b-instruct-Q4_K_M.gguf \
   --port 8080
 ```
 
-The model weights at Q4_K_M for a 7B model are ~4.5 GB. 28 layers will consume around 3.5–4 GB of VRAM, leaving ~1.5–2 GB headroom for the KV cache (which grows with context size). The remaining 4 layers run on CPU. The 64 GB of RAM means you can hold a **very large context window** — the KV cache for 64K context at 7B is roughly 2–4 GB, which fits comfortably in RAM even after the OS and other applications have their share.
+For a 7B Q4 model (~4.5 GB), `--n-gpu-layers 28` typically uses ~3.5-4 GB VRAM, leaving KV-cache headroom. Remaining layers run on CPU. 64 GB RAM is enough for large context KV cache.
 
 With Ollama, the equivalent is set via an environment variable or a Modelfile:
 
@@ -811,9 +813,9 @@ ollama run my-qwen-laptop
 
 **What to expect performance-wise:**
 
-On a modern Intel or AMD laptop CPU with 6 GB VRAM doing partial offload, a 7B Q4 model will generate roughly 8–15 tokens per second. That is readable in real time. Prompt processing (prefilling the context) is slower for long contexts, but for interactive use you will not notice.
+On modern Intel/AMD laptops with partial offload, 7B Q4 typically delivers ~8-15 tok/s. Long-context prefill is slower, but interactive chat is usable.
 
-**The 64K context is your superpower here.** Most consumer GPU setups are constrained by VRAM for long contexts — the KV cache overflows. Your 64 GB RAM means OpenClaw's agent loops, which quickly accumulate large contexts, will run without truncation. You are trading raw token speed for context headroom, and for an agent assistant that trade is often worth it.
+**Your advantage is context headroom.** 64 GB RAM absorbs large KV cache growth during long agent loops.
 
 **A concrete setup for this laptop:**
 
@@ -836,17 +838,17 @@ ollama create qwen-laptop -f ~/qwen-laptop.Modelfile
 ollama launch openclaw --model qwen-laptop
 ```
 
-The `num_thread 8` is a suggested starting point — tune it to your laptop's physical core count. More threads help CPU-side layers but too many adds overhead; physical core count (not hyperthreads) is usually the sweet spot.
+`num_thread 8` is a starting point. Tune toward physical core count; too many threads can add overhead.
 
 ### Why You Might Want This Setup
 
-The appeal of OpenClaw on your own hardware is not performance — cloud models will always win there. The appeal is **persistence and privacy**: your assistant knows your context, your projects, your files, without that data ever touching an external server. You can point it at your local filesystem via MCP, connect it to your local databases, and give it access to internal tools that could never be handed to a cloud API.
+The main benefit is not raw speed. It is **privacy + persistence** with local files, databases, and MCP-connected tools.
 
-For the laptop scenario specifically, the practical use case is a **roaming personal assistant** — you are out with your phone, you ask a question via WhatsApp or Telegram, and the answer comes from a model running on hardware you own. The 64 GB RAM means the model can hold a large conversation history and tool output without forgetting context mid-task.
+For a 64 GB RAM / 6 GB VRAM laptop, this enables a practical roaming assistant with large retained context.
 
 ---
 
-## Part 11: Decision Guide
+### Decision Guide by Constraint
 
 Here is how to cut through the options:
 
@@ -876,7 +878,7 @@ Here is how to cut through the options:
 
 ---
 
-## Part 12: What to Try First
+### 5-Day Starter Path
 
 Rather than getting lost in choices, here is a concrete sequence for a beginner:
 
@@ -911,7 +913,7 @@ From there, the path branches based on what you are building.
 
 ---
 
-## Part 13: Closing Thoughts
+## Conclusion
 
 The local LLM ecosystem has matured faster than almost any other area of software in recent memory. Two years ago, running a capable model locally required navigating undocumented build systems and arcane CUDA dependencies. Today, `ollama run llama3.2` gets you there in thirty seconds.
 
@@ -923,7 +925,7 @@ You own the weights. You own the compute. Nothing you type leaves your machine.
 
 ---
 
-## Reference: Quick-Command Cheatsheet
+## Appendix A: Quick-Command Cheatsheet
 
 ```bash
 # === Ollama ===
@@ -969,7 +971,7 @@ print(r.choices[0].message.content)
 
 ---
 
-## Further Reading
+## Appendix B: Further Reading
 
 - [llama.cpp README](https://github.com/ggml-org/llama.cpp) — the engine under most of this ecosystem
 - [Ollama documentation](https://docs.ollama.com) — model library, API reference, integrations

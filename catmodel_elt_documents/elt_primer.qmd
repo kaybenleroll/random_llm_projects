@@ -1,0 +1,1264 @@
+---
+title: "Catastrophe ELT Primer"
+subtitle: "Practical, Reproducible, and Decision-Oriented"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    number-sections: true
+    template: ../doc_template.html
+    embed-resources: true
+execute:
+  warning: false
+  message: false
+---
+
+## Audience and Intent
+
+If you have strong insurance background but catastrophe model output still feels like a black box, this document is for you.
+
+You do not need to be a catastrophe model developer to use this document. The aim is to make the mechanics understandable enough that you can challenge assumptions, interpret outputs correctly, and communicate decisions with confidence.
+
+In this primer, "CAT" means catastrophe. To keep language clear, the document introduces concepts in full form first, then uses short form where it helps readability.
+
+In this primer, "ELT" means Event Loss Table.
+
+The goal is not to impress you with abstract math. The goal is to get you comfortable with the practical questions that keep coming up in real work:
+
+1. What does this Event Loss Table (ELT) actually imply for pricing?
+2. Which metric should I use in this treaty conversation?
+3. Are these tail numbers credible enough to use?
+4. What do I check before trusting a vendor-style table?
+
+This version is deliberately opinionated:
+
+1. Intuition first, derivation where it matters.
+2. R/tidyverse as canonical implementation.
+3. Python parallels for key sections, with both pandas and polars.
+4. Balanced treatment of occurrence XL, aggregate, and quota share.
+5. Synthetic diagnostics now, real-data validation framework ready for later.
+
+### What this primer does and does not do
+
+What it does:
+
+1. Explains how to interpret catastrophe Event Loss Tables in pricing and risk decisions.
+2. Shows reproducible examples that convert ELT rows into empirical decision outputs.
+3. Connects analytics to governance and release-readiness controls.
+
+What it does not do:
+
+1. Replace detailed vendor methodology documents.
+2. Claim one universal distribution or dependence model is always correct.
+3. Eliminate the need for portfolio-specific validation and judgment.
+
+### Key terms used early in this document
+
+| Term | Meaning |
+|---|---|
+| ELT | Event Loss Table |
+| AAL | Average annual loss |
+| OEP | Occurrence exceedance probability |
+| AEP | Aggregate exceedance probability |
+| GUL | Ground-up loss (before policy and reinsurance terms) |
+| CV | Coefficient of variation, often used as $CV = \sigma/\mu$ |
+
+### Why catastrophe-exposed property insurance is hard
+
+Catastrophe-exposed property insurance has a few structural challenges that make it different from many other pricing contexts:
+
+1. Losses are highly skewed: many periods look quiet, then rare events dominate results.
+2. Historical loss data is sparse at decision-relevant return periods.
+3. Portfolio mix changes over time (geography, occupancy, construction, terms), so historical outcomes are not directly portable.
+4. Event dependence and accumulation effects can create annual outcomes far larger than single-event intuition suggests.
+5. Policy terms, reinsurance structures, and loss view definitions can change interpretation by large factors.
+
+This is why catastrophe event loss table work is fundamentally forward-looking. The goal is not to predict one exact year; it is to build decision-grade distributions under transparent assumptions.
+
+### How to read this document by role
+
+| If you are primarily... | Start here | Then go to |
+|---|---|---|
+| Pricing/Treaty | ELT structure, occurrence exceedance probability (OEP), aggregate exceedance probability (AEP), treaty sections | Production workflow notes, advanced methods |
+| Risk/Capital | OEP/AEP interpretation, empirical distributions, dependence | Extreme value theory (EVT), advanced validation backtesting |
+| Model Validation/Governance | Validation and sensitivity, production workflow | Advanced validation, best practices checklist |
+| Engineering/Implementation | Runtime/reproducibility, Python portability | Production workflow notes, executable index companion |
+
+Practical reading order:
+
+1. Read the core practical sections first.
+2. Use outputs from those sections in day-to-day pricing and validation.
+3. Use advanced sections only when tail, dependence, or run-time constraints require them.
+
+### Executive reading paths by available time
+
+If you only have limited time, use one of these routes:
+
+1. 10-minute path: Audience and intent -> ELT meaning in practice -> OEP/AEP quick map -> release readiness checklist.
+2. 30-minute path: Add ELT structure/loss views -> empirical distribution conversion -> treaty outputs mini-case -> assumptions register.
+3. Deep technical path: Read full core sections, then advanced methods and advanced validation, then production governance controls.
+
+The purpose of these paths is not to skip rigor. It is to match depth to decision context without losing critical caveats.
+
+## Why ELTs Exist
+
+Historical actuarial methods are powerful, but catastrophe risk has a structural problem: the most decision-relevant events are rare.
+
+If your pricing and capital decisions depend on 1-in-100 or 1-in-250 behavior, raw claims history alone is often not enough. ELTs exist because catastrophe modeling is fundamentally prospective.
+
+The forward-looking logic is:
+
+1. Generate plausible stochastic event sets.
+2. Map hazard to damage and damage to insured loss.
+3. Encode those event-level outcomes in a compact table.
+4. Simulate many annual outcomes for pricing and risk decisions.
+
+In short: ELT is a compact machine-readable catalog of contingent futures.
+
+## What "ELT" Means in Practice
+
+In catastrophe modeling, ELT usually means Event Loss Table.
+
+An Event Loss Table is a row-wise representation of potential catastrophe events and their modeled loss behavior for a specific portfolio and loss view.
+
+Two practical clarifications matter:
+
+1. It is event-based, not year-based. The ELT does not directly tell you annual aggregate outcomes until you run a frequency-severity simulation framework over it.
+2. It is portfolio-conditional. The same catalog event can have very different loss values across portfolios because exposure, terms, and geography differ.
+
+### Common ELT misunderstandings
+
+| Misunderstanding | What is actually true |
+|---|---|
+| "ELT is just a historical table of observed losses" | It is a modeled prospective event table, often including events not observed in your short claims history |
+| "MeanLoss is guaranteed loss if event occurs" | MeanLoss is a conditional expected value; actual event realization is distributed around it via secondary uncertainty |
+| "Rate is probability of at least one event in a year" | Rate is event intensity parameter; annual event occurrence is modeled jointly through frequency assumptions |
+| "One ELT number is the truth" | ELT outputs are assumption-dependent and should be interpreted with sensitivity and governance controls |
+
+### ELT in the broader modeling chain
+
+Think of the pipeline as:
+
+1. Event generation and hazard/vulnerability modeling.
+2. Event-level loss representation (the ELT).
+3. Annual simulation over ELT rows (aggregate exceedance probability, occurrence exceedance probability, treaty response, capital metrics).
+4. Validation and governance before decision use.
+
+This framing helps avoid a common mistake: treating ELT values as final answers rather than structured inputs to a decision model.
+
+## Generating Synthetic ELTs (Why and How)
+
+Synthetic ELTs are useful when you need to:
+
+1. Test workflow logic before production data is available.
+2. Stress specific behaviors such as zero inflation and heavy-tail response.
+3. Teach teams how ELT assumptions influence OEP, AEP, and treaty outputs.
+4. Build regression tests for model pipeline and governance controls.
+
+Synthetic does not mean unrealistic by default. The objective is controlled realism: enough structure to reproduce relevant behavior while keeping assumptions explicit.
+
+### Design dimensions for synthetic ELT generation
+
+A practical synthetic ELT generator should control at least:
+
+1. Event-rate profile (many low-rate events, fewer high-impact events).
+2. Mean-loss curve shape across event ranks.
+3. Secondary uncertainty scale (for example, coefficient of variation (CV) bands by severity).
+4. Zero-loss share (events that do not materially impact this portfolio).
+5. Optional peril or region tags for dependence experiments.
+
+### Minimal synthetic ELT generator pattern
+
+```{r}
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(scales)
+})
+
+seed_syn <- as.integer(Sys.getenv("SEED_R", "20260520"))
+set.seed(seed_syn + 303)
+
+generate_synthetic_elt <- function(
+    n_events = 2000,
+    zero_loss_share = 0.35,
+    meanlog_mu = 13.2,
+    meanlog_sigma = 1.2,
+    rate_shape = 0.7,
+    rate_scale = 0.0009) {
+
+  event_id <- seq_len(n_events)
+
+  # Frequency intensity pattern: many low-rate events, few higher-rate events.
+  raw_rate <- rgamma(n_events, shape = rate_shape, scale = rate_scale)
+  rate <- raw_rate / sum(raw_rate) * 0.75
+
+  mean_loss <- rlnorm(n_events, meanlog = meanlog_mu, sdlog = meanlog_sigma)
+
+  # Portfolio-specific no-impact events.
+  zero_idx <- sample(event_id, size = floor(zero_loss_share * n_events), replace = FALSE)
+  mean_loss[zero_idx] <- 0
+
+  rank_pct <- rank(mean_loss, ties.method = "average") / n_events
+  cv <- 0.45 + 0.9 * rank_pct
+  std_dev <- mean_loss * cv
+
+  tibble(
+    event_id = event_id,
+    rate = rate,
+    mean_loss = mean_loss,
+    std_dev = std_dev,
+    cv = cv,
+    is_zero_loss = mean_loss == 0
+  )
+}
+
+synthetic_elt <- generate_synthetic_elt()
+
+tibble(
+  n_events = nrow(synthetic_elt),
+  total_rate = sum(synthetic_elt$rate),
+  zero_loss_share = mean(synthetic_elt$is_zero_loss),
+  aal = sum(synthetic_elt$rate * synthetic_elt$mean_loss)
+) |>
+  mutate(
+    total_rate = round(total_rate, 3),
+    zero_loss_share = percent(zero_loss_share, accuracy = 0.01),
+    aal = dollar(aal)
+  ) |>
+  knitr::kable()
+```
+
+Use this as a scaffold. For production-like testing, calibrate generator parameters to benchmark portfolio diagnostics rather than using arbitrary defaults.
+
+## Runtime and Reproducibility
+
+This document is intended to run in the containerized workflow in this repository.
+
+That may feel operationally heavy for a primer, but reproducibility matters here: if two runs with the same settings produce materially different decisions, you have a governance problem before you have a modeling problem.
+
+```{r}
+library(tidyverse)
+library(scales)
+
+n_sims <- as.integer(Sys.getenv("RENDER_N_SIMS", "10000"))
+seed_r <- as.integer(Sys.getenv("SEED_R", "20260520"))
+seed_py <- as.integer(Sys.getenv("SEED_PY", "20260520"))
+
+set.seed(seed_r)
+
+tibble(
+  parameter = c("RENDER_N_SIMS", "SEED_R", "SEED_PY"),
+  value = c(n_sims, seed_r, seed_py)
+) |>
+  knitr::kable()
+```
+
+If two runs with the same environment and seeds disagree materially, treat that as a workflow warning.
+
+## ELT Structure, Variants, and Loss Views
+
+At minimum, each ELT row has:
+
+1. `event_id`
+2. `rate`
+3. `mean_loss`
+4. `std_dev`
+
+Interpretation:
+
+1. `rate` is long-run annualized intensity.
+2. `mean_loss` is conditional on event occurrence.
+3. `std_dev` reflects secondary uncertainty around that conditional loss.
+
+In plain terms: `rate` tells you how often this type of event tends to show up, `mean_loss` tells you the central loss expectation if it does, and `std_dev` tells you how noisy that event outcome can be around the center.
+
+### Vendor and Research Formats
+
+| Format | Typical Columns | Notes |
+|---|---|---|
+| Vendor-style | `summary_id, type, event_id, rate, mean_loss, standard_deviation, exposure_value` | richer metadata and linkage |
+| Simplified/research | `event_id, rate, mean_loss, std_dev` | compact and easier for examples |
+
+### GUL vs Insured vs Net/Post-Cat
+
+| View | Meaning | Typical Use |
+|---|---|---|
+| GUL | ground-up physical damage loss | hazard/vulnerability diagnostics |
+| Insured (pre-cat) | after policy terms, before outward reinsurance | treaty pricing and portfolio analytics |
+| Net/Post-cat | after reinsurance recoveries | retained risk and capital impact |
+
+This distinction is non-negotiable. Mixing them will break pricing and governance interpretation.
+
+### Toy ELT
+
+```{r}
+toy_elt <- tibble(
+  event_id = 1:10,
+  rate = c(0.14, 0.09, 0.06, 0.04, 0.025, 0.015, 0.009, 0.005, 0.002, 0.001),
+  mean_loss = c(2e5, 6e5, 1.1e6, 2.8e6, 6e6, 11e6, 19e6, 35e6, 70e6, 140e6),
+  std_dev = c(1e5, 3.5e5, 6e5, 1.4e6, 3.2e6, 6e6, 10e6, 18e6, 35e6, 70e6)
+)
+
+toy_elt |>
+  mutate(across(c(mean_loss, std_dev), dollar)) |>
+  knitr::kable()
+```
+
+## Secondary Uncertainty: Distribution Choice Matters
+
+A common mistake is treating `std_dev` as a cosmetic field. It drives tail behavior once you start pricing nonlinear structures.
+
+In practice, this is one of the highest-leverage modeling choices in the document. Two ELTs with similar means can produce very different treaty costs and tail metrics if uncertainty shape is handled differently.
+
+A practical way to think about it:
+
+1. Mean controls central tendency.
+2. Dispersion and shape control nonlinear pricing response.
+3. Tail shape assumptions often dominate differences at high return periods.
+
+Useful distribution options:
+
+1. Truncated Normal: simple but less natural for strong right skew.
+2. Lognormal: common default, strictly positive.
+3. Gamma: often convenient for right-skewed severity.
+4. Beta-scaled: useful when losses are naturally bounded by layer limits.
+
+### Parameter conversions used frequently
+
+For lognormal with target mean $\mu$ and std dev $\sigma$:
+
+$$
+\mu_{\log} = \log\left(\frac{\mu^2}{\sqrt{\mu^2 + \sigma^2}}\right), \quad
+\sigma_{\log}^2 = \log\left(1 + \frac{\sigma^2}{\mu^2}\right)
+$$
+
+For gamma:
+
+$$
+k = \left(\frac{\mu}{\sigma}\right)^2, \quad
+\theta = \frac{\sigma^2}{\mu}
+$$
+
+```{r}
+mu <- 8e6
+sigma <- 4e6
+n_draw <- 30000
+
+mu_log <- log(mu^2 / sqrt(mu^2 + sigma^2))
+sigma_log <- sqrt(log(1 + sigma^2 / mu^2))
+
+k_gamma <- (mu / sigma)^2
+theta_gamma <- sigma^2 / mu
+
+draw_tbl <- bind_rows(
+  tibble(dist = "TruncNormal", loss = pmax(0, rnorm(n_draw, mu, sigma))),
+  tibble(dist = "Lognormal", loss = rlnorm(n_draw, mu_log, sigma_log)),
+  tibble(dist = "Gamma", loss = rgamma(n_draw, shape = k_gamma, scale = theta_gamma))
+)
+
+ggplot(draw_tbl, aes(x = loss, color = dist)) +
+  geom_density(linewidth = 0.8) +
+  scale_x_continuous(labels = dollar_format(scale = 1e-6, suffix = "M")) +
+  labs(
+    title = "Secondary Uncertainty Distribution Comparison",
+    subtitle = "Same target mean/std dev, different tail shape",
+    x = "Loss",
+    y = "Density"
+  ) +
+  theme_minimal()
+```
+
+## OEP and AEP: Choosing the Right Lens
+
+OEP and AEP answer different questions, and confusion between them is one of the most common interpretation errors in practice.
+
+Use OEP when you are discussing single-event stress and occurrence protection. Use AEP when you are discussing annual accumulation and capital volatility.
+
+If a meeting ever mixes these two without saying which lens is active, pause and clarify before making decisions. Many expensive misinterpretations start exactly there.
+
+### Metric-to-decision quick map
+
+| Metric | Best used for | Typical pitfall if misused |
+|---|---|---|
+| AAL | Budgeting, portfolio-level expected cost context | Treated as a tail risk metric |
+| OEP | Occurrence reinsurance and single-event stress | Used to represent annual accumulation |
+| AEP | Capital and annual volatility discussions | Used without checking dependence and event-count assumptions |
+| P99/P99.5 | High-tail decision boundaries | Treated as stable without sensitivity evidence |
+
+Use this map as a guardrail before discussing outputs with pricing committees or risk governance.
+
+### OEP (single-event lens)
+
+Occurrence exceedance probability:
+
+$$
+\text{OEP}(x) = 1 - \exp\left(-\sum_{i: \mu_i \ge x} \text{rate}_i\right)
+$$
+
+Use OEP when the decision is tied to single-event breach behavior.
+
+```{r}
+oep_tbl <- toy_elt |>
+  arrange(desc(mean_loss)) |>
+  mutate(
+    cumulative_rate = cumsum(rate),
+    oep = 1 - exp(-cumulative_rate),
+    return_period = 1 / oep
+  )
+
+oep_tbl |>
+  transmute(
+    event_id,
+    mean_loss = dollar(mean_loss),
+    oep = percent(oep, accuracy = 0.01),
+    return_period = round(return_period, 1)
+  ) |>
+  knitr::kable(col.names = c("Event", "Loss", "OEP", "Return Period"))
+```
+
+### AEP (annual aggregate lens)
+
+Aggregate exceedance probability captures annual accumulation risk.
+
+```{r}
+simulate_year <- function(elt_tbl) {
+  lambda <- sum(elt_tbl$rate)
+  n_events <- rpois(1, lambda)
+  if (n_events == 0) return(0)
+
+  event_idx <- sample(
+    seq_len(nrow(elt_tbl)),
+    size = n_events,
+    replace = TRUE,
+    prob = elt_tbl$rate
+  )
+
+  losses <- map_dbl(event_idx, function(i) {
+    mu <- elt_tbl$mean_loss[i]
+    sigma <- elt_tbl$std_dev[i]
+    if (mu <= 0 || sigma <= 0) return(0)
+
+    mu_log <- log(mu^2 / sqrt(mu^2 + sigma^2))
+    sigma_log <- sqrt(log(1 + sigma^2 / mu^2))
+    rlnorm(1, mu_log, sigma_log)
+  })
+
+  sum(losses)
+}
+
+annual_losses <- replicate(n_sims, simulate_year(toy_elt))
+
+aep_tbl <- tibble(return_period = c(10, 25, 50, 100, 250)) |>
+  mutate(aep_loss = quantile(annual_losses, probs = 1 - 1 / return_period))
+
+aep_tbl |>
+  mutate(aep_loss = dollar(aep_loss)) |>
+  knitr::kable(col.names = c("Return Period", "AEP Loss"))
+```
+
+### OEP vs AEP side-by-side interpretation
+
+The table below is the practical cross-check: for the same return period, how different are OEP and AEP in this portfolio shape?
+
+If the AEP/OEP ratio is materially above 1 at the return periods you care about, annual accumulation effects are economically important and should not be handled as an afterthought.
+
+```{r}
+comparison_tbl <- tibble(return_period = c(10, 25, 50, 100, 250)) |>
+  mutate(
+    target_ep = 1 / return_period,
+    oep_loss = map_dbl(target_ep, function(ep) {
+      oep_tbl |>
+        filter(oep <= ep) |>
+        pull(mean_loss) |>
+        first()
+    }),
+    aep_loss = quantile(annual_losses, probs = 1 - target_ep),
+    ratio_aep_to_oep = aep_loss / oep_loss
+  )
+
+comparison_tbl |>
+  mutate(
+    oep_loss = dollar(oep_loss),
+    aep_loss = dollar(aep_loss),
+    ratio_aep_to_oep = round(ratio_aep_to_oep, 2)
+  ) |>
+  select(return_period, oep_loss, aep_loss, ratio_aep_to_oep) |>
+  knitr::kable(col.names = c("Return Period", "OEP Loss", "AEP Loss", "AEP/OEP"))
+```
+
+## Treaty Structures in One Place
+
+Treaty structures are easiest to understand when you map each one to the risk question it is trying to control:
+
+1. Occurrence XL controls the single-event shock profile.
+2. Quota share proportionally reshapes both frequency and severity exposure.
+3. Aggregate structures cap annual accumulation.
+
+For event loss $L$, attachment $A$, and limit $U$, occurrence XL recovery is:
+
+$$
+\text{recover}(L) = \min(\max(L-A, 0), U)
+$$
+
+For quota share with cession $q$, ceded loss is $qL$ and net is $(1-q)L$. Aggregate stop-loss style treatment is then applied to annual aggregated loss, not event-level loss.
+
+The worked table below keeps all three in one place so you can compare structural response rather than reviewing three disconnected definitions.
+
+This is also where teams often discover they are talking past each other: one side discussing event-level protection and the other discussing annual aggregate impact. Keeping all three side by side reduces that failure mode.
+
+```{r}
+attachment <- 10e6
+limit <- 20e6
+qs <- 0.30
+
+structure_tbl <- tibble(event_loss = c(5e6, 14e6, 22e6, 50e6)) |>
+  mutate(
+    occ_xl_recovery = pmin(pmax(event_loss - attachment, 0), limit),
+    occ_xl_net = event_loss - occ_xl_recovery,
+    qs_recovery = qs * event_loss,
+    qs_net = (1 - qs) * event_loss
+  )
+
+structure_tbl |>
+  mutate(across(everything(), dollar)) |>
+  knitr::kable()
+```
+
+## Python Portability (pandas + polars)
+
+This section is deliberately practical: first show that pandas and polars produce equivalent OEP mechanics on a small table, then show a large-table pattern where engine choice may affect run time.
+
+The goal is not to claim one engine is universally better. The goal is to keep numerical semantics stable while you optimize execution path by workload.
+
+### Small-table parity check (same OEP logic)
+
+```{python}
+import numpy as np
+import pandas as pd
+import polars as pl
+
+pdf = pd.DataFrame({
+    "event_id": [1, 2, 3, 4, 5],
+    "rate": [0.10, 0.05, 0.025, 0.01, 0.004],
+    "mean_loss": [1.5e6, 4e6, 9e6, 20e6, 45e6]
+}).sort_values("mean_loss", ascending=False)
+
+pdf["cumulative_rate"] = pdf["rate"].cumsum()
+pdf["oep"] = 1 - np.exp(-pdf["cumulative_rate"])
+
+pldf = pl.from_pandas(pdf)
+pldf = pldf.with_columns([
+    pl.col("rate").cum_sum().alias("cumulative_rate"),
+]).with_columns([
+    (1 - (-pl.col("cumulative_rate")).exp()).alias("oep")
+])
+
+pdf[["event_id", "mean_loss", "oep"]], pldf.select(["event_id", "mean_loss", "oep"])
+```
+
+### Large-table benchmark pattern (workload dependent)
+
+```{python}
+from time import perf_counter
+
+rng = np.random.default_rng(20260520)
+n = 300_000
+
+pdf_big = pd.DataFrame(
+    {
+        "event_id": np.arange(1, n + 1),
+        "rate": rng.gamma(shape=0.7, scale=0.0008, size=n),
+        "mean_loss": rng.lognormal(mean=13.4, sigma=1.1, size=n),
+    }
+)
+
+t0 = perf_counter()
+pandas_oep = (
+    pdf_big.sort_values("mean_loss", ascending=False)
+    .assign(cumulative_rate=lambda x: x["rate"].cumsum())
+    .assign(oep=lambda x: 1 - np.exp(-x["cumulative_rate"]))
+)
+t1 = perf_counter()
+
+pl_big = pl.from_pandas(pdf_big)
+t2 = perf_counter()
+polars_oep = (
+    pl_big.sort("mean_loss", descending=True)
+    .with_columns(pl.col("rate").cum_sum().alias("cumulative_rate"))
+    .with_columns((1 - (-pl.col("cumulative_rate")).exp()).alias("oep"))
+)
+t3 = perf_counter()
+
+timing_df = pd.DataFrame(
+    {
+        "engine": ["pandas", "polars"],
+        "seconds": [round(t1 - t0, 4), round(t3 - t2, 4)],
+    }
+)
+
+timing_df, polars_oep.select(["event_id", "mean_loss", "oep"]).head(5)
+```
+
+Interpret timing carefully.
+
+1. This is a local illustrative benchmark, not a universal ranking.
+2. Data shape, grouping complexity, and memory pressure can change the result.
+3. Choose engine per pipeline segment, not by one microbenchmark.
+
+## From ELT to Empirical Distributions
+
+This is the bridge from row-level ELT data to decision-level distributions.
+
+Event-level sampling helps explain what one event can do. Annual aggregation shows what the portfolio can do over a year when multiple events combine.
+
+Both views are needed: one for occurrence design and one for accumulation design.
+
+### Step 1: Build an empirical event-loss sample
+
+At event level, two random elements are sampled jointly:
+
+1. Which event occurs (weighted by event rate).
+2. What conditional loss realization occurs for that event.
+
+That produces an empirical event-loss distribution suitable for occurrence-oriented pricing questions.
+
+```{r}
+generate_event_samples <- function(elt_tbl, n_samples = 30000) {
+  probs <- elt_tbl$rate / sum(elt_tbl$rate)
+  idx <- sample(seq_len(nrow(elt_tbl)), n_samples, replace = TRUE, prob = probs)
+
+  losses <- map_dbl(idx, function(i) {
+    mu <- elt_tbl$mean_loss[i]
+    sigma <- elt_tbl$std_dev[i]
+    if (mu <= 0 || sigma <= 0) return(0)
+
+    mu_log <- log(mu^2 / sqrt(mu^2 + sigma^2))
+    sigma_log <- sqrt(log(1 + sigma^2 / mu^2))
+    rlnorm(1, mu_log, sigma_log)
+  })
+
+  tibble(loss = losses)
+}
+
+event_dist_tbl <- generate_event_samples(toy_elt, n_samples = 50000)
+annual_dist_tbl <- tibble(loss = annual_losses)
+
+event_quant_tbl <- tibble(
+  percentile = c(0.50, 0.75, 0.90, 0.95, 0.99),
+  event_loss = quantile(event_dist_tbl$loss, probs = percentile)
+) |>
+  mutate(event_loss = dollar(event_loss))
+
+event_quant_tbl |>
+  knitr::kable(col.names = c("Percentile", "Event-level empirical loss"))
+```
+
+### Step 2: Build the empirical annual aggregate sample
+
+`annual_losses` is the annual aggregate sample in this primer. Converting it into quantiles provides the practical inputs most committees actually review.
+
+```{r}
+annual_quant_tbl <- tibble(
+  percentile = c(0.50, 0.75, 0.90, 0.95, 0.99, 0.995),
+  annual_loss = quantile(annual_losses, probs = percentile)
+) |>
+  mutate(annual_loss = dollar(annual_loss))
+
+annual_quant_tbl |>
+  knitr::kable(col.names = c("Percentile", "Annual empirical loss"))
+```
+
+### Step 3: Compare event and annual views directly
+
+```{r}
+comparison_empirical <- tibble(
+  percentile = c(0.90, 0.95, 0.99),
+  event_loss = quantile(event_dist_tbl$loss, probs = percentile),
+  annual_loss = quantile(annual_losses, probs = percentile),
+  annual_to_event_ratio = annual_loss / event_loss
+) |>
+  mutate(
+    event_loss = dollar(event_loss),
+    annual_loss = dollar(annual_loss),
+    annual_to_event_ratio = round(annual_to_event_ratio, 2)
+  )
+
+comparison_empirical |>
+  knitr::kable(col.names = c("Percentile", "Event Loss", "Annual Loss", "Annual/Event Ratio"))
+```
+
+Interpretation:
+
+1. Ratios near 1 suggest limited annual accumulation at that percentile.
+2. Ratios above 1 suggest accumulation pressure is economically relevant.
+3. The ratio profile across percentiles is often more informative than a single point.
+
+### Step 4: Visualize shape differences
+
+The density view below is useful when explaining to non-technical stakeholders why event and annual perspectives can produce different decisions.
+
+```{r}
+
+bind_rows(
+  event_dist_tbl |> mutate(type = "Event-level"),
+  annual_dist_tbl |> mutate(type = "Annual aggregate")
+) |>
+  ggplot(aes(x = loss, fill = type)) +
+  geom_density(alpha = 0.4) +
+  scale_x_continuous(labels = dollar_format(scale = 1e-6, suffix = "M"), limits = c(0, 60e6)) +
+  labs(
+    title = "Event-Level vs Annual Aggregate Loss Shapes",
+    x = "Loss",
+    y = "Density",
+    fill = "Distribution"
+  ) +
+  theme_minimal()
+```
+
+### Step 5: Convert empirical samples to exceedance views
+
+For decision processes that use exceedance and return-period language, convert empirical samples directly to EP and RP tables.
+
+Here, exceedance probability (EP) is the share of simulated losses above a threshold, and return period (RP) is approximately $RP = 1/EP$.
+
+```{r}
+thresholds <- quantile(annual_losses, probs = seq(0.80, 0.995, by = 0.015))
+
+emp_ep_tbl <- tibble(threshold = as.numeric(thresholds)) |>
+  mutate(
+    annual_ep = map_dbl(threshold, ~ mean(annual_losses > .x)),
+    event_ep = map_dbl(threshold, ~ mean(event_dist_tbl$loss > .x)),
+    annual_rp = 1 / pmax(annual_ep, 1e-9),
+    event_rp = 1 / pmax(event_ep, 1e-9)
+  )
+
+emp_ep_tbl |>
+  transmute(
+    threshold = dollar(threshold),
+    annual_ep = percent(annual_ep, accuracy = 0.01),
+    event_ep = percent(event_ep, accuracy = 0.01),
+    annual_rp = round(annual_rp, 1),
+    event_rp = round(event_rp, 1)
+  ) |>
+  head(12) |>
+  knitr::kable(col.names = c("Threshold", "Annual EP", "Event EP", "Annual RP", "Event RP"))
+```
+
+This is usually the handoff point: empirical exceedance outputs with clear assumptions and sensitivity context.
+
+### End-to-end mini-case: synthetic ELT to treaty outputs
+
+This compact case stitches the full chain together in one place:
+
+1. Start from synthetic ELT rows.
+2. Simulate empirical annual losses.
+3. Build OEP and AEP points.
+4. Translate losses into occurrence and aggregate treaty response.
+
+```{r}
+set.seed(seed_r + 404)
+
+mini_elt <- synthetic_elt |>
+  select(event_id, rate, mean_loss, std_dev)
+
+mini_annual_losses <- replicate(n_sims, simulate_year(mini_elt))
+mini_event_samples <- generate_event_samples(mini_elt, n_samples = 60000)
+
+# OEP from event means.
+mini_oep_tbl <- mini_elt |>
+  arrange(desc(mean_loss)) |>
+  mutate(
+    cumulative_rate = cumsum(rate),
+    oep = 1 - exp(-cumulative_rate)
+  )
+
+rp_targets <- c(10, 25, 50, 100, 250)
+
+mini_points_tbl <- tibble(return_period = rp_targets) |>
+  mutate(
+    ep = 1 / return_period,
+    oep_loss = map_dbl(ep, function(x) {
+      mini_oep_tbl |>
+        filter(oep <= x) |>
+        pull(mean_loss) |>
+        first()
+    }),
+    aep_loss = quantile(mini_annual_losses, probs = 1 - ep)
+  )
+
+# Treaty response examples.
+occ_attach <- 12e6
+occ_limit <- 18e6
+agg_attach <- 65e6
+agg_limit <- 45e6
+
+occ_recovery <- pmin(pmax(mini_event_samples$loss - occ_attach, 0), occ_limit)
+agg_recovery <- pmin(pmax(mini_annual_losses - agg_attach, 0), agg_limit)
+
+treaty_summary_tbl <- tibble(
+  metric = c(
+    "Occurrence treaty expected recovery per event",
+    "Occurrence treaty attachment hit rate",
+    "Aggregate treaty expected recovery per year",
+    "Aggregate treaty attachment hit rate"
+  ),
+  value = c(
+    dollar(mean(occ_recovery)),
+    percent(mean(mini_event_samples$loss > occ_attach), accuracy = 0.01),
+    dollar(mean(agg_recovery)),
+    percent(mean(mini_annual_losses > agg_attach), accuracy = 0.01)
+  )
+)
+
+mini_points_tbl |>
+  mutate(aep_to_oep = round(aep_loss / oep_loss, 2)) |>
+  transmute(
+    return_period,
+    oep_loss = dollar(oep_loss),
+    aep_loss = dollar(aep_loss),
+    aep_to_oep
+  ) |>
+  knitr::kable(col.names = c("Return Period", "OEP Loss", "AEP Loss", "AEP/OEP"))
+
+treaty_summary_tbl |>
+  knitr::kable(col.names = c("Treaty Output", "Value"))
+```
+
+Why this mini-case matters:
+
+1. It shows how ELT rows become decision outputs, not just statistics.
+2. It keeps OEP/AEP interpretation tied to treaty behavior.
+3. It makes sensitivity and governance discussions concrete for pricing committees.
+
+### Multi-Peril Dependence (Compact Practical Example)
+
+Assuming independence is often convenient, but can understate tail risk when perils are conditionally linked.
+
+Treat this as a sensitivity axis, not a binary truth claim. The point is to quantify how much your tail outputs move when dependence is introduced.
+
+If dependence is material at your decision return periods, record that explicitly in assumption logs and release notes.
+
+```{r}
+library(MASS)
+
+rho <- 0.30
+n_years <- 2000
+corr <- matrix(c(1, rho, rho, 1), nrow = 2)
+
+z <- MASS::mvrnorm(n_years, mu = c(0, 0), Sigma = corr)
+u <- pnorm(z)
+
+base_event <- event_dist_tbl$loss
+
+correlated_total <- quantile(base_event, u[,1]) + 0.6 * quantile(base_event, u[,2])
+independent_total <- sample(base_event, n_years, replace = TRUE) + 0.6 * sample(base_event, n_years, replace = TRUE)
+
+tibble(
+  scenario = c("Correlated", "Independent"),
+  p95 = c(quantile(correlated_total, 0.95), quantile(independent_total, 0.95)),
+  p99 = c(quantile(correlated_total, 0.99), quantile(independent_total, 0.99))
+) |>
+  mutate(across(c(p95, p99), dollar)) |>
+  knitr::kable(col.names = c("Scenario", "P95", "P99"))
+```
+
+### Practical EVT Workflow
+
+EVT is a tool, not a magic wand. Use it as a controlled extrapolation workflow.
+
+In this primer, EVT is positioned as a governance extension to simulation, not a replacement for basic distribution diagnostics.
+
+The key practical rule is to treat EVT outputs as conditional statements: "given threshold choice and fit assumptions." That framing avoids overconfidence in a single extrapolated number.
+
+```{r}
+threshold <- quantile(annual_losses, 0.95)
+exceedances <- annual_losses[annual_losses > threshold] - threshold
+
+tibble(
+  threshold = threshold,
+  exceedance_count = length(exceedances),
+  exceedance_mean = mean(exceedances)
+) |>
+  mutate(across(where(is.numeric), round, 2)) |>
+  knitr::kable()
+```
+
+Minimal practical steps:
+
+1. Check threshold sensitivity.
+2. Fit tail model.
+3. Compare extrapolated quantiles against simulation tail.
+4. Report a range, not a single “precise” tail number.
+
+## Validation and Sensitivity
+
+Think of validation as a layered process:
+
+1. Mechanical correctness (schema, units, reproducibility).
+2. Shape correctness (OEP/AEP consistency and stability).
+3. Decision correctness (would pricing/capital decisions materially change under reasonable sensitivity settings).
+
+If you can only do one thing under time pressure, do not skip layer 3.
+
+### Synthetic diagnostics now
+
+```{r}
+validation_tbl <- tibble(
+  metric = c("AAL", "P99 annual", "Zero-loss years share"),
+  value = c(
+    dollar(mean(annual_losses)),
+    dollar(quantile(annual_losses, 0.99)),
+    percent(mean(annual_losses == 0), accuracy = 0.01)
+  )
+)
+
+validation_tbl |>
+  knitr::kable()
+```
+
+### Real-data validation framework later
+
+When real ELTs are available, use this sequence:
+
+1. Schema and unit checks.
+2. Structural checks (event count, total rate, zero-loss share).
+3. Shape checks (OEP/AEP profile consistency).
+4. Tail checks (threshold sensitivity, extrapolation stability).
+5. Governance checks (versioned assumptions, seeds, package versions, reviewer trail).
+
+### Suggested production acceptance gates
+
+Use explicit, pre-agreed thresholds so model release decisions are repeatable.
+
+| Gate | Example threshold | If breached |
+|---|---|---|
+| Data integrity | 100 percent schema checks pass | Block run; remediate mapping/units first |
+| OEP/AEP shape consistency | key return-period points within +/-10 percent of benchmark after approved adjustments | Escalate for assumption review |
+| Tail stability | P99/P99.5 drift under threshold stress less than 15 percent | Restrict tail use; rerun EVT/dependence sensitivity |
+| Backtesting coverage | observed exceedance rate near expected band (for example P95 in 3-7 percent range) | Trigger validation incident and recalibration |
+| Reproducibility | rerun delta on key metrics within tolerance band | Freeze release until deterministic issue resolved |
+
+These thresholds are examples. The important part is using fixed gates before decisions are made, not after.
+
+### Remediation playbook (minimum)
+
+If one or more gates fail:
+
+1. Freeze high-impact use cases (capital sign-off, treaty finalization).
+2. Log a model risk ticket with failed gates and affected decisions.
+3. Re-run with controlled sensitivity permutations (uncertainty, dependence, threshold).
+4. Document delta tables and decision impact before re-approval.
+
+### Mini decision example
+
+| Check Block | Example Outcome | Decision |
+|---|---|---|
+| Schema/units | pass | continue |
+| OEP shape vs benchmark | minor drift | investigate assumptions |
+| Tail stability under stress | unstable above P99.5 | restrict high-tail usage until resolved |
+
+### Production workflow runbook
+
+For production use, include a standard runbook:
+
+1. Read ELT source file and normalize column names.
+2. Record source type (vendor vs internal simplified).
+3. Record loss view (GUL, insured pre-cat, net post-cat).
+4. Run baseline diagnostics and save outputs.
+5. Run one stress scenario and one sensitivity scenario.
+6. Produce a one-page decision note with assumptions and limitations.
+
+If a benchmark ELT file is present, you can include a quick profile block:
+
+```{r}
+benchmark_path <- "benchmark_elt.csv"
+
+if (file.exists(benchmark_path)) {
+  bench <- readr::read_csv(benchmark_path, show_col_types = FALSE)
+
+  # This keeps field mapping defensive across minor schema variants.
+  names_lower <- tolower(names(bench))
+  names(bench) <- names_lower
+
+  if (all(c("rate", "mean_loss") %in% names_lower)) {
+    tibble(
+      n_events = nrow(bench),
+      total_rate = sum(bench$rate, na.rm = TRUE),
+      aal = sum(bench$rate * bench$mean_loss, na.rm = TRUE),
+      zero_loss_pct = 100 * mean(bench$mean_loss == 0, na.rm = TRUE)
+    ) |>
+      mutate(
+        total_rate = round(total_rate, 3),
+        aal = dollar(aal),
+        zero_loss_pct = round(zero_loss_pct, 2)
+      ) |>
+      knitr::kable()
+  } else {
+    cat("benchmark_elt.csv found, but required columns 'rate' and 'mean_loss' are not both present.\n")
+  }
+} else {
+  cat("benchmark_elt.csv not found in this project; skipping production profile block.\n")
+}
+```
+
+## Advanced Methods (After the Practical Core)
+
+The core sections above are enough for many pricing and portfolio workflows.
+This section intentionally adds extra technical depth for situations where
+tail decisions, run-time constraints, or dependence assumptions dominate the result.
+
+### Aggregate Loss Methods: Monte Carlo vs Panjer vs FFT
+
+When annual aggregate distribution is the main output, you usually choose among three families:
+
+| Method | Typical Strength | Typical Weakness | Best Fit |
+|---|---|---|---|
+| Monte Carlo | Flexible, easy with complex treaty logic | Sampling noise in extreme tail unless very large runs | General pricing and validation |
+| Panjer recursion | Fast for some frequency-severity classes and discrete severity grids | Less flexible for complex dependence/treaty structures | High-throughput operational portfolios |
+| FFT convolution | Efficient for repeated aggregate calculations on gridded severity | Aliasing/discretization care required | Batch risk engines and scenario sweeps |
+
+Practical selection rule:
+
+1. Use Monte Carlo as baseline truth model.
+2. Add Panjer/FFT when run-time constraints become binding.
+3. Reconcile high-quantile outputs against Monte Carlo before production sign-off.
+
+### Panjer/FFT readiness checklist
+
+Before migration from Monte Carlo, verify:
+
+1. Severity support can be discretized without material tail distortion.
+2. Frequency model assumptions match engine assumptions.
+3. Quantile error tolerance is documented (for example, allowed deviation at P99 and P99.5).
+4. Reconciliation pack is generated against a large Monte Carlo benchmark run.
+
+### Advanced Dependence Modeling
+
+The compact dependence example earlier used Gaussian-style dependence.
+For advanced tail work, test multiple dependence structures because the same marginal distributions can produce very different tail aggregates.
+
+#### Gaussian vs t-copula style stress
+
+```{r}
+set.seed(seed_r + 101)
+
+n_dep <- 10000
+rho_dep <- 0.35
+
+# Correlated normal factors.
+z1 <- rnorm(n_dep)
+z2 <- rho_dep * z1 + sqrt(1 - rho_dep^2) * rnorm(n_dep)
+
+# Gaussian copula uniforms.
+u1_g <- pnorm(z1)
+u2_g <- pnorm(z2)
+
+# t-copula style uniforms with heavier joint tails.
+nu <- 4
+w <- sqrt(nu / rchisq(n_dep, df = nu))
+t1 <- z1 * w
+t2 <- z2 * w
+u1_t <- pt(t1, df = nu)
+u2_t <- pt(t2, df = nu)
+
+sev <- event_dist_tbl$loss
+
+agg_g <- quantile(sev, u1_g) + 0.6 * quantile(sev, u2_g)
+agg_t <- quantile(sev, u1_t) + 0.6 * quantile(sev, u2_t)
+
+tibble(
+  model = c("Gaussian-style", "t-copula style (nu=4)"),
+  p95 = c(quantile(agg_g, 0.95), quantile(agg_t, 0.95)),
+  p99 = c(quantile(agg_g, 0.99), quantile(agg_t, 0.99)),
+  p995 = c(quantile(agg_g, 0.995), quantile(agg_t, 0.995))
+) |>
+  mutate(across(c(p95, p99, p995), dollar)) |>
+  knitr::kable(col.names = c("Dependence Model", "P95", "P99", "P99.5"))
+```
+
+Interpretation guidance:
+
+1. Similar P95 with diverging P99.5 is common.
+2. If capital decisions are driven by upper tail points, dependence model choice is a first-order assumption.
+3. Keep dependence assumptions explicit in governance notes.
+
+### Advanced EVT Tail Extrapolation
+
+For threshold exceedances over $u$, a GPD form is commonly used:
+
+$$
+F(x \mid x > u) = 1 - \left(1 + \xi \frac{x-u}{\beta}\right)^{-1/\xi}, \quad x > u
+$$
+
+with shape $\xi$ and scale $\beta$.
+
+In practical governance terms:
+
+1. Threshold choice matters as much as parameter choice.
+2. Stable tail estimates require threshold-range sensitivity checks.
+3. Report interval/range outputs, not a single fragile point estimate.
+
+#### Threshold sensitivity snapshot
+
+```{r}
+threshold_grid <- quantile(annual_losses, probs = c(0.90, 0.93, 0.95, 0.97))
+
+evt_sens <- map_dfr(threshold_grid, function(u) {
+  exc <- annual_losses[annual_losses > u] - u
+  tibble(
+    threshold = u,
+    n_exceed = length(exc),
+    mean_excess = ifelse(length(exc) > 0, mean(exc), NA_real_),
+    p99_empirical = quantile(annual_losses, 0.99)
+  )
+})
+
+evt_sens |>
+  mutate(
+    threshold = dollar(threshold),
+    mean_excess = dollar(mean_excess),
+    p99_empirical = dollar(p99_empirical)
+  ) |>
+  knitr::kable(col.names = c("Threshold", "Exceedance Count", "Mean Excess", "Empirical P99"))
+```
+
+### Advanced Validation: Backtesting Pattern
+
+When you have observed annual losses, backtesting should be explicit.
+A minimal coverage-style check asks: if model P95 is used as a benchmark, do observed years exceed it about 5 percent of the time?
+
+```{r}
+set.seed(seed_r + 202)
+
+# Placeholder observed losses for demonstration workflow.
+observed_losses <- annual_losses[sample.int(length(annual_losses), size = 4000, replace = TRUE)] *
+  runif(4000, min = 0.95, max = 1.08)
+
+model_p95 <- quantile(annual_losses, 0.95)
+model_p99 <- quantile(annual_losses, 0.99)
+
+backtest_tbl <- tibble(
+  metric = c("Model P95", "Observed exceedance rate over model P95", "Model P99", "Observed exceedance rate over model P99"),
+  value = c(
+    dollar(model_p95),
+    percent(mean(observed_losses > model_p95), accuracy = 0.01),
+    dollar(model_p99),
+    percent(mean(observed_losses > model_p99), accuracy = 0.01)
+  )
+)
+
+backtest_tbl |>
+  knitr::kable()
+```
+
+If observed exceedance rates are materially off expectations, treat this as a model risk event:
+
+1. Recheck schema/unit mapping and loss view consistency.
+2. Re-estimate uncertainty and dependence assumptions.
+3. Re-run tail sensitivity with documented deltas.
+4. Gate high-tail use until diagnostics are acceptable.
+
+## Production Implementation and Governance
+
+This section brings implementation, governance, and release discipline into one place.
+Use it as the final quality gate after analytical sections are complete.
+
+A useful operating model is:
+
+1. Analysis sections generate candidate numbers.
+2. Governance sections decide whether those numbers are fit for decision use.
+3. Release controls decide where those numbers can and cannot be used.
+
+If you only remember one thing from this section, remember this: strong analytics without strong release discipline still creates weak decisions.
+
+### Structured Mapping to Decision Use
+
+| Area | Primary Outputs | Typical Decision | Minimum Control Set |
+|---|---|---|---|
+| Pricing | OEP points, layer expected loss, AAL | occurrence/aggregate pricing support | reproducible config + assumption log |
+| Risk/Capital | AEP, P99/P99.5, tail summaries | annual volatility and capital view | simulation depth evidence + sensitivity suite |
+| Model Validation | OEP/AEP shape and tail checks | accept, conditionally accept, or remediate | documented thresholds + review record |
+
+### Assumptions Register (minimum)
+
+Every release should ship with a compact assumptions register.
+
+| Assumption Area | Example Assumption | Why It Matters | Mandatory Evidence |
+|---|---|---|---|
+| Frequency | Poisson annual frequency is adequate for this portfolio | Drives event-count tail | Frequency diagnostics and alternatives tested |
+| Severity | Lognormal/gamma parameterization reflects conditional loss shape | Drives layer response and tail | Distribution fit comparisons and residual checks |
+| Dependence | Gaussian/t-copula dependence choice and parameters | Changes upper-tail aggregate risk | Sensitivity table at decision return periods |
+| Loss view | Insured pre-cat (or specified alternative) is used consistently | Prevents apples-to-oranges pricing | Mapping check and source lineage notes |
+| Data quality | Schema and units validated with no unresolved exceptions | Avoids silent scale errors | Automated validation report |
+
+### Common Failure Modes and First Checks
+
+| Symptom | Likely Cause | First Check |
+|---|---|---|
+| OEP looks unexpectedly flat at high thresholds | Too many zero/low conditional losses for selected portfolio | Review zero-loss share and event mix by threshold bucket |
+| AEP/OEP gap unexpectedly large | Accumulation or dependence effect stronger than assumed | Compare annual event-count distribution and dependence stress deltas |
+| Layer expected loss unstable across reruns | Insufficient simulation depth or seed handling drift | Increase simulation depth and rerun fixed-seed reproducibility check |
+| Tail metrics swing when threshold moves slightly | EVT threshold region not stable | Run threshold grid sensitivity and narrow valid range |
+| Benchmark mismatch despite similar AAL | Shape mismatch hidden by mean agreement | Compare percentile profile (P90/P95/P99/P99.5), not AAL only |
+
+### Release Readiness Checklist
+
+Before a release is approved for pricing, capital, or governance use:
+
+1. All acceptance gates have pass/fail outcomes recorded.
+2. Assumptions register is complete and versioned.
+3. Sensitivity pack includes at least uncertainty, dependence, and threshold dimensions.
+4. Reproducibility rerun is within tolerance band.
+5. Decision note states where outputs are reliable and where they are not.
+6. Reviewer sign-off and timestamp are recorded.
+
+If any item is missing, do not treat the run as release-ready even if headline metrics look plausible.
+
+### Decision communication template (pricing committee ready)
+
+Use this as a one-page summary structure when presenting outputs:
+
+1. Decision context: what action is being decided and at what confidence requirement.
+2. Headline outputs: AAL, key OEP/AEP points, and treaty response highlights.
+3. Critical assumptions: frequency, severity, dependence, and loss view.
+4. Sensitivity summary: what moved materially under uncertainty, dependence, and threshold tests.
+5. Reliability boundary: where outputs are robust and where they are conditional.
+6. Recommendation: approve, approve with conditions, or hold pending remediation.
+
+Suggested plain-language caveat sentence:
+"These results are decision-grade within the tested sensitivity ranges and stated assumptions; use outside those ranges requires additional validation."
+
+### Best Practices Checklist
+
+1. Never mix loss views in one analysis table.
+2. Keep event-level and annual-level interpretations separate.
+3. Do not treat one seed run as a final truth statement.
+4. Always pair headline outputs with at least one sensitivity result.
+5. Log assumptions and model choices in plain language.
+
+## Glossary (Quick Reference)
+
+| Term | Practical meaning |
+|---|---|
+| ELT (Event Loss Table) | Event-level table of modeled catastrophe loss behavior for a portfolio |
+| Rate | Event intensity weight used in annual frequency-severity simulation |
+| MeanLoss | Conditional expected loss for the event if it occurs |
+| StdDev | Conditional dispersion around event loss, used in secondary uncertainty modeling |
+| AAL | Average annual loss from the modeled annual distribution |
+| OEP | Occurrence exceedance probability (single-event oriented) |
+| AEP | Aggregate exceedance probability (annual accumulation oriented) |
+| GUL | Ground-up loss before policy and reinsurance terms |
+| Insured loss | Loss after policy terms and before outward reinsurance |
+| Net/Post-cat loss | Retained loss after reinsurance response |
+| EP | Exceedance probability at a threshold |
+| RP | Return period, typically $RP = 1/EP$ |
+| Secondary uncertainty | Event-conditional loss variability around mean loss |
+| Dependence | Cross-event or cross-peril relationship affecting tail accumulation |
+
+## References and Further Reading
+
+1. Klugman, Panjer, and Willmot. Loss Models: From Data to Decisions.
+2. McNeil, Frey, and Embrechts. Quantitative Risk Management.
+3. Vendor methodology documentation for AIR/RMS/Oasis style outputs.
+4. Internal model governance standards for pricing and capital usage.

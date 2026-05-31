@@ -1,0 +1,39 @@
+set shell := ["bash", "-c"]
+set dotenv-load := true
+
+PROJECT_NAME := "political_systems"
+TEMPLATE := "/repo/doc_template.html"
+PWD := `pwd`
+REPO_ROOT := `cd .. && pwd`
+PANDOC_IMAGE := "localhost/political-systems-pandoc:latest"
+
+HTML_FLAGS := "--standalone --embed-resources --toc --toc-depth=3 --number-sections --syntax-highlighting=breezedark --mathjax"
+AUTHOR := "May 2026"
+
+default:
+  @just --list
+
+all: primer-html
+
+docs:
+  @just primer-html
+
+primer-html:
+  word_count="$(wc -w < european-electoral-systems-primer.md)"; \
+  podman run --rm -v "{{REPO_ROOT}}:/repo" -w /repo/political_systems {{PANDOC_IMAGE}} \
+    european-electoral-systems-primer.md -o european-electoral-systems-primer.html \
+    {{HTML_FLAGS}} --template="{{TEMPLATE}}" \
+    --metadata title="A Practical Primer On European Electoral Systems" \
+    --metadata word_count="${word_count}" \
+    --metadata author="{{AUTHOR}}"
+  @echo "✓ HTML written to european-electoral-systems-primer.html"
+
+build-image:
+  podman build -t {{PANDOC_IMAGE}} -f Dockerfile .
+
+pull-images:
+  podman pull docker.io/pandoc/latex:latest
+
+clean:
+  rm -rf outputs
+  rm -f european-electoral-systems-primer.html

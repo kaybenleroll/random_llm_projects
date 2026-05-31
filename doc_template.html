@@ -480,6 +480,7 @@
     <span class="navbar-brand">$title$</span>
 $if(date)$    <span class="navbar-meta">$date$</span>$endif$
 $if(author)$    <span class="navbar-meta">$author$</span>$endif$
+$if(word_count)$    <span class="navbar-meta">$word_count$ words</span>$endif$
   </nav>
 
   <div class="layout">
@@ -537,7 +538,7 @@ $body$
         li.classList.add('toc-depth-' + String(depth));
 
         var sublist = firstChildByTag(li, 'UL');
-        if (sublist && depth >= 2) {
+        if (sublist && depth >= 1) {
           var btn = document.createElement('button');
           btn.setAttribute('type', 'button');
           btn.className = 'toc-toggle';

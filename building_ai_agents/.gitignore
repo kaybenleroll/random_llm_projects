@@ -1,0 +1,14 @@
+# LaTeX/PDF build byproducts
+*.aux
+*.out
+*.toc
+*.synctex.gz
+*.fdb_latexmk
+*.fls
+
+# Generated output files
+*.html
+*.pdf
+
+# Build intermediates
+.build/

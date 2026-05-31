@@ -5,7 +5,7 @@ set -euo pipefail
 #   ./render.sh
 #   ./render.sh path/to/file.md
 
-MD_INPUT="${1:-running-llms-locally.md}"
+MD_INPUT="${1:-openclaw_primer.md}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$SCRIPT_DIR"
 REPO_ROOT="$(cd "$PROJECT_DIR/.." && pwd)"
@@ -25,11 +25,11 @@ BASE_NAME="${MD_INPUT%.md}"
 HTML_OUT="${BASE_NAME}.html"
 PDF_OUT="${BASE_NAME}.pdf"
 
-TITLE="Running LLMs Locally: A Complete Beginner's Landscape"
-AUTHOR="May 2026"
+TITLE="OpenClaw Primer: A Comprehensive, Podman-First Guide"
+AUTHOR="28 May 2026"
 
 echo "Rendering HTML -> $HTML_OUT"
-podman run --rm -v "$REPO_ROOT:/repo" -w /repo/research_local_llms docker.io/pandoc/core:latest \
+podman run --rm -v "$REPO_ROOT:/repo" -w /repo/openclaw_primer docker.io/pandoc/core:latest \
   "$MD_INPUT" -o "$HTML_OUT" \
   --standalone --embed-resources --toc --toc-depth=3 \
   --syntax-highlighting=tango --template="/repo/doc_template.html" \
@@ -37,7 +37,7 @@ podman run --rm -v "$REPO_ROOT:/repo" -w /repo/research_local_llms docker.io/pan
   --metadata author="$AUTHOR"
 
 echo "Rendering PDF -> $PDF_OUT"
-podman run --rm -v "$REPO_ROOT:/repo" -w /repo/research_local_llms docker.io/pandoc/latex:latest \
+podman run --rm -v "$REPO_ROOT:/repo" -w /repo/openclaw_primer docker.io/pandoc/latex:latest \
   "$MD_INPUT" -o "$PDF_OUT" \
   --pdf-engine=xelatex --toc --toc-depth=3 \
   -V geometry:margin=1.2in -V fontsize=11pt -V linestretch=1.25 \

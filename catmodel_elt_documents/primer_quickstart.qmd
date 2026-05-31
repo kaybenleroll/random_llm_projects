@@ -1,0 +1,90 @@
+---
+title: "Catastrophe ELT Primer Quickstart"
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    toc-location: left
+    number-sections: true
+    template: ../doc_template.html
+    embed-resources: true
+---
+
+## Purpose
+
+This companion gives the shortest path to build and render the internal Release 1 package.
+
+Release 1 package components:
+
+1. Canonical primer: `elt_primer.qmd`
+2. Quickstart companion: `primer_quickstart.qmd`
+3. Executable index: `executable_index.qmd`
+
+## Fast Reading Routes Into The Primer
+
+If you want to read first and run later, use one of these quick routes in `elt_primer.qmd`:
+
+1. 10-minute route:
+  Audience and Intent -> What "ELT" Means in Practice -> OEP and AEP: Choosing the Right Lens -> Release Readiness Checklist
+2. 30-minute route:
+  ELT Structure, Variants, and Loss Views -> From ELT to Empirical Distributions -> End-to-end mini-case: synthetic ELT to treaty outputs -> Assumptions Register
+3. Deep technical route:
+  Full core sections -> Advanced Methods (After the Practical Core) -> Production Implementation and Governance
+
+## High-Value Sections Added Recently
+
+These are useful entry points if you already know the basics:
+
+1. Generating Synthetic ELTs (Why and How)
+2. From ELT to Empirical Distributions (expanded step-by-step conversion)
+3. End-to-end mini-case: synthetic ELT to treaty outputs
+4. Decision communication template (pricing committee ready)
+5. Glossary (Quick Reference)
+
+## Build Container
+
+```bash
+just image-build
+```
+
+## Check Available Targets
+
+```bash
+just --list
+```
+
+## Render (Dev)
+
+```bash
+just render-dev-container
+```
+
+## Render (Full)
+
+```bash
+just render-full-container
+```
+
+## Outputs
+
+Rendered files are written to `outputs/`.
+
+- `elt_primer.html`
+- `primer_quickstart.html`
+- `executable_index.html`
+
+## Determinism
+
+Configuration is in `render.env`.
+
+- `DEV_N_SIMS`
+- `FULL_N_SIMS`
+- `SEED_R`
+- `SEED_PY`
+
+## Recommended Working Loop
+
+1. Edit content in `elt_primer.qmd`.
+2. Run `just render-dev-container` for fast feedback.
+3. Run `just render-full-container` before sharing or review.
+4. Check `outputs/` artifacts for consistency.
