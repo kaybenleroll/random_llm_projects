@@ -8,13 +8,14 @@ OUTPUT_HTML     := PROJECT_NAME + ".html"
 OUTPUT_HTML_MATHML := PROJECT_NAME + ".mathml.html"
 OUTPUT_HTML_MATHJAX := PROJECT_NAME + ".mathjax.html"
 OUTPUT_PDF      := PROJECT_NAME + ".pdf"
-TEMPLATE        := "doc-template.html"
+TEMPLATE        := "/repo/doc_template.html"
 
 TITLE           := "Numerical Analysis Primer: A Practical Guide for Practitioners"
 AUTHOR          := "May 2026"
 
 # Container configuration
 PWD             := `pwd`
+REPO_ROOT       := `cd .. && pwd`
 PANDOC_CORE     := "docker.io/pandoc/core:latest"
 PANDOC_LATEX    := "docker.io/pandoc/latex:latest"
 
@@ -34,7 +35,7 @@ all: html pdf
 
 # Render markdown to HTML using pandoc/core container
 html:
-  podman run --rm -v "{{PWD}}:/data" {{PANDOC_CORE}} \
+  podman run --rm -v "{{REPO_ROOT}}:/repo" -w "/repo/numerical_analysis_primer" {{PANDOC_CORE}} \
     {{SOURCE_MD}} -o {{OUTPUT_HTML}} \
     --standalone --embed-resources --toc --toc-depth=3 \
     --mathjax \
@@ -45,7 +46,7 @@ html:
 
 # Render markdown to HTML (MathML variant)
 html-mathml:
-  podman run --rm -v "{{PWD}}:/data" {{PANDOC_CORE}} \
+  podman run --rm -v "{{REPO_ROOT}}:/repo" -w "/repo/numerical_analysis_primer" {{PANDOC_CORE}} \
     {{SOURCE_MD}} -o {{OUTPUT_HTML_MATHML}} \
     --standalone --embed-resources --toc --toc-depth=3 \
     --mathml \
@@ -56,7 +57,7 @@ html-mathml:
 
 # Render markdown to HTML (MathJax variant)
 html-mathjax:
-  podman run --rm -v "{{PWD}}:/data" {{PANDOC_CORE}} \
+  podman run --rm -v "{{REPO_ROOT}}:/repo" -w "/repo/numerical_analysis_primer" {{PANDOC_CORE}} \
     {{SOURCE_MD}} -o {{OUTPUT_HTML_MATHJAX}} \
     --standalone --embed-resources --toc --toc-depth=3 \
     --mathjax \
@@ -70,7 +71,7 @@ html-variants: html-mathml html-mathjax
 
 # Render markdown to PDF (via xelatex) using pandoc/latex container
 pdf:
-  podman run --rm -v "{{PWD}}:/data" {{PANDOC_LATEX}} \
+  podman run --rm -v "{{REPO_ROOT}}:/repo" -w "/repo/numerical_analysis_primer" {{PANDOC_LATEX}} \
     {{SOURCE_MD}} -o {{OUTPUT_PDF}} \
     --pdf-engine=xelatex --toc --toc-depth=3 \
     -V geometry:margin=1.2in -V fontsize=11pt -V linestretch=1.25 \

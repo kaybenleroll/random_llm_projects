@@ -510,6 +510,7 @@ Object.defineProperty(e,"__esModule",{value:!0}),e.mhchemParser=void 0;var r=fun
 Guide for Practitioners</span>
 
     <span class="navbar-meta">May 2026</span>
+
   </nav>
 
   <div class="layout">
@@ -651,9 +652,12 @@ Methods</a></li>
 <li><a href="#stiffness-why-tiny-steps-sometimes-appear" id="toc-stiffness-why-tiny-steps-sometimes-appear">9.2 Stiffness: Why
 Tiny Steps Sometimes Appear</a></li>
 <li><a href="#local-and-global-error" id="toc-local-and-global-error">9.3 Local and Global Error</a></li>
-<li><a href="#shared-example-a-non-stiff-ivp-compare-euler-and-rk4" id="toc-shared-example-a-non-stiff-ivp-compare-euler-and-rk4">9.4 Shared
+<li><a href="#pde-discretization-basics-finite-difference-finite-volume-finite-element" id="toc-pde-discretization-basics-finite-difference-finite-volume-finite-element">9.4
+PDE Discretization Basics: Finite Difference, Finite Volume, Finite
+Element</a></li>
+<li><a href="#shared-example-a-non-stiff-ivp-compare-euler-and-rk4" id="toc-shared-example-a-non-stiff-ivp-compare-euler-and-rk4">9.5 Shared
 Example A: Non-stiff IVP, compare Euler and RK4</a></li>
-<li><a href="#shared-example-b-use-ecosystem-solver-with-adaptivity" id="toc-shared-example-b-use-ecosystem-solver-with-adaptivity">9.5
+<li><a href="#shared-example-b-use-ecosystem-solver-with-adaptivity" id="toc-shared-example-b-use-ecosystem-solver-with-adaptivity">9.6
 Shared Example B: Use ecosystem solver with adaptivity</a></li>
 </ul></li>
 <li><a href="#optimization-finding-good-decisions-numerically" id="toc-optimization-finding-good-decisions-numerically">10.
@@ -2315,7 +2319,116 @@ specified tolerance, taking large steps where the solution is smooth and
 small steps where it is changing rapidly. This delivers the desired
 accuracy with far fewer function evaluations than a fixed-step
 method.</p>
-<h3 id="shared-example-a-non-stiff-ivp-compare-euler-and-rk4">9.4 Shared
+<h3 id="pde-discretization-basics-finite-difference-finite-volume-finite-element">9.4
+PDE Discretization Basics: Finite Difference, Finite Volume, Finite
+Element</h3>
+<p>You are absolutely right to care about this distinction because these
+three methods often solve “the same” PDE with very different
+tradeoffs.</p>
+<p><strong>Finite difference (FDM)</strong> starts from the strong form
+and replaces derivatives with stencil formulas on a grid. For example,
+in 1D, <span class="math display">\[
+u&#39;&#39;(x_i) \approx \frac{u_{i+1}-2u_i+u_{i-1}}{h^2}.
+\]</span> Why people like it: easy to implement, very fast on structured
+grids, and great for rectangular domains with simple boundary
+conditions. Where it struggles: irregular geometry, complex boundaries,
+and local mesh adaptation are less natural.</p>
+<p><strong>Finite volume (FVM)</strong> writes the PDE in conservation
+form, integrates over each control volume, and balances fluxes across
+faces. Unknowns are typically cell averages. Why it matters:
+conservation is built in by construction, which is why FVM is dominant
+in CFD and transport problems. If flux leaves one cell, it enters the
+neighbor; global conservation follows naturally.</p>
+<p><strong>Finite element (FEM)</strong> starts from a weak form,
+chooses basis/test functions on each element, and assembles a global
+system from local element contributions. Why it is powerful: it handles
+complex geometry and mixed boundary conditions cleanly, supports
+high-order basis functions, and works naturally with adaptive mesh
+refinement. That flexibility is why FEM is standard in structural
+mechanics and many multiphysics problems.</p>
+<p>How to choose in practice:</p>
+<ol type="1">
+<li>If geometry is simple and you want fast prototyping: start with
+FDM.</li>
+<li>If local/global conservation is non-negotiable (mass, momentum,
+energy): prefer FVM.</li>
+<li>If geometry/materials are complex or weak-form machinery is natural:
+prefer FEM.</li>
+</ol>
+<p>All three discretize a continuous PDE into algebraic equations. The
+right one is usually the method whose assumptions best match your domain
+geometry, conservation requirements, and software ecosystem.</p>
+<h4 id="which-problem-types-map-to-which-method">9.4.1 Which problem
+types map to which method?</h4>
+<p>If you think in terms of problem archetypes rather than method names,
+method choice becomes much clearer:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Problem type</th>
+<th>Typical first choice</th>
+<th>Why this choice is common</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Heat diffusion on a rectangular plate (simple geometry)</td>
+<td>FDM</td>
+<td>Structured grids and simple second-derivative stencils make
+implementation and debugging fast.</td>
+</tr>
+<tr>
+<td>Incompressible or compressible flow, advection-dominated transport,
+shock-containing conservation laws</td>
+<td>FVM</td>
+<td>Conservative flux balances at cell faces preserve
+mass/momentum/energy in a physically meaningful way.</td>
+</tr>
+<tr>
+<td>Structural deformation, elasticity, stress analysis in complex
+parts</td>
+<td>FEM</td>
+<td>Weak-form framework and unstructured meshes handle curved geometry,
+mixed materials, and boundary conditions naturally.</td>
+</tr>
+<tr>
+<td>Electromagnetics in complicated 3D domains</td>
+<td>FEM</td>
+<td>Basis functions on unstructured elements are flexible for irregular
+domains and heterogeneous media.</td>
+</tr>
+<tr>
+<td>Porous-media flow on mostly regular grids</td>
+<td>FDM or FVM</td>
+<td>FDM is fast when geometry is simple; FVM is preferred when strict
+local conservation is required.</td>
+</tr>
+<tr>
+<td>Multiphysics coupling (for example thermo-mechanics)</td>
+<td>FEM (often)</td>
+<td>Variational formulation and modular element assembly are well suited
+to coupling multiple field equations.</td>
+</tr>
+</tbody>
+</table>
+<p>A practical way to use this table:</p>
+<ol type="1">
+<li>Start from the physics: is conservation the dominant requirement, or
+is geometry the dominant challenge?</li>
+<li>If conservation is non-negotiable, bias toward FVM.</li>
+<li>If geometry and boundary complexity dominate, bias toward FEM.</li>
+<li>If both are simple and you need speed-to-first-result, FDM is often
+the fastest path.</li>
+<li>Re-evaluate after a prototype: the best final method is the one that
+meets accuracy and runtime targets on your real problem, not the one
+that sounds best in theory.</li>
+</ol>
+<h3 id="shared-example-a-non-stiff-ivp-compare-euler-and-rk4">9.5 Shared
 Example A: Non-stiff IVP, compare Euler and RK4</h3>
 <p>Problem: <span class="math display">\[
 y&#39;=-2y, \quad y(0)=1, \quad y(1)=e^{-2}
@@ -2429,7 +2542,7 @@ for intuition.</p>
 <span id="cb27-30"><a href="#cb27-30" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb27-31"><a href="#cb27-31" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">&quot;Euler: &quot;</span>, y_euler, <span class="st">&quot; error: &quot;</span>, <span class="fu">abs</span>(y_euler <span class="op">-</span> y_true))</span>
 <span id="cb27-32"><a href="#cb27-32" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">&quot;RK4  : &quot;</span>, y_rk4, <span class="st">&quot; error: &quot;</span>, <span class="fu">abs</span>(y_rk4 <span class="op">-</span> y_true))</span></code></pre></div>
-<h3 id="shared-example-b-use-ecosystem-solver-with-adaptivity">9.5
+<h3 id="shared-example-b-use-ecosystem-solver-with-adaptivity">9.6
 Shared Example B: Use ecosystem solver with adaptivity</h3>
 <p>This is where idiomatic language differences shine.</p>
 <p><strong>Python (SciPy)</strong></p>
@@ -3072,7 +3185,7 @@ they are almost always useful.</p>
         li.classList.add('toc-depth-' + String(depth));
 
         var sublist = firstChildByTag(li, 'UL');
-        if (sublist && depth >= 2) {
+        if (sublist && depth >= 1) {
           var btn = document.createElement('button');
           btn.setAttribute('type', 'button');
           btn.className = 'toc-toggle';

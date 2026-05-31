@@ -1081,7 +1081,50 @@ The **global error** is what you actually care about — the total accumulated e
 
 Step-size control matters as much as method order in practice. Adaptive solvers continuously estimate the local error at each step and adjust $h$ to keep it within a specified tolerance, taking large steps where the solution is smooth and small steps where it is changing rapidly. This delivers the desired accuracy with far fewer function evaluations than a fixed-step method.
 
-### 9.4 Shared Example A: Non-stiff IVP, compare Euler and RK4
+### 9.4 PDE Discretization Basics: Finite Difference, Finite Volume, Finite Element
+
+You are absolutely right to care about this distinction because these three methods often solve "the same" PDE with very different tradeoffs.
+
+**Finite difference (FDM)** starts from the strong form and replaces derivatives with stencil formulas on a grid. For example, in 1D,
+$$
+u''(x_i) \approx \frac{u_{i+1}-2u_i+u_{i-1}}{h^2}.
+$$
+Why people like it: easy to implement, very fast on structured grids, and great for rectangular domains with simple boundary conditions. Where it struggles: irregular geometry, complex boundaries, and local mesh adaptation are less natural.
+
+**Finite volume (FVM)** writes the PDE in conservation form, integrates over each control volume, and balances fluxes across faces. Unknowns are typically cell averages. Why it matters: conservation is built in by construction, which is why FVM is dominant in CFD and transport problems. If flux leaves one cell, it enters the neighbor; global conservation follows naturally.
+
+**Finite element (FEM)** starts from a weak form, chooses basis/test functions on each element, and assembles a global system from local element contributions. Why it is powerful: it handles complex geometry and mixed boundary conditions cleanly, supports high-order basis functions, and works naturally with adaptive mesh refinement. That flexibility is why FEM is standard in structural mechanics and many multiphysics problems.
+
+How to choose in practice:
+
+1. If geometry is simple and you want fast prototyping: start with FDM.
+2. If local/global conservation is non-negotiable (mass, momentum, energy): prefer FVM.
+3. If geometry/materials are complex or weak-form machinery is natural: prefer FEM.
+
+All three discretize a continuous PDE into algebraic equations. The right one is usually the method whose assumptions best match your domain geometry, conservation requirements, and software ecosystem.
+
+#### 9.4.1 Which problem types map to which method?
+
+If you think in terms of problem archetypes rather than method names, method choice becomes much clearer:
+
+| Problem type | Typical first choice | Why this choice is common |
+|---|---|---|
+| Heat diffusion on a rectangular plate (simple geometry) | FDM | Structured grids and simple second-derivative stencils make implementation and debugging fast. |
+| Incompressible or compressible flow, advection-dominated transport, shock-containing conservation laws | FVM | Conservative flux balances at cell faces preserve mass/momentum/energy in a physically meaningful way. |
+| Structural deformation, elasticity, stress analysis in complex parts | FEM | Weak-form framework and unstructured meshes handle curved geometry, mixed materials, and boundary conditions naturally. |
+| Electromagnetics in complicated 3D domains | FEM | Basis functions on unstructured elements are flexible for irregular domains and heterogeneous media. |
+| Porous-media flow on mostly regular grids | FDM or FVM | FDM is fast when geometry is simple; FVM is preferred when strict local conservation is required. |
+| Multiphysics coupling (for example thermo-mechanics) | FEM (often) | Variational formulation and modular element assembly are well suited to coupling multiple field equations. |
+
+A practical way to use this table:
+
+1. Start from the physics: is conservation the dominant requirement, or is geometry the dominant challenge?
+2. If conservation is non-negotiable, bias toward FVM.
+3. If geometry and boundary complexity dominate, bias toward FEM.
+4. If both are simple and you need speed-to-first-result, FDM is often the fastest path.
+5. Re-evaluate after a prototype: the best final method is the one that meets accuracy and runtime targets on your real problem, not the one that sounds best in theory.
+
+### 9.5 Shared Example A: Non-stiff IVP, compare Euler and RK4
 
 Problem:
 $$
@@ -1200,7 +1243,7 @@ println("Euler: ", y_euler, " error: ", abs(y_euler - y_true))
 println("RK4  : ", y_rk4, " error: ", abs(y_rk4 - y_true))
 ```
 
-### 9.5 Shared Example B: Use ecosystem solver with adaptivity
+### 9.6 Shared Example B: Use ecosystem solver with adaptivity
 
 This is where idiomatic language differences shine.
 
