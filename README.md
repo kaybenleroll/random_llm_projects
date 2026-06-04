@@ -1,2 +1,9 @@
 # random_llm_projects
-This project will hold the various different LLM projects I want to run from time to time - it will not necessarily involve code (and most likely will not)
+
+Miscellaneous projects and admin work.
+
+## Contents
+
+- `system_queries/` — System debugging notes, ACPI patches, kernel work
+- `update_cv/` — CV/resume sources
+- `cex_tablet/` — Tablet research notes
