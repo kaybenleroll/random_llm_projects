@@ -1,0 +1,143 @@
+# SKIKK Thor 16 sysadmin task runner
+# Run `just` or `just --list` to see available recipes
+
+default:
+    @just --list
+
+# ─── Health Checks ───────────────────────────────────────────────────────────
+
+# Quick 5-item health check (~2 min): failed units, GPU PM, ASPM, D3cold storm, root FS
+health-quick:
+    @echo "=== Q1: Failed systemd units ==="
+    systemctl --failed
+    @echo ""
+    @echo "=== Q2: GPU runtime PM fix ==="
+    grep NVreg_DynamicPowerManagement /etc/modprobe.d/nvidia-power.conf /etc/modprobe.d/nvidia.conf 2>/dev/null
+    @echo ""
+    @echo "=== Q3: PCIe ASPM policy ==="
+    grep -o 'pcie_aspm[^ ]*' /proc/cmdline
+    @echo ""
+    @echo "=== Q4: GPU D3cold storm (last 10 min) ==="
+    sudo dmesg --since "10 minutes ago" | grep -c 'nvidia.*pm_runtime_work\|nvidia.*D3cold\|nvidia.*NVPCF' || true
+    @echo ""
+    @echo "=== Q5: Root filesystem headroom ==="
+    df -h / /data 2>/dev/null
+
+# Full health check: runs health-quick plus GPU firmware, storage, networking, thermal, processes, mounts
+health-full: health-quick
+    @echo ""
+    @echo "=== 3A: ACPI DSDT OEM revision ==="
+    sudo python3 -c "import struct; hdr=open('/sys/firmware/acpi/tables/DSDT','rb').read(36); rev=struct.unpack('<I',hdr[24:28])[0]; print(hex(rev))"
+    @echo ""
+    @echo "=== 3A: GRUB cmdline ==="
+    cat /proc/cmdline
+    @echo ""
+    @echo "=== 3A: Kernel messages (errors/warnings, filtered) ==="
+    sudo dmesg | grep -E 'error|fail|warn' | grep -v -E 'ite_8291|Bluetooth: hci|acpi-cpufreq|ACPI: \\_SB' | tail -30
+    @echo ""
+    @echo "=== 3B: GPU firmware mode ==="
+    nvidia-smi --query-gpu=name,driver_version,persistence_mode --format=csv,noheader
+    @echo ""
+    @echo "=== 3B: D3cold storm check (last 1 hour) ==="
+    sudo journalctl -k --since "1 hour ago" | grep -c 'pm_runtime_work\|NVPCF\|D3cold' || true
+    @echo ""
+    @echo "=== 3B: GPE07 rate ==="
+    sudo cat /sys/kernel/debug/acpi/gpe_info 2>/dev/null | grep -i 'gpe07\|GPE07' || echo "(gpe_info not available)"
+    @echo ""
+    @echo "=== 3C: NVMe SMART summary ==="
+    sudo smartctl -a /dev/nvme0n1 | grep -E 'Model|Serial|Temperature|Available_Spare|Unsafe_Shutdowns|Media_Errors|Power_On_Hours'
+    sudo smartctl -a /dev/nvme1n1 | grep -E 'Model|Serial|Temperature|Available_Spare|Unsafe_Shutdowns|Media_Errors|Power_On_Hours'
+    @echo ""
+    @echo "=== 3C: Filesystem usage ==="
+    df -h / /data
+    @echo ""
+    @echo "=== 3D: Ethernet carrier state ==="
+    ip link show enp5s0
+    cat /sys/class/net/enp5s0/carrier 2>/dev/null && echo "carrier: UP" || echo "carrier: DOWN (check cable)"
+    @echo ""
+    @echo "=== 3D: r8125 driver ==="
+    lsmod | grep r8125
+    @echo ""
+    @echo "=== 3E: DIMM temperatures ==="
+    sensors | grep -A5 -i 'spd\|dimm\|ddr' || echo "(no DIMM sensor data)"
+    @echo ""
+    @echo "=== 3E: CPU temperature ==="
+    sensors | grep -E 'Tctl|Tdie|Package'
+    @echo ""
+    @echo "=== 3E: GPU temperature ==="
+    nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader
+    @echo ""
+    @echo "=== 3F: Zombie count ==="
+    ps aux | awk '$8=="Z"' | wc -l
+    @echo ""
+    @echo "=== 3F: Podman containers ==="
+    podman ps -a
+    @echo ""
+    @echo "=== 3G: rclone mounts ==="
+    mount | grep rclone
+    systemctl status rclone-googledrive.service rclone-onedrive.service --no-pager -l
+
+# ─── GPU / Power ──────────────────────────────────────────────────────────────
+
+# Show current ASPM policy from /proc/cmdline and live kernel parameter
+aspm-status:
+    @echo "=== /proc/cmdline (ASPM flags) ==="
+    grep -o 'pcie_aspm[^ ]*' /proc/cmdline
+    @echo ""
+    @echo "=== Live kernel ASPM policy ==="
+    cat /sys/module/pcie_aspm/parameters/policy
+
+# Show NVreg_DynamicPowerManagement value across all modprobe.d files
+gpu-pm-status:
+    grep NVreg_DynamicPowerManagement /etc/modprobe.d/nvidia-power.conf /etc/modprobe.d/nvidia.conf 2>/dev/null
+
+# Show CPU, GPU, and DIMM temperatures from sensors
+temps:
+    @echo "=== CPU ==="
+    sensors | grep -E 'Tctl|Tdie|Package'
+    @echo ""
+    @echo "=== GPU ==="
+    nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader
+    @echo ""
+    @echo "=== DIMMs ==="
+    sensors | grep -A5 -i 'spd\|dimm\|ddr' || echo "(no DIMM sensor data)"
+
+# ─── Fan Profiles ─────────────────────────────────────────────────────────────
+
+# Switch TCC fan profile to performance (thor_gaming)
+fan-performance:
+    bash scripts/switch_profile.sh thor_gaming
+
+# Switch TCC fan profile to balanced (thor_balanced)
+fan-balanced:
+    bash scripts/switch_profile.sh thor_balanced
+
+# Switch TCC fan profile to TUXEDO default (balanced fan curve, no overboost)
+fan-auto:
+    bash scripts/switch_profile.sh __default_custom_profile__
+
+# ─── Storage ──────────────────────────────────────────────────────────────────
+
+# Identify storage consumers under /home and /var
+disk-usage:
+    du -sh /home/* /var/* 2>/dev/null | sort -h
+
+# Run SMART diagnostics on both NVMe drives
+# Note: requires Bash(sudo smartctl**) in CC settings allowlist
+smart-check:
+    sudo smartctl -a /dev/nvme0n1
+    sudo smartctl -a /dev/nvme1n1
+
+# ─── Dotfiles ─────────────────────────────────────────────────────────────────
+
+# Show pending chezmoi changes
+dotfiles-diff:
+    chezmoi diff
+
+# Apply chezmoi dotfile changes
+dotfiles-apply:
+    chezmoi apply
+
+# Pull upstream and apply chezmoi dotfile changes
+dotfiles-update:
+    chezmoi update
