@@ -23,6 +23,28 @@ The quick check takes under 2 minutes. The full check takes 5–10 minutes depen
 
 ---
 
+## Quick Reference — When to Run What
+
+Use this table to pick the right command without reading the full runbook.
+
+| Situation | Command | Takes |
+|-----------|---------|-------|
+| Starting any admin session | `just health-quick` | ~2 min |
+| After a reboot | `just health-full` | ~5 min |
+| After a kernel/driver update | `just health-full` then `just gpu-pm-status` | ~7 min |
+| Machine feels hot / fan loud | `just temps` | instant |
+| Want to reduce fan noise | `just fan-balanced` | instant |
+| Doing heavy GPU/CPU work | `just fan-performance` | instant |
+| Done with intensive work | `just fan-auto` | instant |
+| Investigating storage growth | `just disk-usage` | ~30 sec |
+| Checking drive health | `just smart-check` | ~10 sec (needs `sudo smartctl**` in CC allowlist) |
+| Syncing CC config from this machine to others | `just dotfiles-diff` then `just dotfiles-apply` | instant |
+| Pulling CC config updates from another machine | `just dotfiles-update` | instant |
+| Suspecting GPU power management issue | `just gpu-pm-status` then check dmesg | instant |
+| Suspecting ethernet freeze / NIC stranded | `just aspm-status` | instant |
+
+---
+
 ## 2. Quick Health Check (~2 min)
 
 Run these five checks in order. Any FAIL stops the session until resolved.
