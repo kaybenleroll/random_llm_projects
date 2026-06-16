@@ -159,7 +159,7 @@ dotfiles-update:
 
 # Start Stremio server container and open in Chrome app mode
 stremio:
-    @bash /home/mcooney/workspace/random_llm_projects/system_queries/scripts/stremio-launch.sh
+    @bash /home/mcooney/sysadmin_files/utilities/stremio-launch.sh
 
 # Start Stremio server container only (no browser)
 stremio-server:
