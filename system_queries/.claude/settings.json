@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(sudo *)",
+      "Bash(sensors*)",
+      "Bash(nvidia-smi*)"
+    ],
+    "deny": [
+      "Bash(sudo dd *)",
+      "Bash(sudo mkfs*)",
+      "Bash(sudo parted *)",
+      "Bash(sudo fdisk *)",
+      "Bash(sudo gdisk *)",
+      "Bash(sudo shred *)",
+      "Bash(sudo wipefs *)"
+    ]
+  }
+}
