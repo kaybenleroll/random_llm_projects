@@ -42,6 +42,8 @@ Use this table to pick the right command without reading the full runbook.
 | Pulling CC config updates from another machine | `just dotfiles-update` | instant |
 | Suspecting GPU power management issue | `just gpu-pm-status` then check dmesg | instant |
 | Suspecting ethernet freeze / NIC stranded | `just aspm-status` | instant |
+| Want a full audit trail for later comparison | `just health-log` | ~5 min |
+| Checking whether metrics are drifting over time | `just health-snapshot` then `cat logs/health-metrics.tsv` | instant |
 
 ---
 

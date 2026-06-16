@@ -77,6 +77,19 @@ health-full: health-quick
     mount | grep rclone
     systemctl status rclone-googledrive.service rclone-onedrive.service --no-pager -l
 
+# Run full health check and save timestamped output to logs/
+health-log:
+    @mkdir -p logs
+    @just health-full 2>&1 | tee logs/health-$(date +%Y%m%d-%H%M%S).txt
+
+# Capture key metrics as a single timestamped line for trend tracking
+health-snapshot:
+    @mkdir -p logs
+    @[ -f logs/health-metrics.tsv ] || echo -e "timestamp\tdisk_pct\tdimm1_temp\tzombies\tfailed_units\tgpu_pm" > logs/health-metrics.tsv
+    @echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t$(df / | awk 'NR==2{print $5}' | tr -d '%')\t$(sensors 2>/dev/null | grep -A1 'DIMM 1' | grep 'temp1' | awk '{print $2}' | tr -d '+°C' || echo unknown)\t$(ps aux | awk '{print $8}' | grep -c '^Z' || echo 0)\t$(systemctl --failed --no-legend 2>/dev/null | wc -l | tr -d ' ')\t$(grep -h NVreg_DynamicPowerManagement /etc/modprobe.d/nvidia-power.conf 2>/dev/null | head -1 | grep -o '0x[0-9a-fA-F]*' || echo unknown)" >> logs/health-metrics.tsv
+    @echo "Snapshot saved. Current metrics:"
+    @tail -2 logs/health-metrics.tsv | column -t -s $'\t'
+
 # ─── GPU / Power ──────────────────────────────────────────────────────────────
 
 # Show current ASPM policy from /proc/cmdline and live kernel parameter
