@@ -154,3 +154,21 @@ dotfiles-apply:
 # Pull upstream and apply chezmoi dotfile changes
 dotfiles-update:
     chezmoi update
+
+# ── Stremio ──────────────────────────────────────────────────────────────────
+
+# Start Stremio server container and open in Chrome app mode
+stremio:
+    @bash /home/mcooney/workspace/random_llm_projects/system_queries/scripts/stremio-launch.sh
+
+# Start Stremio server container only (no browser)
+stremio-server:
+    @podman run -d --name stremio-server --restart unless-stopped \
+        -p 11470:11470 \
+        -v $(echo $HOME)/.stremio-server:/root/.stremio-server:Z \
+        docker.io/sleeyax/stremio-streaming-server:latest
+
+# Stop and remove Stremio server container
+stremio-stop:
+    @podman rm -f stremio-server 2>/dev/null || true
+    @echo "Stremio server stopped"
