@@ -45,8 +45,8 @@ health-full: health-quick
     sudo cat /sys/kernel/debug/acpi/gpe_info 2>/dev/null | grep -i 'gpe07\|GPE07' || echo "(gpe_info not available)"
     @echo ""
     @echo "=== 3C: NVMe SMART summary ==="
-    sudo smartctl -a /dev/nvme0n1 | grep -E 'Model|Serial|Temperature|Available_Spare|Unsafe_Shutdowns|Media_Errors|Power_On_Hours'
-    sudo smartctl -a /dev/nvme1n1 | grep -E 'Model|Serial|Temperature|Available_Spare|Unsafe_Shutdowns|Media_Errors|Power_On_Hours'
+    sudo /usr/sbin/smartctl -a /dev/nvme0n1 | grep -E 'Model|Serial|Temperature|Available_Spare|Unsafe_Shutdowns|Media_Errors|Power_On_Hours'
+    sudo /usr/sbin/smartctl -a /dev/nvme1n1 | grep -E 'Model|Serial|Temperature|Available_Spare|Unsafe_Shutdowns|Media_Errors|Power_On_Hours'
     @echo ""
     @echo "=== 3C: Filesystem usage ==="
     df -h / /data
@@ -136,10 +136,10 @@ disk-usage:
     du -sh /home/* /var/* 2>/dev/null | sort -h
 
 # Run SMART diagnostics on both NVMe drives
-# Note: requires Bash(sudo smartctl**) in CC settings allowlist
+# Note: requires Bash(sudo /usr/sbin/smartctl**) in CC settings allowlist
 smart-check:
-    sudo smartctl -a /dev/nvme0n1
-    sudo smartctl -a /dev/nvme1n1
+    sudo /usr/sbin/smartctl -a /dev/nvme0n1
+    sudo /usr/sbin/smartctl -a /dev/nvme1n1
 
 # ─── Dotfiles ─────────────────────────────────────────────────────────────────
 
@@ -154,6 +154,50 @@ dotfiles-apply:
 # Pull upstream and apply chezmoi dotfile changes
 dotfiles-update:
     chezmoi update
+
+# ─── Maintenance & Security ──────────────────────────────────────────────────
+
+# Show all listening TCP and UDP sockets with owning processes
+ports:
+    @echo "=== Listening TCP ==="
+    ss -tlnp
+    @echo ""
+    @echo "=== Listening UDP ==="
+    ss -ulnp
+
+# Update package lists and upgrade all installed packages
+pkg-upgrade:
+    sudo apt update && sudo apt upgrade -y
+    sudo apt autoremove -y
+
+# Purge config files left by removed packages (rc state in dpkg)
+pkg-purge:
+    @echo "=== Packages in rc state ==="
+    dpkg -l | grep '^rc' | awk '{print $2}'
+    dpkg -l | grep '^rc' | awk '{print $2}' | xargs sudo apt-get purge -y
+
+# Remove all disabled snap revisions to reclaim disk space
+snap-clean:
+    snap list --all | awk '/disabled/{print $1, $3}' | while read name rev; do \
+        sudo snap remove "$$name" --revision="$$rev"; \
+    done
+    sudo snap set system refresh.retain=2
+
+# Show firewall status, external-facing listeners, and SSH hardening config
+security-check:
+    @echo "=== UFW Status ==="
+    sudo ufw status verbose
+    @echo ""
+    @echo "=== External-facing TCP listeners ==="
+    ss -tlnp | grep -v '127\.' | grep -v '\[::1\]'
+    @echo ""
+    @echo "=== SSH config ==="
+    grep -E 'PasswordAuthentication|PermitRootLogin|Port' /etc/ssh/sshd_config
+
+# Trim systemd journal to last 30 days and show current disk usage
+journal-trim:
+    sudo journalctl --vacuum-time=30d
+    sudo journalctl --disk-usage
 
 # ── Stremio ──────────────────────────────────────────────────────────────────
 
