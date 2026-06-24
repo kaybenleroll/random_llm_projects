@@ -45,15 +45,15 @@ health-full: health-quick
     sudo cat /sys/kernel/debug/acpi/gpe_info 2>/dev/null | grep -i 'gpe07\|GPE07' || echo "(gpe_info not available)"
     @echo ""
     @echo "=== 3C: NVMe SMART summary ==="
-    sudo /usr/sbin/smartctl -a /dev/nvme0n1 | grep -E 'Model|Serial|Temperature|Available_Spare|Unsafe_Shutdowns|Media_Errors|Power_On_Hours'
-    sudo /usr/sbin/smartctl -a /dev/nvme1n1 | grep -E 'Model|Serial|Temperature|Available_Spare|Unsafe_Shutdowns|Media_Errors|Power_On_Hours'
+    sudo /usr/sbin/smartctl -a /dev/nvme0n1 | grep -E 'Model|Serial|Temperature|Available Spare|Unsafe Shutdowns|Media and Data|Power On Hours'
+    sudo /usr/sbin/smartctl -a /dev/nvme1n1 | grep -E 'Model|Serial|Temperature|Available Spare|Unsafe Shutdowns|Media and Data|Power On Hours'
     @echo ""
     @echo "=== 3C: Filesystem usage ==="
     df -h / /data
     @echo ""
     @echo "=== 3D: Ethernet carrier state ==="
     ip link show enp5s0
-    cat /sys/class/net/enp5s0/carrier 2>/dev/null && echo "carrier: UP" || echo "carrier: DOWN (check cable)"
+    @[ "$$(cat /sys/class/net/enp5s0/carrier 2>/dev/null)" = "1" ] && echo "carrier: UP" || echo "carrier: DOWN (no cable)"
     @echo ""
     @echo "=== 3D: r8125 driver ==="
     lsmod | grep r8125
@@ -74,13 +74,27 @@ health-full: health-quick
     podman ps -a
     @echo ""
     @echo "=== 3G: rclone mounts ==="
-    mount | grep rclone
-    systemctl status rclone-googledrive.service rclone-onedrive.service --no-pager -l
+    mount | grep rclone || echo "(no rclone mounts)"
+    systemctl list-units --type=service --no-pager 2>/dev/null | grep -i rclone || echo "(no rclone systemd units found)"
 
 # Run full health check and save timestamped output to logs/
 health-log:
     @mkdir -p logs
     @just health-full 2>&1 | tee logs/health-$(date +%Y%m%d-%H%M%S).txt
+
+# Run all health checks (full + SMART + security) and save everything for CC review
+health-all:
+    @mkdir -p logs .scratch
+    @echo "=== Running full health check... ==="
+    @just health-full 2>&1 | tee logs/health-$(date +%Y%m%d-%H%M%S).txt
+    @echo ""
+    @echo "=== Running SMART check... ==="
+    @just smart-check 2>&1 | tee .scratch/smart-check.txt
+    @echo ""
+    @echo "=== Running security check... ==="
+    @just security-check 2>&1 | tee .scratch/security-check.txt
+    @echo ""
+    @echo "=== health-all complete. Files written to logs/ and .scratch/ ==="
 
 # Capture key metrics as a single timestamped line for trend tracking
 health-snapshot:
