@@ -51,12 +51,8 @@ health-full: health-quick
     @echo "=== 3C: Filesystem usage ==="
     df -h / /data
     @echo ""
-    @echo "=== 3D: Ethernet carrier state ==="
-    ip link show enp5s0
-    @[ "$$(cat /sys/class/net/enp5s0/carrier 2>/dev/null)" = "1" ] && echo "carrier: UP" || echo "carrier: DOWN (no cable)"
-    @echo ""
-    @echo "=== 3D: r8125 driver ==="
-    lsmod | grep r8125
+    @echo "=== 3D: NIC driver state (r8125/r8169 blacklisted) ==="
+    @lsmod | grep -E 'r8125|r8169' && echo "WARNING: NIC driver loaded — blacklist not effective" || echo "r8125/r8169 not loaded (expected)"
     @echo ""
     @echo "=== 3E: DIMM temperatures ==="
     sensors | grep -A5 -i 'spd\|dimm\|ddr' || echo "(no DIMM sensor data)"
@@ -77,24 +73,134 @@ health-full: health-quick
     mount | grep rclone || echo "(no rclone mounts)"
     systemctl list-units --type=service --no-pager 2>/dev/null | grep -i rclone || echo "(no rclone systemd units found)"
 
-# Run full health check and save timestamped output to logs/
+# Run all health checks and save timestamped output to logs/
 health-log:
     @mkdir -p logs
-    @just health-full 2>&1 | tee logs/health-$(date +%Y%m%d-%H%M%S).txt
+    @just health-all 2>&1 | tee logs/health-$(date +%Y%m%d-%H%M%S).txt
 
-# Run all health checks (full + SMART + security) and save everything for CC review
+# Run all health checks (9 domains). Requires sudo for some sections. Use `just health-log` to capture to file.
 health-all:
     @mkdir -p logs .scratch
-    @echo "=== Running full health check... ==="
-    @just health-full 2>&1 | tee logs/health-$(date +%Y%m%d-%H%M%S).txt
+    @echo "=== [1/9] Core hardware & firmware ==="
+    @just health-full
     @echo ""
-    @echo "=== Running SMART check... ==="
+    @echo "=== [2/9] Boot, timers & coredumps ==="
+    @just health-boot
+    @echo ""
+    @echo "=== [3/9] NVMe SMART ==="
     @just smart-check 2>&1 | tee .scratch/smart-check.txt
     @echo ""
-    @echo "=== Running security check... ==="
+    @echo "=== [4/9] Security (firewall + SSH) ==="
     @just security-check 2>&1 | tee .scratch/security-check.txt
     @echo ""
-    @echo "=== health-all complete. Files written to logs/ and .scratch/ ==="
+    @echo "=== [5/9] Package hygiene ==="
+    @just health-packages
+    @echo ""
+    @echo "=== [6/9] Container hygiene ==="
+    @just health-containers
+    @echo ""
+    @echo "=== [7/9] Home directory cruft ==="
+    @just health-cruft
+    @echo ""
+    @echo "=== [8/9] Log health ==="
+    @just health-logs
+    @echo ""
+    @echo "=== [9/9] Network health ==="
+    @just health-network
+    @echo ""
+    @echo "=== health-all complete ==="
+
+# Boot health: uptime, boot time, installed kernels, pending reboot, coredumps, failed timers
+health-boot:
+    @echo "=== Uptime and load ==="
+    uptime
+    @echo ""
+    @echo "=== Boot time ==="
+    systemd-analyze
+    @echo ""
+    @echo "=== Slow boot units (top 10) ==="
+    systemd-analyze blame | head -10
+    @echo ""
+    @echo "=== Installed kernels ==="
+    ls /boot/vmlinuz-* | sort -V
+    @echo ""
+    @echo "=== Pending reboot ==="
+    @[ -f /var/run/reboot-required ] && cat /var/run/reboot-required || echo "none"
+    @echo ""
+    @echo "=== Coredumps ==="
+    coredumpctl list 2>/dev/null | tail -10 | grep -q '.' && coredumpctl list 2>/dev/null | tail -10 || echo "none"
+    @echo ""
+    @echo "=== Failed/missed systemd timers ==="
+    systemctl list-timers --all --no-pager | grep -E 'n/a|failed' || echo "all timers OK"
+
+# Package hygiene: upgradable packages, purge candidates, disabled snap revisions
+health-packages:
+    @echo "=== Upgradable packages ==="
+    apt list --upgradable 2>/dev/null | grep -v '^Listing' || echo "none"
+    @echo ""
+    @echo "=== Security updates ==="
+    apt list --upgradable 2>/dev/null | grep -i security || echo "none"
+    @echo ""
+    @echo "=== Purge candidates (removed packages with leftover config) ==="
+    dpkg -l | grep '^rc' | awk '{print $2}' || echo "none"
+    @echo ""
+    @echo "=== Disabled snap revisions ==="
+    snap list --all 2>/dev/null | grep disabled || echo "none"
+
+# Container hygiene: disk usage, dangling images, stopped containers
+health-containers:
+    @echo "=== Podman system disk usage ==="
+    podman system df
+    @echo ""
+    @echo "=== Dangling images ==="
+    podman images --filter dangling=true 2>/dev/null || echo "none"
+    @echo ""
+    @echo "=== Exited containers ==="
+    podman ps -a --filter status=exited 2>/dev/null
+
+# Home directory cruft: cache, downloads, trash, large files (>500 MB)
+health-cruft:
+    @echo "=== Home directory sizes ==="
+    du -sh /home/mcooney/Downloads /home/mcooney/.cache /home/mcooney/.local/share/Trash /home/mcooney/.local/share/containers 2>/dev/null | sort -h
+    @echo ""
+    @echo "=== Files over 500 MB in home (local filesystem only) ==="
+    find /home/mcooney -xdev -maxdepth 6 -type f -size +500M \
+        -not -path '*/snap/*' \
+        -not -path '*/\.local/share/containers/*' \
+        -printf '%s\t%p\n' 2>/dev/null | sort -rn | head -15 | \
+        numfmt --to=iec --field=1 2>/dev/null || echo "(none found)"
+
+# Log health: recent error counts, error trend, failed SSH login attempts
+health-logs:
+    @echo "=== Journal errors (last 24h, filtered) ==="
+    journalctl -p err --since "24 hours ago" --no-pager -q 2>/dev/null \
+        | grep -v -E 'ite_8291|GPE07|NVreg|enp5s0' | tail -30 || true
+    @echo ""
+    @echo "=== Error count last 7 days (excl. known noise) ==="
+    journalctl -p err --since "7 days ago" --no-pager -q 2>/dev/null \
+        | grep -v -E 'ite_8291|GPE07|NVreg|enp5s0' | wc -l || echo "0"
+    @echo ""
+    @echo "=== r8125 ESD recovery events (last 7 days, expected 0 — r8125 blacklisted) ==="
+    journalctl -p err --since "7 days ago" -k --no-pager -q 2>/dev/null \
+        | grep -c 'enp5s0.*pci link is down' || echo "0"
+    @echo ""
+    @echo "=== Failed SSH login attempts (last 24h) ==="
+    journalctl --since "24 hours ago" -u ssh --no-pager -q 2>/dev/null \
+        | grep -c 'Failed password\|Invalid user' || echo "0"
+
+# Network health: active connections, WiFi signal, DNS check, ethernet state
+health-network:
+    @echo "=== Active connections ==="
+    nmcli connection show --active 2>/dev/null || ip route show
+    @echo ""
+    @echo "=== WiFi networks visible (signal) ==="
+    nmcli -f SSID,SIGNAL,BARS device wifi list 2>/dev/null | head -6 || echo "(not available)"
+    @echo ""
+    @echo "=== DNS resolution ==="
+    resolvectl query google.com 2>/dev/null | head -5 || nslookup google.com 2>/dev/null | head -6 || echo "DNS check failed"
+    @echo ""
+    @echo "=== Ethernet state (r8125/r8169 blacklisted — NIC unused) ==="
+    @lsmod | grep -E 'r8125|r8169' && echo "WARNING: NIC driver loaded — blacklist not effective" || echo "NIC drivers not loaded (expected)"
 
 # Capture key metrics as a single timestamped line for trend tracking
 health-snapshot:

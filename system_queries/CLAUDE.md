@@ -5,9 +5,9 @@ SKIKK Thor 16 (Tongfang GM6HG7Y) · AMD Ryzen 9 9955HX3D · RTX 5070 Ti (Blackwe
 Ubuntu 26.04 LTS · kernel 6.17.0-23-generic · nvidia-open 580.126.09 · tuxedo-drivers 4.22.2
 
 ## Hard constraints
-- **Keep `pcie_aspm=force` with `pcie_aspm.policy=default`** — r8125 ethernet hard-freezes when `policy=powersave` + `force` push L1 ASPM aggressively, stranding the NIC in a low-power state; `force` must stay but `policy` must remain `default` to allow correct negotiation
+- **Keep `pcie_aspm=force` with `pcie_aspm.policy=default`** — `force` is required for s2idle (PCIe root ports cannot gate power without it); `policy=default` avoids over-aggressive L1 on remaining devices. Original r8125 hard-freeze resolved by blacklisting the driver — if NIC is ever re-enabled, test `policy=default` carefully before considering `powersave`
 - **This system has no `/etc/default/grub`** — GRUB is configured exclusively via `/etc/default/grub.d/` drop-ins; after any `update-grub` run, verify `/proc/cmdline` on next boot to confirm all params survived
-- **BIOS updates invalidate the DSDT override** — rebuild nvpcf_fix.asl against new DSDT after any firmware update
+- **BIOS updates may change the DSDT** — check NVPCF fix status after any firmware update; the current initrd override is superseded (BIOS Dec 2025 already contains the empty-method fix) and harmless but not active (kernel rejects it as OEM revision is not greater)
 
 ## Active fixes
 | Fix | File | Status |
@@ -16,6 +16,7 @@ Ubuntu 26.04 LTS · kernel 6.17.0-23-generic · nvidia-open 580.126.09 · tuxedo
 | pm_runtime_work freeze (Blackwell + fine-grained PM) | `/etc/modprobe.d/nvidia-power.conf` | Live |
 | pm_runtime_work cmdline override (definitive fix) | `/etc/default/grub.d/99-nvidia-pm.cfg` | Live |
 | Platform cmdline params (pcie_aspm, amd_pstate, nvidia-drm) | `/etc/default/grub.d/10-skikk-platform.cfg` | Live |
+| r8125/r8169 NIC disabled (ASPM ESD ~250/day) | `/etc/modprobe.d/blacklist-r8125.conf` | Live |
 | Gemini wrong-fix artifacts | Deleted | Done |
 | GRUB cleanup (wrong CPIO, stale flags) | `.scratch/grub_cleanup.sh` | Done |
 
@@ -25,20 +26,62 @@ Ubuntu 26.04 LTS · kernel 6.17.0-23-generic · nvidia-open 580.126.09 · tuxedo
 
 ## File layout
 ```
-dsdt.dsl              — decompiled firmware DSDT (source of truth for ACPI work)
-dsdt.dat              — raw DSDT binary
-SKIKK_Support_Dossier.md  — hardware/platform context
-.scratch/             — all working files, scripts, outputs
+acpi/                       — DSDT firmware artifacts (dsdt.dsl source, dsdt.dat binary, nvpcf_fix.asl patch)
+doc/                        — decision logs, runbooks, machine history
+SKIKK_Thor_ASPM_Bug_Report.md  — r8125 ASPM crash bug report filed with SKIKK (historical; see Resolution section)
+.scratch/                   — all working files, scripts, outputs
 ```
 
 ## Working approach
 - All temp and output files go in `.scratch/` — never `/tmp/`
 - Scripts that need root use `sudo` internally; run them as `bash .scratch/script.sh`, not `sudo bash`
 - Subagents do implementation; this session orchestrates
-- Check DSDT OEM revision (offset 24-28, not 32-36 which is Creator Revision): `sudo python3 -c "import struct; hdr=open('/sys/firmware/acpi/tables/DSDT','rb').read(36); rev=struct.unpack('<I',hdr[24:28])[0]; print(hex(rev))"` — firmware is `0x0107200A` (Dec 2025 BIOS)
+- Check DSDT OEM revision (offset 24-28, not 32-36 which is Creator Revision): `sudo python3 -c "import struct; hdr=open('/sys/firmware/acpi/tables/DSDT','rb').read(36); rev=struct.unpack('<I',hdr[24:28])[0]; print(hex(rev))"` — firmware is `0x01072009` (Dec 2025 BIOS; Python prints as `0x1072009` with leading zero dropped)
+
+## Recurring operations
+
+**"Do a comprehensive health check"** → `just health-all`
+Runs full diagnostics + SMART + security. Some checks require sudo — if the session can't authenticate, bundle them: write `.scratch/health_sudo.sh` and ask the user to run `sudo bash .scratch/health_sudo.sh`. The sudo checks are: DSDT OEM revision, dmesg nvidia-PM events, UFW status, smartctl on both NVMe drives.
+
+### Health targets
+`health-all` calls all 9 domains in sequence. `health-log` saves `health-all` output to a timestamped file in `logs/`.
+
+| Target | Domain | Sudo |
+|--------|---------|------|
+| `health-quick` | 5 key spot-checks (failed units, GPU PM, ASPM, D3cold, disk) | partial |
+| `health-full` | Core hardware/firmware (depends on health-quick) | yes |
+| `health-boot` | Uptime, boot time, installed kernels, pending reboot, coredumps, failed timers | no |
+| `smart-check` | NVMe SMART diagnostics on both drives | yes |
+| `security-check` | UFW firewall, external listeners, SSH hardening | yes |
+| `health-packages` | Upgradable packages, security updates, purge candidates, disabled snaps | no |
+| `health-containers` | Podman disk usage, dangling images, stopped containers | no |
+| `health-cruft` | Home dir sizes (Downloads/.cache/Trash/containers), files >500 MB | no |
+| `health-logs` | Journal error counts (24h/7d), failed SSH login attempts | no |
+| `health-network` | Active connections, WiFi signal, DNS resolution, ethernet state | no |
+| `health-all` | Calls all 9 above — **use this for "do a health check" requests** | yes |
+| `health-log` | Saves `health-all` output to `logs/health-TIMESTAMP.txt` | yes |
+| `health-snapshot` | Append one metrics row to `logs/health-metrics.tsv` (trend tracking) | no |
+
+### Other common targets
+| Target | What it does |
+|--------|-------------|
+| `temps` | CPU / GPU / DIMM temperatures |
+| `gpu-pm-status` | Verify GPU PM fix is active (should show `0x01`) |
+| `aspm-status` | Verify PCIe ASPM policy |
+| `disk-usage` | Storage consumers in /home and /var |
+| `journal-trim` | Vacuum journal to 30 days then show size |
+| `pkg-upgrade` | Update and upgrade packages |
+| `pkg-purge` | Purge removed-package config leftovers |
+| `snap-clean` | Remove disabled snap revisions |
+| `stremio` | Start Stremio server + Chrome |
+| `stremio-stop` | Stop Stremio server |
+
+### Journal size
+Journald runs on defaults — no `SystemMaxUse` set, but systemd auto-caps at ~4 GB. On a 921 GB root this is fine; 1–2 GB is normal. Run `just journal-trim` to vacuum to 30 days if it looks large. Only add a `SystemMaxUse` drop-in if a specific service is generating log spam.
 
 ## Known platform quirks
 - GPE07 fires ~320/sec (EC Dynamic Boost polling) — hardware characteristic, not a bug
 - `ite_8291` logs 125 LED rename warnings at boot — cosmetic, RGB driver issue
 - `NVreg_EnableGpuFirmware=0` in modprobe.d is silently ignored (GSP mandatory on Blackwell)
 - Battery cycle count always reads 0 — EC doesn't expose wear data
+- **r8125/r8169 blacklisted** — `pcie_aspm=force` caused ~250 ESD recovery events/day even with no cable connected. NIC is unused (WiFi only). Blacklist at `/etc/modprobe.d/blacklist-r8125.conf`. To re-enable: `sudo rm /etc/modprobe.d/blacklist-r8125.conf && sudo update-initramfs -u -k all && reboot`.

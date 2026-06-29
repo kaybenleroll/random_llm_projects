@@ -43,3 +43,13 @@ watchdog: BUG: soft lockup - CPU#9 stuck for 22s! [kworker/9:2:206293]
 
 ## Request
 This appears to be an ACPI/Firmware flaw regarding how the PCIe root port handles ASPM handshakes with this specific Realtek chip. Please escalate this report to the firmware engineering/ODM team to investigate if a BIOS update can resolve the ASPM routing stability.
+
+## Resolution (2026-06-28)
+
+The firmware root cause was never fixed by SKIKK/Tongfang. The system was stabilised via a progression of workarounds:
+
+1. **Initial workaround (`pcie_aspm=off`):** Stopped the crash but broke s2idle — PCIe root ports need ASPM to enter low-power sleep states.
+2. **Intermediate workaround (`pcie_aspm=force` + `policy=default`):** Restored s2idle. `force` pushes ASPM on all devices; `default` policy avoids the aggressive L1 sub-states that caused the original crash. The NIC survived but generated ~250 ESD recovery events/day even with no cable attached (`enp5s0: pci link is down` kernel errors).
+3. **Final resolution — driver blacklist (2026-06-28):** Both `r8125` (vendor driver) and `r8169` (kernel fallback) blacklisted via `/etc/modprobe.d/blacklist-r8125.conf`. The NIC is unused (system runs on WiFi exclusively). ESD recovery spam eliminated. `pcie_aspm=force` + `policy=default` retained for s2idle correctness.
+
+To re-enable the NIC: `sudo rm /etc/modprobe.d/blacklist-r8125.conf && sudo update-initramfs -u -k all && reboot`. Expect ESD recovery events to resume; verify `policy=default` still prevents the original hard-freeze before considering any change to the ASPM policy.

@@ -1,3 +1,6 @@
+> **Status (2026-06-28): Resolved by workaround — firmware fix never shipped.**
+> The practical issue is closed: both `r8125` and `r8169` drivers are blacklisted via `/etc/modprobe.d/blacklist-r8125.conf`. The NIC is unused (WiFi only). `pcie_aspm=force` + `policy=default` is retained for s2idle — this is safe with no NIC driver loaded. ESD recovery events eliminated. The content below is preserved as the original bug report.
+
 # Technical Support Dossier: SKIKK Thor 16 (Tongfang GM6HG7Y) Power & Thermal Failures
 
 ## **Executive Summary**
@@ -9,7 +12,7 @@ This system is experiencing unrecoverable soft lockups and severe thermal instab
 *   **CPU:** Ryzen 9 (ZEN 4/5)
 *   **GPU:** NVIDIA RTX 5070 Ti
 *   **Ethernet:** Realtek Semiconductor Co., Ltd. RTL8125 2.5GbE Controller (PCIe ID: 10ec:8125)
-*   **OS:** Ubuntu 25.10 / 26.04 LTS (Questing/Resolute)
+*   **OS:** Ubuntu 26.04 LTS
 
 ## **Technical Root Cause: The "RTAC" Bug**
 System logs consistently report the following ACPI error during power state transitions and boot:

@@ -17,7 +17,7 @@ _Last updated: 2026-06-16. Written from handover files, CLAUDE.md, and SKIKK_Sup
 | OS | Ubuntu 26.04 LTS |
 | Kernel | 6.17.0-23-generic |
 | NVIDIA driver | nvidia-open 580.126.09 |
-| BIOS revision | Dec 2025 (OEM revision `0x0107200A`, ACPI offset 24–28) |
+| BIOS revision | Dec 2025 (OEM revision `0x01072009`, ACPI offset 24–28) |
 | Tuxedo drivers | tuxedo-drivers DKMS 4.22.2 |
 
 ### Known platform quirks (hardware, not bugs)
@@ -45,7 +45,7 @@ When `_DSM` aborted, ASPM timing parameters for the Realtek r8125 NIC were never
 
 **Fix applied.** Added `pcie_aspm=force` to GRUB kernel cmdline. This forces ASPM link negotiation to proceed regardless of the missing firmware hint, allowing r8125 to reach a stable state.
 
-**Constraint created.** `pcie_aspm=force` must remain in `/etc/default/grub` until the r8125 ASPM issue is resolved by upstream firmware or driver. Removing it causes hard ethernet freezes on system state transitions.
+**Constraint created.** `pcie_aspm=force` must remain in the GRUB cmdline until the r8125 ASPM issue is resolved by upstream firmware or driver. Note: `/etc/default/grub` does not exist on this system — GRUB is configured via `/etc/default/grub.d/` drop-ins (`10-skikk-platform.cfg` for platform params, `99-nvidia-pm.cfg` for nvidia PM). Removing `pcie_aspm=force` causes hard ethernet freezes on system state transitions.
 
 ---
 
@@ -58,6 +58,8 @@ When `_DSM` aborted, ASPM timing parameters for the Realtek r8125 NIC were never
 **Upstream fix.** Community PR #1181 on `NVIDIA/open-gpu-kernel-modules`: "Don't wake a runtime-suspended dGPU to service NVPCF/GPS ACPI notifies." Filed 2026-06-06. As of Jun 2026, unmerged. Neither 580.159.04 nor 610.43.02 contains the fix.
 
 **Fix applied.** Set `NVreg_DynamicPowerManagement=0x01` (coarse-grained power management, no D3cold transitions) in `/etc/modprobe.d/nvidia-power.conf` and `/etc/modprobe.d/nvidia.conf`. This prevents the GPU from entering runtime suspend, eliminating the stale-state re-notification loop.
+
+**Note: modprobe.d fix alone was insufficient.** The machine froze twice with the modprobe.d fix active — Steam loading `nvidia-drm` was the trigger, which can override modprobe.d load order. Definitive fix applied 2026-06-24: `/etc/default/grub.d/99-nvidia-pm.cfg` sets `nvidia.NVreg_DynamicPowerManagement=0x01` as a kernel cmdline parameter. The cmdline parameter takes absolute precedence over all modprobe.d settings regardless of module load order. Both the modprobe.d files and the cmdline override are now active.
 
 **Status.** Live. Coarse-grained PM means the GPU idles higher than optimal but does not freeze the machine.
 
@@ -77,7 +79,7 @@ When `_DSM` aborted, ASPM timing parameters for the Realtek r8125 NIC were never
 
 ```bash
 sudo python3 -c "import struct; hdr=open('/sys/firmware/acpi/tables/DSDT','rb').read(36); rev=struct.unpack('<I',hdr[24:28])[0]; print(hex(rev))"
-# Current firmware: 0x0107200A
+# Current firmware: 0x01072009
 ```
 
 ---
@@ -90,7 +92,7 @@ sudo python3 -c "import struct; hdr=open('/sys/firmware/acpi/tables/DSDT','rb').
 
 | Artifact | Action | Reason |
 |----------|--------|--------|
-| `GRUB_EARLY_INITRD_LINUX_CUSTOM="acpi_override.cpio"` | Removed from `/etc/default/grub` | Wrong fix; DSDT patch superseded anyway |
+| `GRUB_EARLY_INITRD_LINUX_CUSTOM="acpi_override.cpio"` | Removed from GRUB config (note: `/etc/default/grub` does not exist; drop-ins in `/etc/default/grub.d/` used instead) | Wrong fix; DSDT patch superseded anyway |
 | `acpi_osi='!Windows 2020'` | Removed | Inert on this firmware |
 | `processor.max_cstate=5` | Removed | Counterproductive; limits CPU power savings |
 | `pcie_aspm=force` | Kept | Correct — r8125 hard freeze without it |
@@ -106,7 +108,7 @@ Script: `.scratch/grub_cleanup.sh`. Status: Done.
 
 **Root cause.** With `pcie_aspm=force` in GRUB, `pcie_aspm.policy=powersave` (the prior setting) aggressively pushed PCIe devices including r8125 into L1 ASPM. The Realtek NIC would strand itself in a low-power state overnight: `enp5s0` showed `state DOWN` on the following morning.
 
-**Fix applied.** Changed `pcie_aspm.policy=powersave` to `pcie_aspm.policy=default` in `/etc/default/grub`, ran `sudo update-grub`, rebooted. Post-reboot: `/proc/cmdline` confirmed `pcie_aspm.policy=default` live; `enp5s0` healthy (NO-CARRIER only because no cable was plugged in at time of check; driver state clean).
+**Fix applied.** Changed `pcie_aspm.policy=powersave` to `pcie_aspm.policy=default` in `/etc/default/grub.d/10-skikk-platform.cfg` (note: `/etc/default/grub` does not exist on this system; platform cmdline params live in this drop-in), ran `sudo update-grub`, rebooted. Post-reboot: `/proc/cmdline` confirmed `pcie_aspm.policy=default` live; `enp5s0` healthy (NO-CARRIER only because no cable was plugged in at time of check; driver state clean).
 
 **Constraint created.** The combination `pcie_aspm=force` + `pcie_aspm.policy=default` is the required stable state. `policy=powersave` + `force` together strand the NIC. Do not change `policy` without testing ethernet stability over multiple sleep/wake cycles.
 
@@ -225,22 +227,32 @@ Both connections are required simultaneously. This BIOS mode setting is the reas
 
 ---
 
+### §2.15 — r8125/r8169 NIC blacklisted (2026-06-28)
+
+**Symptom:** ~250 ESD recovery events/day in the kernel journal (`enp5s0: pci link is down`) even with no ethernet cable attached. Root cause: `pcie_aspm=force` pushes ASPM on all devices including the RTL8125; the NIC cannot negotiate L1 correctly, generating continuous Error State Detection events. No hard freeze (unlike the original `pcie_aspm=off` era) but significant journal noise and false-positive health-check errors.
+
+**Resolution:** Blacklisted both `r8125` (vendor driver) and `r8169` (kernel fallback) via `/etc/modprobe.d/blacklist-r8125.conf`. `pcie_aspm=force` + `policy=default` retained — required for s2idle. NIC is unused; system runs on WiFi exclusively.
+
+**Re-enable:** `sudo rm /etc/modprobe.d/blacklist-r8125.conf && sudo update-initramfs -u -k all && reboot`. Expect ESD recovery events to resume; verify `policy=default` prevents hard freeze before considering ASPM policy changes.
+
+---
+
 ## 3. Active Constraints
 
 Things that must not be changed without understanding the downstream impact:
 
 | Constraint | File | Why |
 |------------|------|-----|
-| Keep `pcie_aspm=force` | `/etc/default/grub` | r8125 hard-freezes without ASPM negotiation being forced; root cause is BIOS RTAC bug in PEP `_DSM` |
-| Keep `pcie_aspm.policy=default` | `/etc/default/grub` | `policy=powersave` + `force` together strand r8125 in L1 ASPM overnight |
-| Keep `NVreg_DynamicPowerManagement=0x01` | `/etc/modprobe.d/nvidia-power.conf` and `/etc/modprobe.d/nvidia.conf` | Fine-grained (0x02) causes `pm_runtime_work` to block the system workqueue on Blackwell GB203M, hard-freezing the machine |
-| After any `/etc/default/grub` edit: run `sudo update-grub` + reboot | `/etc/default/grub` | Changes do not take effect until grub regenerates and the kernel cmdline is updated at next boot |
+| Keep `pcie_aspm=force` | `/etc/default/grub.d/10-skikk-platform.cfg` (note: `/etc/default/grub` does not exist; use drop-ins) | r8125 hard-freezes without ASPM negotiation being forced; root cause is BIOS RTAC bug in PEP `_DSM` |
+| Keep `pcie_aspm.policy=default` | `/etc/default/grub.d/10-skikk-platform.cfg` | `policy=powersave` + `force` together strand r8125 in L1 ASPM overnight |
+| Keep `NVreg_DynamicPowerManagement=0x01` | `/etc/modprobe.d/nvidia-power.conf`, `/etc/modprobe.d/nvidia.conf`, and `/etc/default/grub.d/99-nvidia-pm.cfg` (cmdline takes precedence) | Fine-grained (0x02) causes `pm_runtime_work` to block the system workqueue on Blackwell GB203M, hard-freezing the machine |
+| After any GRUB drop-in edit: run `sudo update-grub` + reboot | `/etc/default/grub.d/` drop-ins (`/etc/default/grub` does not exist on this system) | Changes do not take effect until grub regenerates and the kernel cmdline is updated at next boot |
 | After any BIOS update: rebuild DSDT override | `.scratch/nvpcf_fix.asl` | BIOS update changes ACPI table revision; old override is silently rejected by kernel |
 | `NVreg_EnableGpuFirmware=0` is silently ignored | Any modprobe.d file | GSP firmware is mandatory on Blackwell; this option has no effect |
 | `waydroid.prop` is overwritten on every session start | `/var/lib/waydroid/waydroid.prop` | Persist waydroid config changes in `waydroid.cfg`, not `waydroid.prop` |
 | Stop `tccd` before editing TCC fan config | `/var/lib/tuxedo-control-center/` | `tccd` rewrites config on clean exit; edits made while running are overwritten |
 | External monitor requires discrete GPU BIOS mode | BIOS setting | Hybrid mode disables the discrete output path needed for the mini-DP port |
-| Keep `/etc/modprobe.d/blacklist-r8169.conf` | As-is | r8125 is the correct driver; blacklisting r8169 prevents kernel loading the wrong one |
+| r8125/r8169 NIC blacklisted | `/etc/modprobe.d/blacklist-r8125.conf` | Both drivers blacklisted 2026-06-28. NIC unused; system on WiFi. `pcie_aspm=force`+`policy=default` retained for s2idle. Re-enable: `sudo rm /etc/modprobe.d/blacklist-r8125.conf && sudo update-initramfs -u -k all && reboot` |
 
 ---
 
@@ -270,20 +282,24 @@ Things that must not be changed without understanding the downstream impact:
 **Steps:**
 
 ```bash
-# 1. Remove the workaround file
+# 1. Remove the modprobe.d workaround file
 sudo rm /etc/modprobe.d/nvidia-power.conf
 
-# 2. Revert nvidia.conf to fine-grained power management
+# 2. Remove the cmdline override (the definitive fix — must also be removed)
+sudo rm /etc/default/grub.d/99-nvidia-pm.cfg
+sudo update-grub
+
+# 3. Revert nvidia.conf to fine-grained power management
 # Edit /etc/modprobe.d/nvidia.conf — change all instances of
 #   NVreg_DynamicPowerManagement=0x01
 # to
 #   NVreg_DynamicPowerManagement=0x02
 # Note: the value appears three times across two files — update all three
 
-# 3. Rebuild initramfs to pick up the change
+# 4. Rebuild initramfs to pick up the change
 sudo update-initramfs -u -k all
 
-# 4. Reboot and verify
+# 5. Reboot and verify
 # After reboot: monitor GPU temperature at idle
 # Baseline with fix: GPU should idle at ambient+5°C or better
 # Red flag: GPU idle temp climbing above 50°C → storm has returned
@@ -295,16 +311,16 @@ sudo update-initramfs -u -k all
 If `enp5s0` shows `state DOWN` after a reboot involving GRUB changes:
 
 1. Verify `/proc/cmdline` contains both `pcie_aspm=force` AND `pcie_aspm.policy=default`.
-2. If either is missing, check `/etc/default/grub`, correct, re-run `sudo update-grub`, reboot.
+2. If either is missing, check `/etc/default/grub.d/10-skikk-platform.cfg` (note: `/etc/default/grub` does not exist on this system; use drop-ins), correct, re-run `sudo update-grub`, reboot.
 3. If both are present but NIC is still DOWN: check `dmesg | grep r8125` and `dmesg | grep -i aspm` for regression.
 
 ### 5.3 — DSDT override after a BIOS update
 
 1. Dump new DSDT: `sudo cp /sys/firmware/acpi/tables/DSDT dsdt.dat && iasl -d dsdt.dat`
-2. Verify OEM revision has changed: compare output of the python3 offset check against `0x0107200A`.
+2. Verify OEM revision has changed: compare output of the python3 offset check against `0x01072009`.
 3. Re-examine `_Q84` handler (was at dsdt.dsl line 9468) in new DSDT — check if `INOU.PWUP` is still an empty method.
 4. If `INOU.PWUP` is no longer empty and the D3cold bug is fixed upstream, no patch needed.
-5. If patch is still needed: rebuild `nvpcf_fix.asl` with OEM revision incremented by 1, recompile, regenerate CPIO, update `/etc/default/grub`, `sudo update-grub`, reboot.
+5. If patch is still needed: rebuild `nvpcf_fix.asl` with OEM revision incremented by 1, recompile, regenerate CPIO, update the relevant `/etc/default/grub.d/` drop-in (note: `/etc/default/grub` does not exist on this system), `sudo update-grub`, reboot.
 
 ---
 

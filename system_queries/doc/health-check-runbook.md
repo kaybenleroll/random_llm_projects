@@ -81,7 +81,7 @@ grep -o 'pcie_aspm[^ ]*' /proc/cmdline
 
 **Pass:** Output includes `pcie_aspm=force` and `pcie_aspm.policy=default`
 **Fail:** `policy=powersave` — ethernet will strand in L1 ASPM. See section 5 (Escalation: Networking).
-**Note:** If GRUB was recently edited, a reboot may be pending — check `/etc/default/grub` to compare.
+**Note:** If GRUB was recently edited, a reboot may be pending — check `/etc/default/grub.d/` drop-ins (this system has no `/etc/default/grub`) to compare.
 
 ---
 
@@ -124,7 +124,7 @@ print(hex(rev))
 "
 ```
 
-**Known good:** `0x0107200A` (Dec 2025 BIOS)
+**Known good:** `0x01072009` (Dec 2025 BIOS)
 **If changed:** BIOS was updated. The nvpcf_override.cpio in /boot may need rebuilding — but check CLAUDE.md; as of Jun 2026 the BIOS itself ships the empty `PWUP` method that the patch applied, so the override may still be harmless/redundant. Kernel rejection (`OEM revision equal, not greater`) is normal.
 
 #### GRUB cmdline integrity
@@ -138,7 +138,7 @@ cat /proc/cmdline
 - `pcie_aspm.policy=default` — must be `default`, not `powersave`
 
 **Harmless/legacy flags that may still be present:**
-- `GRUB_EARLY_INITRD_LINUX_CUSTOM="acpi_override.cpio"` — removed in Jun 2026 cleanup (verify absent in `/etc/default/grub`)
+- `GRUB_EARLY_INITRD_LINUX_CUSTOM="acpi_override.cpio"` — removed in Jun 2026 cleanup (verify absent in `/etc/default/grub.d/` drop-ins; this system has no `/etc/default/grub`)
 - `processor.max_cstate=5` — removed in cleanup (counterproductive)
 - `acpi_osi='!Windows 2020'` — removed in cleanup (inert)
 
@@ -164,6 +164,15 @@ grep NVreg_DynamicPowerManagement /etc/modprobe.d/nvidia-power.conf /etc/modprob
 
 **Pass:** All occurrences = `0x01`
 **Note:** There are currently three occurrences across two files — all must be `0x01`. If you ever need to change this value, update all three.
+
+#### Dynamic PM cmdline override (definitive fix — takes precedence over modprobe.d)
+
+```bash
+grep NVreg_DynamicPowerManagement /proc/cmdline || echo "(not in cmdline — check /etc/default/grub.d/99-nvidia-pm.cfg)"
+```
+
+**Pass:** Output includes `nvidia.NVreg_DynamicPowerManagement=0x01`
+**Note:** The cmdline parameter set in `/etc/default/grub.d/99-nvidia-pm.cfg` takes absolute precedence over all modprobe.d load order. A missing cmdline value means the fix is not fully applied even if modprobe.d shows `0x01`.
 
 #### GPU firmware mode
 
@@ -224,25 +233,16 @@ df -h / /data
 
 ### 3D — Networking
 
-#### Ethernet carrier state
+#### NIC driver blacklist check (r8125/r8169 blacklisted 2026-06-28)
+
+NIC is unused (WiFi only); both r8125 and r8169 blacklisted to eliminate ASPM-induced ESD recovery spam.
 
 ```bash
-ip link show enp5s0
-cat /sys/class/net/enp5s0/carrier 2>/dev/null && echo "carrier: UP" || echo "carrier: DOWN (check cable)"
+lsmod | grep -E 'r8125|r8169' && echo "WARNING: NIC driver loaded — blacklist not effective" || echo "r8125/r8169 not loaded (expected — NIC blacklisted 2026-06-28)"
 ```
 
-**Pass (cable plugged):** `state UP`, carrier = `1`
-**Pass (no cable):** `state DOWN`, `NO-CARRIER` — driver is healthy, physical link absent
-**Fail:** `state DOWN` with cable plugged in — r8125 stranded in L1 ASPM. Verify `pcie_aspm.policy=default` in `/proc/cmdline`; if missing, update GRUB and reboot.
-
-#### r8125 driver loaded
-
-```bash
-lsmod | grep r8125
-```
-
-**Pass:** `r8125` listed (not `r8169`)
-**Fail:** `r8169` loaded — wrong driver. Check `/etc/modprobe.d/blacklist-r8169.conf` exists.
+**Pass:** Neither driver loaded — output shows `r8125/r8169 not loaded (expected — NIC blacklisted 2026-06-28)`
+**Fail:** Either driver appears in lsmod — check `/etc/modprobe.d/blacklist-r8125.conf` exists and `sudo update-initramfs -u -k all` was run.
 
 ---
 
@@ -338,7 +338,7 @@ systemctl status rclone-googledrive.service rclone-onedrive.service --no-pager -
 | Battery cycle count | 0 | — | EC doesn't expose wear data; always 0 |
 | NVreg_DynamicPowerManagement | `0x01` | `0x02` = freeze risk | 3 occurrences across 2 files — must all be `0x01` |
 | pcie_aspm.policy | `default` | `powersave` = NIC freeze | Must be `default`; `force` stays permanently |
-| DSDT OEM revision | `0x0107200A` | Change = BIOS updated | Check offset 24–28 (not 32–36 which is Creator Revision) |
+| DSDT OEM revision | `0x01072009` | Change = BIOS updated | Check offset 24–28 (not 32–36 which is Creator Revision) |
 | GPU idle temp (fix active) | < 45°C | > 60°C idle | Was 84°C during D3cold storm before fix |
 
 ---
@@ -357,7 +357,7 @@ Must all be `0x01`. If any is `0x02`, run `.scratch/fix_nvidia_dynpm.sh` (or set
 
 **Root cause reference:** nvidia-open bug in `rm_acpi_nvpcf_notify()` — calls `os_ref_dynamic_power()` unconditionally without D3Cold state check. Community PR #1181 (open-gpu-kernel-modules). Unmerged as of Jun 2026.
 
-**When to revert to `0x02`:** Watch 610.x+ nvidia-open release notes for "NVPCF", "RTD3", or "D3cold" fix. Then: `sudo rm /etc/modprobe.d/nvidia-power.conf`, revert `nvidia.conf` to `0x02`, `sudo update-initramfs -u -k all`.
+**When to revert to `0x02`:** Watch 610.x+ nvidia-open release notes for "NVPCF", "RTD3", or "D3cold" fix. Then: `sudo rm /etc/modprobe.d/nvidia-power.conf /etc/default/grub.d/99-nvidia-pm.cfg`, revert `nvidia.conf` to `0x02`, run `sudo update-grub && sudo update-initramfs -u -k all`, reboot.
 
 **Reference files:** `.scratch/handover-20260611-nvidia-dynamic-boost-storm.md`, `.scratch/freeze_investigation_20260613_164630.txt`, CLAUDE.md (Active fixes table)
 
@@ -371,9 +371,9 @@ Must all be `0x01`. If any is `0x02`, run `.scratch/fix_nvidia_dynpm.sh` (or set
 
 **Fix sequence:**
 1. Verify `/proc/cmdline` contains `pcie_aspm.policy=default` — if it shows `powersave`, GRUB edit didn't take effect
-2. Check `/etc/default/grub` for `pcie_aspm.policy=default`
+2. Check `/etc/default/grub.d/` drop-ins for `pcie_aspm.policy=default` (this system has no `/etc/default/grub`)
 3. If missing from GRUB: add it, run `sudo update-grub`, reboot
-4. Verify `lsmod | grep r8125` (not r8169) and `/etc/modprobe.d/blacklist-r8169.conf` exists
+4. Verify `lsmod | grep r8125` (not r8169) and `/etc/modprobe.d/blacklist-r8125.conf` exists
 
 **Hard constraint:** `pcie_aspm=force` must remain. Only `policy=default` is the fix. Do not remove `force`.
 
@@ -449,7 +449,7 @@ sudo journalctl -k -p err -b
 snap list --all | awk 'NR>1 {print $1, $3}' | sort
 
 # Check which nvidia modprobe files exist
-ls /etc/modprobe.d/nvidia*.conf /etc/modprobe.d/blacklist-r8169.conf 2>/dev/null
+ls /etc/modprobe.d/nvidia*.conf /etc/modprobe.d/blacklist-r8125.conf 2>/dev/null
 
 # Verify rclone mount contents alive (not stale mount)
 ls ~/GoogleDrive | head -3
