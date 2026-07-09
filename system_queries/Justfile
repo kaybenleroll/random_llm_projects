@@ -74,11 +74,11 @@ health-full: health-quick
     systemctl list-units --type=service --no-pager 2>/dev/null | grep -i rclone || echo "(no rclone systemd units found)"
 
 # Run all health checks and save timestamped output to logs/
-health-log:
+health-save:
     @mkdir -p logs
     @just health-all 2>&1 | tee logs/health-$(date +%Y%m%d-%H%M%S).txt
 
-# Run all health checks (9 domains). Requires sudo for some sections. Use `just health-log` to capture to file.
+# Run all health checks (9 domains). Requires sudo for some sections. Use `just health-save` to capture to file.
 health-all:
     @mkdir -p logs .scratch
     @echo "=== [1/9] Core hardware & firmware ==="
@@ -102,8 +102,8 @@ health-all:
     @echo "=== [7/9] Home directory cruft ==="
     @just health-cruft
     @echo ""
-    @echo "=== [8/9] Log health ==="
-    @just health-logs
+    @echo "=== [8/9] Journal health ==="
+    @just health-journal
     @echo ""
     @echo "=== [9/9] Network health ==="
     @just health-network
@@ -170,8 +170,8 @@ health-cruft:
         -printf '%s\t%p\n' 2>/dev/null | sort -rn | head -15 | \
         numfmt --to=iec --field=1 2>/dev/null || echo "(none found)"
 
-# Log health: recent error counts, error trend, failed SSH login attempts
-health-logs:
+# Journal health: recent error counts, error trend, failed SSH login attempts
+health-journal:
     @echo "=== Journal errors (last 24h, filtered) ==="
     journalctl -p err --since "24 hours ago" --no-pager -q 2>/dev/null \
         | grep -v -E 'ite_8291|GPE07|NVreg|enp5s0' | tail -30 || true
@@ -205,10 +205,15 @@ health-network:
 # Capture key metrics as a single timestamped line for trend tracking
 health-snapshot:
     @mkdir -p logs
-    @[ -f logs/health-metrics.tsv ] || echo -e "timestamp\tdisk_pct\tdimm1_temp\tzombies\tfailed_units\tgpu_pm" > logs/health-metrics.tsv
-    @echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t$(df / | awk 'NR==2{print $5}' | tr -d '%')\t$(sensors 2>/dev/null | grep -A1 'DIMM 1' | grep 'temp1' | awk '{print $2}' | tr -d '+°C' || echo unknown)\t$(ps aux | awk '{print $8}' | grep -c '^Z' || echo 0)\t$(systemctl --failed --no-legend 2>/dev/null | wc -l | tr -d ' ')\t$(grep -h NVreg_DynamicPowerManagement /etc/modprobe.d/nvidia-power.conf 2>/dev/null | head -1 | grep -o '0x[0-9a-fA-F]*' || echo unknown)" >> logs/health-metrics.tsv
+    @[ -f logs/health-metrics.tsv ] || echo -e "timestamp\tdisk_pct\tdimm1_temp\tzombies\tfailed_units\tgpu_pm\tjournal_size_mb" > logs/health-metrics.tsv
+    @echo -e "$(date +%Y-%m-%dT%H:%M:%S)\t$(df / | awk 'NR==2{print $5}' | tr -d '%')\t$(sensors 2>/dev/null | grep -A1 'DIMM 1' | grep 'temp1' | awk '{print $2}' | tr -d '+°C' || echo unknown)\t$(ps aux | awk '{print $8}' | grep -c '^Z' || echo 0)\t$(systemctl --failed --no-legend 2>/dev/null | wc -l | tr -d ' ')\t$(grep -h NVreg_DynamicPowerManagement /etc/modprobe.d/nvidia-power.conf 2>/dev/null | head -1 | grep -o '0x[0-9a-fA-F]*' || echo unknown)\t$(du -sm /var/log/journal 2>/dev/null | awk '{print $1}')" >> logs/health-metrics.tsv
     @echo "Snapshot saved. Current metrics:"
     @tail -2 logs/health-metrics.tsv | column -t -s $'\t'
+
+# Check journal disk usage for unusual growth vs the last check (seeds/updates state in ~/.cache)
+journal-watch:
+    @echo "=== Journal growth watch ==="
+    bash scripts/journal-watch.sh
 
 # ─── GPU / Power ──────────────────────────────────────────────────────────────
 

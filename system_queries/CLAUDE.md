@@ -44,7 +44,7 @@ SKIKK_Thor_ASPM_Bug_Report.md  — r8125 ASPM crash bug report filed with SKIKK 
 Runs full diagnostics + SMART + security. Some checks require sudo — if the session can't authenticate, bundle them: write `.scratch/health_sudo.sh` and ask the user to run `sudo bash .scratch/health_sudo.sh`. The sudo checks are: DSDT OEM revision, dmesg nvidia-PM events, UFW status, smartctl on both NVMe drives.
 
 ### Health targets
-`health-all` calls all 9 domains in sequence. `health-log` saves `health-all` output to a timestamped file in `logs/`.
+`health-all` calls all 9 domains in sequence. `health-save` saves `health-all` output to a timestamped file in `logs/`.
 
 | Target | Domain | Sudo |
 |--------|---------|------|
@@ -56,10 +56,10 @@ Runs full diagnostics + SMART + security. Some checks require sudo — if the se
 | `health-packages` | Upgradable packages, security updates, purge candidates, disabled snaps | no |
 | `health-containers` | Podman disk usage, dangling images, stopped containers | no |
 | `health-cruft` | Home dir sizes (Downloads/.cache/Trash/containers), files >500 MB | no |
-| `health-logs` | Journal error counts (24h/7d), failed SSH login attempts | no |
+| `health-journal` | Journal error counts (24h/7d), failed SSH login attempts | no |
 | `health-network` | Active connections, WiFi signal, DNS resolution, ethernet state | no |
 | `health-all` | Calls all 9 above — **use this for "do a health check" requests** | yes |
-| `health-log` | Saves `health-all` output to `logs/health-TIMESTAMP.txt` | yes |
+| `health-save` | Saves `health-all` output to `logs/health-TIMESTAMP.txt` | yes |
 | `health-snapshot` | Append one metrics row to `logs/health-metrics.tsv` (trend tracking) | no |
 
 ### Other common targets
@@ -79,9 +79,16 @@ Runs full diagnostics + SMART + security. Some checks require sudo — if the se
 ### Journal size
 Journald runs on defaults — no `SystemMaxUse` set, but systemd auto-caps at ~4 GB. On a 921 GB root this is fine; 1–2 GB is normal. Run `just journal-trim` to vacuum to 30 days if it looks large. Only add a `SystemMaxUse` drop-in if a specific service is generating log spam.
 
+When the journal is pinned at its size cap and self-vacuuming, disk-usage checks report 0 growth regardless of actual write rate — detect real journal growth via log volume per interval (e.g. `journalctl` line counts), not disk usage.
+
+A journal anomaly threshold calibrated for one check interval doesn't transfer to a different interval — rescale it proportionally when changing check frequency, or a shortened interval (e.g. hourly to 10-minute) loses sensitivity and a lengthened one generates false positives.
+
 ## Known platform quirks
 - GPE07 fires ~320/sec (EC Dynamic Boost polling) — hardware characteristic, not a bug
 - `ite_8291` logs 125 LED rename warnings at boot — cosmetic, RGB driver issue
 - `NVreg_EnableGpuFirmware=0` in modprobe.d is silently ignored (GSP mandatory on Blackwell)
 - Battery cycle count always reads 0 — EC doesn't expose wear data
 - **r8125/r8169 blacklisted** — `pcie_aspm=force` caused ~250 ESD recovery events/day even with no cable connected. NIC is unused (WiFi only). Blacklist at `/etc/modprobe.d/blacklist-r8125.conf`. To re-enable: `sudo rm /etc/modprobe.d/blacklist-r8125.conf && sudo update-initramfs -u -k all && reboot`.
+- **io_uring/podman hung-task warnings (unconfirmed, monitoring)** — kernel hung-task warnings (ioq worker threads blocked 122–368s on mutex, kernel tainted G W OE) correlating with container creation failures (conmon exit 255) and container churn. Observed 2026-07-06 and 2026-07-09 (health-save log). Unlike the other quirks above, not yet confirmed benign/expected — watch for recurrence.
+
+- rclone's `--fast-list` is a no-op on `rclone mount` (rclone logs a NOTICE) — it only speeds up one-shot commands (sync/copy). To reduce directory cache stalls on a live mount, tune `--dir-cache-time` instead.
