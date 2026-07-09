@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/mcooney/workspace/random_llm_projects/claude_code_research/.claude/hooks/session-cost-nudge.py"
+          }
+        ]
+      }
+    ]
+  }
+}
