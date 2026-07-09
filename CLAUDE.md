@@ -13,6 +13,7 @@ If you are reading this, you launched Claude Code from the **root** of `random_l
 - `tvfilm_recommendations/` — TV/film recommendation tooling
 - `update_cv/` — CV and resume work
 - `cex_tablet/` — CEX tablet project
+- `claude_code_research/` — Claude Code capability research and experiments
 
 **Exit this session, `cd` into the relevant subfolder, and relaunch Claude Code there.**
 

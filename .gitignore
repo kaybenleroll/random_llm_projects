@@ -57,3 +57,7 @@ Thumbs.db
 # Logs
 *.log
 logs/
+
+# Claude Code scratch/local
+.scratch/
+.claude/settings.local.json
