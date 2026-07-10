@@ -237,6 +237,36 @@ Both connections are required simultaneously. This BIOS mode setting is the reas
 
 ---
 
+### §2.16 — NVPCF fix superseded by BIOS update (Jun 2026)
+
+**Status:** BIOS Dec 2025 ships `\_SB.INOU.PWUP` as an empty method — the same fix our DSDT patch (`nvpcf_fix.asl` → `/boot/nvpcf_override.cpio`) applied. The initrd override is no longer needed. The kernel rejects our cpio anyway (OEM revision equal, not greater) so it's harmless to leave in place. No action required; see §5.3 for what to check after any future BIOS update.
+
+---
+
+### §2.17 — pm_runtime_work freeze (Blackwell + fine-grained PM) (Jun 2026)
+
+**Symptom:** Machine hard-freezes intermittently, no kernel panic or error logged. Root cause: nvidia-open 580.126.09 (upgraded May 3 2026) introduced a bug in `rm_acpi_nvpcf_notify()` — calls `os_ref_dynamic_power()` unconditionally without a D3Cold state check, causing `pm_runtime_work` callbacks to block the system workqueue on Blackwell GB203M. Fix is in community PR #1181 (open-gpu-kernel-modules, filed Jun 6 2026, unmerged as of Jun 24 2026). Latest available driver at the time, 595.84 (Jun 17 2026), did not contain the fix.
+
+**First attempt (insufficient):** `NVreg_DynamicPowerManagement=0x01` (coarse-grained) set in `/etc/modprobe.d/nvidia-power.conf` and `/etc/modprobe.d/nvidia.conf`. Machine still froze twice with this active — Steam loading `nvidia-drm` was the trigger. Root cause: `cmdline` parameters take absolute precedence over all modprobe.d load order, so the modprobe.d-only fix could be overridden by load timing.
+
+**Definitive fix (Jun 24 2026):** `/etc/default/grub.d/99-nvidia-pm.cfg` sets `GRUB_CMDLINE_LINUX_DEFAULT` to include `nvidia.NVreg_DynamicPowerManagement=0x01`.
+
+**Revert when nvidia-open fixes Blackwell runtime PM:** watch 610.x+ release notes for "NVPCF", "RTD3", or "D3cold" fix, then `sudo rm /etc/modprobe.d/nvidia-power.conf /etc/default/grub.d/99-nvidia-pm.cfg`, revert `nvidia.conf` to `0x02`, run `sudo update-grub && sudo update-initramfs -u -k all`, reboot.
+
+---
+
+### §2.18 — s2idle suspend freeze via power/lid triggers (2026-07-09)
+
+**Symptom:** A spurious power/sleep-key input event (source unconfirmed — candidates: the "2.4G Mouse System Control" wireless dongle glitching, or ACPI/EC noise given GPE07's already-documented high firing rate; ruled out: no GNOME keybinding maps to a suspend/lock action that could explain it, and `turbo-whisper`'s hotkey is `Ctrl+Space` not the key the user pressed) triggered `systemd-logind` → `The system will suspend now!`. `nvidia-suspend.service` then hit the same Blackwell s2idle bug as §2.17 — `NVRM: nvAssertFailedNoLog` MMU-walk assertion failures during GPU memory teardown — and the machine never resumed: both displays went blank while the CPU kept running, ending in a kernel soft-lockup (`Xwayland` stuck 26s+) ~34s after the suspend request. Required a hard reset; nothing else was logged afterward.
+
+**Root gap:** `logind.conf` only had `HandleLidSwitch*=ignore` — `HandleSuspendKey` was never set. Separately, **GNOME's own power daemon has an independent trigger path** (`org.gnome.settings-daemon.plugins.power` `power-button-action`/`lid-close-*-action`, both still `'suspend'`) that `logind.conf`'s `HandleLidSwitch=ignore` does *not* cover — GNOME can request suspend on lid-close or power-button press regardless of the logind-level setting.
+
+**Fix:** set all three GNOME actions to `'nothing'` (live, no reboot); staged a `HandleSuspendKey=ignore`/`HandleHibernateKey=ignore` logind drop-in for defense-in-depth (needs sudo+reboot — see CLAUDE.md Active fixes table for current status).
+
+**If this recurs:** blank screens + machine still powered on this hardware means a hung s2idle resume, not a hang worth waiting out — hard power-cycle is the only recovery; try SSH from another device first if convenient, since this was a soft lockup (not a full panic) and another CPU may still answer.
+
+---
+
 ## 3. Active Constraints
 
 Things that must not be changed without understanding the downstream impact:
