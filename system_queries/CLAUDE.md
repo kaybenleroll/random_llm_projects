@@ -96,3 +96,7 @@ A journal anomaly threshold calibrated for one check interval doesn't transfer t
 - **io_uring/podman hung-task warnings (unconfirmed, monitoring)** — kernel hung-task warnings (ioq worker threads blocked 122–368s on mutex, kernel tainted G W OE) correlating with container creation failures (conmon exit 255) and container churn. Observed 2026-07-06 and 2026-07-09 (health-save log). Unlike the other quirks above, not yet confirmed benign/expected — watch for recurrence.
 
 - rclone's `--fast-list` is a no-op on `rclone mount` (rclone logs a NOTICE) — it only speeds up one-shot commands (sync/copy). To reduce directory cache stalls on a live mount, tune `--dir-cache-time` instead.
+
+## tmux / Byobu
+- Byobu bypasses `~/.tmux.conf` entirely — it launches via its own profile chain and hardcodes `mouse off`/other overrides (e.g. `/usr/share/byobu/keybindings/mouse.tmux.enable` sets `set -g mouse off` despite the filename) and only sources user config from `~/.config/byobu/.tmux.conf` (or its chezmoi-managed template), loaded last. Put tmux settings there, not in `~/.tmux.conf`.
+- tmux silently no-ops `run`/`run-shell` when the referenced file (e.g. a missing tpm plugin manager) doesn't exist — no error or status-bar message. If a tmux config feature isn't working, verify the referenced path actually exists before assuming the config itself is broken.
