@@ -28,6 +28,10 @@ Ubuntu 26.04 LTS · kernel 6.17.0-23-generic · nvidia-open 580.126.09 · tuxedo
 
 **s2idle suspend freeze (2026-07-09):** GNOME's power daemon has a suspend trigger path independent of `logind.conf`'s `HandleLidSwitch` — both must be disabled. Fixed live (GNOME) + logind drop-in staged (pending sudo+reboot). Full detail and recovery steps: `doc/machine-history.md` §2.18.
 
+**yt6801 out-of-tree taint (2026-07-10):** Motorcomm NIC driver (TUXEDO DKMS bundle), loaded but inert — no matching PCI hardware on this chassis (RTL8125 only), 0 refcount. Taint is a DKMS/MOK signing artifact, no functional impact (Secure Boot disabled). Blacklisting recommended but not yet applied — needs sign-off. Full detail: `doc/machine-history.md` §2.19.
+
+**NVRM `nvAssertFailedNoLog` boot assertions (2026-07-10):** 3x at ~18s post nvidia-drm init, different code path than the §2.17/§2.18 bugs, boot-only, no freeze followed. Monitoring only. Full detail: `doc/machine-history.md` §2.20.
+
 ## File layout
 ```
 acpi/                       — DSDT firmware artifacts (dsdt.dsl source, dsdt.dat binary, nvpcf_fix.asl patch)
@@ -93,6 +97,8 @@ A journal anomaly threshold calibrated for one check interval doesn't transfer t
 - `ite_8291` logs 125 LED rename warnings at boot — cosmetic, RGB driver issue
 - `NVreg_EnableGpuFirmware=0` in modprobe.d is silently ignored (GSP mandatory on Blackwell)
 - Battery cycle count always reads 0 — EC doesn't expose wear data
+- `yt6801` (Motorcomm NIC driver, TUXEDO DKMS bundle) loads and taints kernel at every boot but binds to no hardware on this chassis — cosmetic, see `doc/machine-history.md` §2.19
+- `NVRM: nvAssertFailedNoLog @ osapi.c:1939` x3 at boot, ~18s after nvidia-drm init — logged-only, no freeze observed, see `doc/machine-history.md` §2.20
 - **r8125/r8169 blacklisted** — `pcie_aspm=force` caused ~250 ESD recovery events/day even with no cable connected. NIC is unused (WiFi only). Blacklist at `/etc/modprobe.d/blacklist-r8125.conf`. To re-enable: `sudo rm /etc/modprobe.d/blacklist-r8125.conf && sudo update-initramfs -u -k all && reboot`.
 - **io_uring/podman hung-task warnings (unconfirmed, monitoring)** — kernel hung-task warnings (ioq worker threads blocked 122–368s on mutex, kernel tainted G W OE) correlating with container creation failures (conmon exit 255) and container churn. Observed 2026-07-06 and 2026-07-09 (health-save log). Unlike the other quirks above, not yet confirmed benign/expected — watch for recurrence.
 

@@ -267,6 +267,30 @@ Both connections are required simultaneously. This BIOS mode setting is the reas
 
 ---
 
+### §2.19 — yt6801 out-of-tree taint at boot (2026-07-10)
+
+**Symptom:** `health-20260710-131810.txt` showed `yt6801: loading out-of-tree module taints kernel` and `yt6801: module verification failed: signature and/or required key missing - tainting kernel` near the start of dmesg.
+
+**Investigation:** `yt6801` is the Motorcomm YT6801 Gigabit Ethernet driver, shipped via the `tuxedo-yt6801` DKMS package (`dkms status` → `tuxedo-yt6801/1.0.31, 6.17.0-23-generic, x86_64: installed`), not part of the already-documented Realtek RTL8125 stack (§2.15). `lsmod` shows it loaded with 0 references (`yt6801 180224 0`) — not bound to any device. `lspci -nn` on this machine shows no PCI device matching the driver's PCI alias (`pci:v00001F0Ad00006801sv*sd*bc*sc*i*`, vendor `1f0a`) — this chassis has no Motorcomm NIC at all; the RTL8125 (vendor `10ec`) doesn't appear in `lspci` either post-blacklist. The module is part of TUXEDO's shared driver bundle that loads unconditionally across TUXEDO chassis models and only binds if matching hardware is present — on this machine it never binds. `modinfo` shows the module is signed (`sig_id: PKCS#7`, signer `skikk-thor Secure Boot Module Signature key`) but verification still fails; Secure Boot itself is disabled (`mokutil --sb-state` → `SecureBoot disabled`), so the taint is purely a DKMS auto-signing/MOK-enrollment artifact — the build-time signing key was never enrolled via `mokutil --import`, which is common for locally-built DKMS modules and has no functional effect while Secure Boot is off. No ASPM/ESD errors, no functional symptoms in the journal for this module.
+
+**Conclusion:** Cosmetic boot-time taint only — module is loaded but inert (0 refcount, no matching hardware). Not the same driver path as the blacklisted r8125/r8169 (different vendor, different chip), so it carries no ASPM/ESD risk even if it were to bind.
+
+**Recommendation (not yet applied):** Low priority — optionally blacklist `yt6801` via a new `/etc/modprobe.d/blacklist-yt6801.conf` (same pattern as `blacklist-r8125.conf`) purely to remove the taint flag from future boots, since the driver serves no function on this chassis. This needs explicit user sign-off before applying, same as any other modprobe.d change. Current status: monitoring, no action taken.
+
+---
+
+### §2.20 — NVRM `nvAssertFailedNoLog` boot-time assertions (2026-07-10)
+
+**Symptom:** `health-20260710-131810.txt` showed 3x `NVRM: nvAssertFailedNoLog: Assertion failed: 0 @ osapi.c:1939` at 11:01:41–11:01:42 during boot.
+
+**Investigation:** Journal timeline (`journalctl -k -b`) shows: NVIDIA driver load at 11:01:23 (`NVRM: loading NVIDIA UNIX Open Kernel Module ... 580.126.09`), `nvidia-drm` init and `GPS ACPI DSM called before _acpiDsmSupportedFuncCacheInit` warnings at 11:01:23–25, then the three `nvAssertFailedNoLog` lines at 11:01:41–42 — roughly 16–18 seconds after DRM init, in the window where GDM/gnome-shell typically starts probing the display. This is a different assertion (`osapi.c:1939`) and a different code path than the already-documented `pm_runtime_work`/D3cold bug (§2.17, which lives in `rm_acpi_nvpcf_notify()`) and the s2idle MMU-walk teardown assertions from §2.18 — this one fires once at boot and does not recur, and no freeze followed this boot.
+
+**Conclusion:** Boot-time-only, logged-but-non-fatal assertion in nvidia-open 580.126.09 on this Blackwell GPU (GB203M) — consistent with the driver's broader pattern of internal assertion firing under ACPI/GSP interaction on this hardware generation, but this particular instance had no observed functional impact (no freeze, no display glitch reported).
+
+**Status:** Monitoring, no action taken. Watch for recurrence or escalation to an actual freeze — if it starts correlating with a hang (as the similar-looking assertions in §2.18 did during s2idle resume), escalate; a one-off logged assertion at boot with no consequence does not currently warrant a fix.
+
+---
+
 ## 3. Active Constraints
 
 Things that must not be changed without understanding the downstream impact:
