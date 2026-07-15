@@ -32,6 +32,8 @@ Ubuntu 26.04 LTS · kernel 6.17.0-23-generic · nvidia-open 580.126.09 · tuxedo
 
 **NVRM `nvAssertFailedNoLog` boot assertions (2026-07-10):** 3x at ~18s post nvidia-drm init, different code path than the §2.17/§2.18 bugs, boot-only, no freeze followed. Monitoring only. Full detail: `doc/machine-history.md` §2.20.
 
+**Stremio x265/HEVC black screen (2026-07-13):** Chrome has no HEVC decoder on Linux (RealDebrid links bypass Stremio's server-side transcode, so this is the full explanation, not just a contributing factor); Flathub's "stable" Stremio Flatpak is the broken NVIDIA/wgpu shell (`stremio-linux-shell #30`), reconfirmed dead, uninstalled. **Working fallback:** grab the resolved URL from `podman logs stremio-server` (`opensubHash?videoUrl=...` line) → `mpv <url>` (NVDEC now default via `~/.config/mpv/mpv.conf`) — confirmed real GPU decode via `nvidia-smi`. Automated browser→mpv handoff (Tampermonkey userscript + `mpv-handler`) installed but not working yet — userscript's CSS selector likely stale, parked mid-debug. Full detail: `doc/machine-history.md` §2.21.
+
 ## File layout
 ```
 acpi/                       — DSDT firmware artifacts (dsdt.dsl source, dsdt.dat binary, nvpcf_fix.asl patch)
@@ -101,6 +103,7 @@ A journal anomaly threshold calibrated for one check interval doesn't transfer t
 - `NVRM: nvAssertFailedNoLog @ osapi.c:1939` x3 at boot, ~18s after nvidia-drm init — logged-only, no freeze observed, see `doc/machine-history.md` §2.20
 - **r8125/r8169 blacklisted** — `pcie_aspm=force` caused ~250 ESD recovery events/day even with no cable connected. NIC is unused (WiFi only). Blacklist at `/etc/modprobe.d/blacklist-r8125.conf`. To re-enable: `sudo rm /etc/modprobe.d/blacklist-r8125.conf && sudo update-initramfs -u -k all && reboot`.
 - **io_uring/podman hung-task warnings (unconfirmed, monitoring)** — kernel hung-task warnings (ioq worker threads blocked 122–368s on mutex, kernel tainted G W OE) correlating with container creation failures (conmon exit 255) and container churn. Observed 2026-07-06 and 2026-07-09 (health-save log). Unlike the other quirks above, not yet confirmed benign/expected — watch for recurrence.
+- UFW block-log volume spikes from routine LAN neighbour discovery/broadcast traffic (e.g. KDE Connect port 1716, SSDP/mDNS) are expected noise from active LAN hosts, not an attack signal
 
 - rclone's `--fast-list` is a no-op on `rclone mount` (rclone logs a NOTICE) — it only speeds up one-shot commands (sync/copy). To reduce directory cache stalls on a live mount, tune `--dir-cache-time` instead.
 
