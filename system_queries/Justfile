@@ -210,6 +210,31 @@ health-snapshot:
     @echo "Snapshot saved. Current metrics:"
     @tail -2 logs/health-metrics.tsv | column -t -s $'\t'
 
+# Delete health-save snapshot files (logs/health-YYYYMMDD-HHMMSS.txt) older than 30 days
+logs-cleanup:
+    @mkdir -p logs
+    @found=$(find logs -maxdepth 1 -name 'health-????????-??????.txt' -mtime +30 -print); \
+    if [ -n "$found" ]; then \
+        echo "Removing snapshot files older than 30 days:"; \
+        echo "$found"; \
+        find logs -maxdepth 1 -name 'health-????????-??????.txt' -mtime +30 -delete; \
+    else \
+        echo "No health-save snapshot files older than 30 days."; \
+    fi
+
+# Trim logs/health-snapshot-cron.log to the last 5000 lines if it exceeds 5 MB
+logs-trim-cron:
+    @mkdir -p logs
+    @if [ -f logs/health-snapshot-cron.log ] && [ $(stat -c%s logs/health-snapshot-cron.log 2>/dev/null || echo 0) -gt 5242880 ]; then \
+        echo "Trimming logs/health-snapshot-cron.log to last 5000 lines"; \
+        tail -n 5000 logs/health-snapshot-cron.log > logs/health-snapshot-cron.log.tmp && mv logs/health-snapshot-cron.log.tmp logs/health-snapshot-cron.log; \
+    else \
+        echo "logs/health-snapshot-cron.log under 5 MB, no trim needed."; \
+    fi
+
+# Run all logs/ disk-growth management (snapshot cleanup + cron log trim). Safe to run weekly via cron.
+logs-maintain: logs-cleanup logs-trim-cron
+
 # Check journal disk usage for unusual growth vs the last check (seeds/updates state in ~/.cache)
 journal-watch:
     @echo "=== Journal growth watch ==="
