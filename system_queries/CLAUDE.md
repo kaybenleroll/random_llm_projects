@@ -21,6 +21,7 @@ Ubuntu 26.04 LTS · kernel 6.17.0-23-generic · nvidia-open 580.126.09 · tuxedo
 | GRUB cleanup (wrong CPIO, stale flags) | `.scratch/grub_cleanup.sh` | Done |
 | GNOME suspend triggers disabled (power-button/lid s2idle freeze) | `gsettings` (power-button-action, lid-close-*-action = 'nothing') | Live |
 | logind suspend/hibernate key ignored (defense-in-depth) | `.scratch/logind_suspend_key_fix.sh` → `/etc/systemd/logind.conf.d/98-suspend-key.conf` | Pending sudo+reboot |
+| unattended-upgrades honours mozillateam PPA pin (firefox downgrade ping-pong) | `/etc/apt/apt.conf.d/50unattended-upgrades` (`Allowed-Origins` += `LP-PPA-mozillateam`) | Live |
 
 **NVPCF fix status:** superseded by BIOS (Dec 2025 fixes it natively); initrd override harmless but inert. Full detail: `doc/machine-history.md` §2.16.
 
@@ -32,7 +33,13 @@ Ubuntu 26.04 LTS · kernel 6.17.0-23-generic · nvidia-open 580.126.09 · tuxedo
 
 **NVRM `nvAssertFailedNoLog` boot assertions (2026-07-10):** 3x at ~18s post nvidia-drm init, different code path than the §2.17/§2.18 bugs, boot-only, no freeze followed. Monitoring only. Full detail: `doc/machine-history.md` §2.20.
 
+**Firefox "downgrade" on `apt full-upgrade`, fixed (2026-07-23):** not a real regression — Ubuntu's own repo ships a snap-stub firefox with an epoch-prefixed version (`1:1snap1-...`) that always outranks the real mozillateam-PPA build in version comparison, so apt reports reverting to the PPA build as a "downgrade". `unattended-upgrades` wasn't honouring the PPA's priority-1001 pin, causing repeated ping-pong between the stub and the real build. Fixed by adding the PPA origin to `unattended-upgrades`' `Allowed-Origins`. Full detail: `doc/machine-history.md` §2.25.
+
 **Stremio x265/HEVC black screen (2026-07-13):** Chrome has no HEVC decoder on Linux (RealDebrid links bypass Stremio's server-side transcode, so this is the full explanation, not just a contributing factor); Flathub's "stable" Stremio Flatpak is the broken NVIDIA/wgpu shell (`stremio-linux-shell #30`), reconfirmed dead, uninstalled. **Working fallback:** grab the resolved URL from `podman logs stremio-server` (`opensubHash?videoUrl=...` line) → `mpv <url>` (NVDEC now default via `~/.config/mpv/mpv.conf`) — confirmed real GPU decode via `nvidia-smi`. Automated browser→mpv handoff (Tampermonkey userscript + `mpv-handler`) installed but not working yet — userscript's CSS selector likely stale, parked mid-debug. Full detail: `doc/machine-history.md` §2.21.
+
+**ExpressVPN journal flood, resolved (2026-07-16):** `journal-watch.sh` alerted on a 52K-line/10-min spike; root cause was an IPC "payload too large" bug in the installed `4.1.1-beta+10039` client cascading into thousands of parse errors. Recurred 2026-07-13 and 2026-07-16 (661K entries over 7 days). Fixed by updating to `14.2.0+13656` via the official installer (no apt repo configured) — flood confirmed stopped post-update. If it recurs on 14.2.0, it's a new bug. Full detail: `doc/machine-history.md` §2.23.
+
+**VS Code Remote-SSH crashes to uhet, workaround only (2026-07-17):** intermittent renderer SIGABRT + extension host crash tied to a VS Code core transport bug (malformed JSON on the remote socket) plus an unrelated known Copilot Chat chatParticipant bug. Kill+relaunch (`pkill -f '/usr/share/code/'`) clears it short-term; root cause unresolved. Full detail: `doc/machine-history.md` §2.24.
 
 ## File layout
 ```
@@ -104,8 +111,10 @@ A journal anomaly threshold calibrated for one check interval doesn't transfer t
 - **r8125/r8169 blacklisted** — `pcie_aspm=force` caused ~250 ESD recovery events/day even with no cable connected. NIC is unused (WiFi only). Blacklist at `/etc/modprobe.d/blacklist-r8125.conf`. To re-enable: `sudo rm /etc/modprobe.d/blacklist-r8125.conf && sudo update-initramfs -u -k all && reboot`.
 - **io_uring/podman hung-task warnings (unconfirmed, monitoring)** — kernel hung-task warnings (ioq worker threads blocked 122–368s on mutex, kernel tainted G W OE) correlating with container creation failures (conmon exit 255) and container churn. Observed 2026-07-06 and 2026-07-09 (health-save log). Unlike the other quirks above, not yet confirmed benign/expected — watch for recurrence.
 - UFW block-log volume spikes from routine LAN neighbour discovery/broadcast traffic (e.g. KDE Connect port 1716, SSDP/mDNS) are expected noise from active LAN hosts, not an attack signal
+- HP USB-C dock: display and ethernet don't work (USB peripherals do) — dock uses HP's proprietary MUX alt-mode (SVID `03f0`), not standard DP Alt-Mode; HP ships no Linux driver, no fix exists. See `doc/machine-history.md` §2.22
 
 - rclone's `--fast-list` is a no-op on `rclone mount` (rclone logs a NOTICE) — it only speeds up one-shot commands (sync/copy). To reduce directory cache stalls on a live mount, tune `--dir-cache-time` instead.
+- Any package pinned to priority ≥1000 in `/etc/apt/preferences.d/` (e.g. mozilla-firefox → `LP-PPA-mozillateam`) must have its PPA origin added to `Unattended-Upgrade::Allowed-Origins` in `/etc/apt/apt.conf.d/50unattended-upgrades`, or unattended-upgrades will silently install the unpinned (lower-priority, possibly epoch-inflated) alternative on its own schedule and the next manual `apt full-upgrade` will "downgrade" it back — a ping-pong, not a real regression. When adding or reviewing a pin file under `preferences.d/`, cross-check `50unattended-upgrades`' `Allowed-Origins` for the matching origin (find it via `apt-cache policy <pkg>` or the source's `Release` file `Origin:` field). See `doc/machine-history.md` §2.25.
 
 ## tmux / Byobu
 - Byobu bypasses `~/.tmux.conf` entirely — it launches via its own profile chain and hardcodes `mouse off`/other overrides (e.g. `/usr/share/byobu/keybindings/mouse.tmux.enable` sets `set -g mouse off` despite the filename) and only sources user config from `~/.config/byobu/.tmux.conf` (or its chezmoi-managed template), loaded last. Put tmux settings there, not in `~/.tmux.conf`.

@@ -321,6 +321,36 @@ Both connections are required simultaneously. This BIOS mode setting is the reas
 
 ---
 
+### §2.22 — HP dock DisplayPort/ethernet fail — proprietary MUX alt-mode has no Linux driver (2026-07-16)
+
+**Symptom:** User plugged in an HP-branded USB-C docking station. Initially reported as "not detected at all"; investigation showed partial detection — USB peripherals (mouse/keyboard, storage, audio) work through the dock, but display and ethernet do not.
+
+**Investigation:**
+
+- **USB-C/Type-C layer:** the dock IS detected at the Type-C level — `/sys/class/typec/port0-partner` and `port0-cable` are present, `data_role: host` is correct. The laptop correctly recognizes it as a USB-C peripheral.
+- **USB topology:** the dock enumerates as 3 cascaded USB hubs (Bus 001) with HID and mass-storage devices bound correctly. A separate Bus 002 device carries a Realtek RTL8152 USB-Ethernet adapter (`r8152` driver bound) plus USB audio interfaces (`snd-usb-audio` bound). **RTL8152 is a different chipset from the already-blacklisted RTL8125/r8169 PCIe NICs (§2.15/known quirks)** — the existing `blacklist-r8125.conf` is unrelated to this device and does not affect it.
+- **Ethernet:** `enx9cebe88dcecc` exists with `r8152` bound but stays DOWN/NO-CARRIER; `ethtool` confirms `Link detected: no` on both dock USB-C ports tested. Could be no cable in the dock's ethernet port, or gated behind the same MUX handshake as display — not conclusively distinguished.
+- **Display:** `xrandr` never shows anything but the internal panel (`eDP-2`) — no external monitor detected via the dock on either USB-C port.
+- **Billboard device:** a USB "Billboard" class device (used for USB-PD/Alt-Mode capability advertisement) enumerates with no driver bound, both before and after an unplug/replug cycle.
+- **Root cause:** the dock's typec altmode nodes (`port0-partner.0`/`.1`, and `port1-partner.0`/`.1` after moving to the second USB-C port) both advertise SVID `03f0` — **HP's own USB vendor ID**, used for HP's proprietary "MUX" alt-mode signaling protocol, not the standard DisplayPort Alt-Mode SVID `ff01`. All four nodes show `active: no` on both ports.
+- **Port-independence confirmed:** identical behavior (USB works, ethernet DOWN, no altmode activation) on both port0 and port1 — rules out a port-specific hardware fault on the laptop side.
+- **power_role instability:** observed to differ between two separate connection events (sink, then later source) — consistent with the dock's MUX logic retrying a handshake it can't complete, not conclusively diagnosed further.
+- **Manual activation attempted:** `echo 1 | sudo tee /sys/class/typec/port1-partner/port1-partner.0/active` returned `Permission denied (os error 13)` even as root — confirms the kernel's typec/altmode driver has no write handler for manual activation on this node; no userspace lever exists to force it.
+- **Cross-machine test (user-confirmed):** the same dock works fully, including display, on a different laptop — also a SKIKK machine, but running Windows. This rules out "requires HP-brand host hardware" as the mechanism; the gate is OS/driver-level, not a hardware vendor lock.
+- **Web research:** HP does not publish Linux drivers for these USB-C docks (Windows/Mac only per HP's own support pages). Some HP dock models (e.g. G4) use standard DP Alt-Mode and need no driver; this dock is evidently a model requiring HP's proprietary Windows-only MUX trigger sequence, which Linux's generic `ucsi_acpi`/`typec` stack has no equivalent for.
+- **Driver stack confirmed clean:** `ucsi_acpi` → `typec_ucsi` → `typec`, loaded via the AMD `CPMUCSI` ACPI SSDT. No errors logged by this stack — negotiation simply never starts, because the dock only advertises its proprietary SVID and no Linux driver implements a trigger for it.
+
+**Diagnostic evidence:** `.scratch/dock-diagnostics-20260716.txt` (baseline), `.scratch/dock-reconnect-20260716.txt` (unplug/replug capture), `.scratch/dock-typec-controller-20260716.txt` (PD/altmode driver identification), `.scratch/dock-port2-20260716.txt` (second-port test).
+
+**Conclusion:** No Linux-side fix exists. This is a vendor driver gap — HP ships no Linux driver for the proprietary MUX trigger — not a bug in this machine's configuration, and not fixable via kernel params, sysfs, or udev rules. USB peripherals work fully through the dock since they don't depend on the alt-mode handshake; ethernet and display do not.
+
+**Suggested workarounds (untested, not yet executed):**
+- A direct USB-C-to-HDMI/DisplayPort/VGA adapter plugged straight into the laptop's own USB-C port (bypassing the dock) should work for display, since it only needs the laptop's own standard DP Alt-Mode support — confirmed present (`port0.0` altmode SVID `048d`, `active: yes`) — not the dock's proprietary negotiation.
+- Use the dock only when booted into Windows, if dual-boot is ever set up — not currently applicable, this machine is Linux-only.
+- Replace with a dock that uses standard DP Alt-Mode (SVID `ff01`) instead of a proprietary MUX.
+
+---
+
 ## 3. Active Constraints
 
 Things that must not be changed without understanding the downstream impact:
@@ -405,6 +435,58 @@ If `enp5s0` shows `state DOWN` after a reboot involving GRUB changes:
 3. Re-examine `_Q84` handler (was at dsdt.dsl line 9468) in new DSDT — check if `INOU.PWUP` is still an empty method.
 4. If `INOU.PWUP` is no longer empty and the D3cold bug is fixed upstream, no patch needed.
 5. If patch is still needed: rebuild `nvpcf_fix.asl` with OEM revision incremented by 1, recompile, regenerate CPIO, update the relevant `/etc/default/grub.d/` drop-in (note: `/etc/default/grub` does not exist on this system), `sudo update-grub`, reboot.
+
+### §2.23 — ExpressVPN IPC buffer-overflow journal flood (recurring, 2026-07-13 / 2026-07-16)
+
+**Symptom:** `journal-watch.sh` (20,000-line/10-min threshold) alerted at 2026-07-16T20:19:46 — 52,286 lines in the window (2.6x threshold), journal at 3.2 GB. Root cause traced to `expressvpn-client.desktop`, which logged 51,940 entries in that single 10-minute window. Confirmed recurring: 182,988 entries around 2026-07-13T01:00, 375,523 around 2026-07-16T20:00, 88,805 aftershock at 2026-07-16T21:00 — 661,228 expressvpn journal entries over the trailing 7 days, concentrated in these spike windows.
+
+**Root cause:** A malformed IPC message with a 1,150,808-byte payload (exceeding the daemon's buffer limit) hits `src/ipc.cpp:553` ("Invalid message: payload too large"), then cascades into thousands of "missing or incorrect magic tag" parse errors (`ipc.cpp:522`) as the daemon tries to resync on corrupted buffer fragments. `DaemonConnectionError` warnings appear on the client side during the incident. The daemon itself does not crash or restart — it stays up but floods the journal while failing to reconnect the client.
+
+**Version finding:** installed ExpressVPN is `4.1.1-beta+10039` (built Sept 2025), custom install at `/opt/expressvpn/` (no apt repo configured), service `expressvpn-service.service`. Current public stable is `14.2.0` (June 2026) — a 10-major-version gap. Plausible that the IPC framing bug was fixed somewhere in that range; not confirmed against changelogs line-by-line.
+
+**Status:** Resolved 2026-07-16T21:17 — user reinstalled via the official Linux installer, updating `4.1.1-beta+10039` → `14.2.0+13656` (confirmed at `/opt/expressvpn/share/version.txt`). Service restarted cleanly (`expressvpn-service.service` active since 21:17:25). Flood confirmed stopped: expressvpn logging dropped from ~8,000 lines/min during the incident to ~18 lines/min afterward, overall journal rate back to normal (~125 lines/min). If it recurs on 14.2.0, treat as a new bug (not the same 4.1.1-beta IPC framing issue) and investigate from scratch.
+
+---
+
+### §2.24 — VS Code crashing on Remote-SSH to uhet — VS Code core transport bug + unrelated Copilot Chat bug (2026-07-17)
+
+**Symptom:** VS Code repeatedly failing/crashing while using Remote-SSH to connect to host `uhet` (`~/.ssh/config` alias for `144.76.230.169`). Multiple distinct crash signatures observed across the day, not a single reproducible failure.
+
+**Timeline:**
+
+- **~09:29–09:30:** initial report of a failed Remote-SSH connection. SSH itself and VS Code's own connection logs from this window showed a clean, successful connect — no reproducible failure at the time; likely transient.
+- **~09:40:** extension host crash-looping locally ("Extension host (LocalProcess pid: N) terminated unexpectedly", respawning every 3–4s), each crash immediately preceded by `MainThreadChatAgents2#$updateAgent: No agent with handle N registered` and `chatParticipant must be declared in package.json: claude-code`. Initially misattributed to the Anthropic `claude-code` extension (v2.1.212) or a conflict with `saoudrizwan.claude-dev` (Cline). WebSearch established this is actually a known **Microsoft/GitHub Copilot Chat bug**: Copilot Chat (bundled, v0.50.1 in Stable) registers a chatParticipant named `claude-code` that it never declares in its own `package.json` `contributes.chatParticipants`. Fixed upstream in Copilot Chat 0.51 (VS Code Insiders only as of this date), not yet in Stable. Tracking issues: `microsoft/vscode#319423`, `#276860`, `#286303`, `#285730`; `anthropics/claude-code#11178`, `#9713`. **Not an Anthropic extension bug.** Firing once at startup is harmless (activation continues normally); the crash-loop appearance only occurs when something else is repeatedly killing the whole extension host, causing repeated re-activation and repeated one-shot firing of this same error.
+- **09:52:43:** separate renderer process crash, `reason: crashed, code: 135` (SIGABRT). No coredump/minidump captured — VS Code's own crashpad handler logged that it could not find its Crashpad attachments directory (crash reporter itself broken/misconfigured). No correlating kernel/GPU errors in `journalctl -k` for that window — ruled out NVIDIA driver / this machine's known GPU-PM quirks as a cause. Session is Wayland (`XDG_SESSION_TYPE=wayland`), Electron running the native Wayland ozone platform; no `argv.json` overrides existed at the time.
+- **Attempted fix:** created `~/.config/Code/argv.json` with `{"ozone-platform-hint": "x11"}` to force XWayland instead of native Wayland (a common fix for Electron+Wayland renderer instability). Did **not** take effect even after a full process kill (`pkill -f '/usr/share/code/'`) and relaunch — VS Code processes continued showing `--ozone-platform=wayland` in `ps aux` across multiple relaunch attempts throughout the day. Root cause of `argv.json` being ignored not diagnosed (possibly needs a different setting name/value, a full logout/login, or is unsupported in this VS Code build) — flagged as unresolved.
+- **17:02:14:** recurrence, this time with a real stack trace. An exthost `TypeError`, "Cannot read properties of undefined (reading '0')", inside `onBuffer`/`onRawMessage` handlers, traced to `workbench.desktop.main.js` — **VS Code core's** IPC/`ManagedSocket` transport layer, not any extension. Root cause: a `JSON.parse` call in the transport layer threw `SyntaxError` on a malformed/truncated payload (`Unexpected token 's'...`), which was mishandled, and the next buffer callback then dereferenced `[0]` on `undefined`. This killed the extension host before any extension activated ("No extensions were activated"), and the renderer SIGABRT (code 135) fired the same second — likely fallout from the same corrupted transport state. Confirms the crash is a **VS Code core bug in the remote transport/socket layer**, exercised by Remote-SSH (which opens the managed socket to remote hosts) but not caused by Remote-SSH's own extension code. No exact-match GitHub issue found (closest non-matches: `microsoft/vscode#317596`, `vscode-remote-release#10804`, `#10902`) — worth filing fresh against `microsoft/vscode` (core) if it recurs, with this stack trace.
+- Remote-SSH extension was on `0.124.0`; marketplace had `0.125.2026062315` available — updated as reasonable hygiene, unrelated to this specific bug.
+- **Remediation applied each time:** full process kill (`pkill -f '/usr/share/code/'` — precise pattern, avoids matching the Claude Code CLI process) + relaunch. Cleared the immediate symptom both times (no crash in the following ~8–25s window, chatParticipant error fires once harmlessly, no loop). Not a root-cause fix — the core transport bug and the inert X11 override remain unresolved. User confirmed as of ~20:40 IST this was sufficient for now.
+- **Remote host `uhet` ruled out as a cause:** disk 30%/55% used, memory 98GB free of 251GB, no OOM kills in `dmesg`, remote `vscode-server` logs showed clean exits, remote SSH auth/connectivity healthy throughout. One unrelated finding: an orphaned remote `vscode-server` CLI process had been running 48+ days (stale install, separate from the active server) — noted as a cleanup opportunity, not acted on.
+
+**Status:** Workaround only (kill + relaunch). Two distinct unresolved upstream issues:
+
+1. GitHub Copilot Chat 0.50.1 chatParticipant registration bug (Microsoft-side, fixed in Insiders 0.51, will resolve itself when Stable catches up).
+2. VS Code core transport/socket JSON-parse bug causing intermittent Remote-SSH connection crashes (SIGABRT + exthost death) — no confirmed matching upstream issue, not yet filed by user.
+
+**Follow-up if it recurs:** check `uhet`'s shell startup files (`.bashrc`/`.profile`/`.bash_profile`/MOTD scripts) for anything printing non-JSON output on non-interactive SSH sessions, since the malformed payload likely originates from data returned over that channel. Also worth revisiting why `~/.config/Code/argv.json`'s `ozone-platform-hint` was never honored.
+
+---
+
+### §2.25 — Firefox "downgrade" ping-pong: unattended-upgrades ignores the mozillateam PPA pin (2026-07-23)
+
+**Symptom:** User ran `sudo apt update && sudo apt full-upgrade` and saw firefox reported as a **downgrade** (`1:1snap1-0ubuntu8` → `153.0+build1-0ubuntu0.26.04.1~mt1`).
+
+**Root cause:** Two `firefox` package sources are configured:
+- Ubuntu's own repo ships a transitional snap-wrapper stub, versioned with an epoch prefix (`1:1snap1-0ubuntu8`). Epoch always outranks any non-epoch version in dpkg/apt version comparison, regardless of the actual number after it.
+- The Mozilla Team PPA (`mozillateam/ppa`, origin `LP-PPA-mozillateam`) ships the real Firefox `.deb` build, pinned to priority **1001** in `/etc/apt/preferences.d/mozilla-firefox` (priority ≥1000 = install even if apt's version comparison calls it a downgrade).
+
+`apt full-upgrade`, run manually, honours the pin and installs the real PPA build — correct behaviour, but reported as "Downgrade" purely because of the epoch-vs-no-epoch version-string comparison.
+
+`unattended-upgrades`, however, does **not** honour that pin: its `Allowed-Origins` list (`/etc/apt/apt.conf.d/50unattended-upgrades`) only included `${distro_id}:${distro_codename}[-security]` and the ESM origins — the mozillateam PPA origin was never in the list. So on its own schedule it installs Ubuntu's snap-stub instead. Confirmed recurring in `/var/log/apt/history.log`: unattended-upgrade → `1:1snap1-0ubuntu8` (2026-07-15, 2026-07-23 13:52), next manual `apt full-upgrade` → real PPA build reported as "Downgrade" (2026-07-16, 2026-07-23 15:04). Net effect each cycle: no actual firefox regression, just repeated churn and a confusing "downgrade" message.
+
+**Fix applied (2026-07-23):** Added `"LP-PPA-mozillateam:${distro_codename}";` to `Unattended-Upgrade::Allowed-Origins` in `/etc/apt/apt.conf.d/50unattended-upgrades` via `.scratch/fix_unattended_upgrades_firefox.sh`. This lets unattended-upgrades install from the PPA too, so it should stop reverting firefox to the Ubuntu stub.
+
+**Verification pending:** watch `/var/log/apt/history.log` over the next few unattended-upgrade cycles for firefox entries — expect no more `Downgrade`/`Upgrade` ping-pong between `1:1snap1-...` and the PPA version. If the stub reappears after this fix, the origin string or codename variable may need adjusting.
 
 ---
 
