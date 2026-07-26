@@ -1,0 +1,31 @@
+[
+  { "name": "P0: critical", "category": "priority", "color": "b60205", "description": "Drop everything" },
+  { "name": "P1: high", "category": "priority", "color": "d93f0b", "description": "Next up" },
+  { "name": "P2: medium", "category": "priority", "color": "fbca04", "description": "Normal priority" },
+  { "name": "P3: backlog", "category": "priority", "color": "c5def5", "description": "No urgency" },
+
+  { "name": "type: bug", "category": "type", "color": "d73a4a", "description": "Something isn't working" },
+  { "name": "type: feature", "category": "type", "color": "0e8a16", "description": "New capability" },
+  { "name": "type: enhancement", "category": "type", "color": "a2eeef", "description": "Improvement to existing behaviour" },
+  { "name": "type: tech-debt", "category": "type", "color": "8b6b1f", "description": "Cleanup / refactor / consolidation" },
+  { "name": "type: docs", "category": "type", "color": "0075ca", "description": "Documentation only" },
+  { "name": "type: research", "category": "type", "color": "5319e7", "description": "Investigation / spike, no committed fix yet" },
+
+  { "name": "area: system-queries", "category": "area", "color": "1d76db", "description": "system_queries subproject — Linux system management, Justfiles, health queries" },
+  { "name": "area: leisure", "category": "area", "color": "1d76db", "description": "leisure subproject — games, puzzle apps, desktop setup" },
+  { "name": "area: tvfilm-recommendations", "category": "area", "color": "1d76db", "description": "tvfilm_recommendations subproject" },
+  { "name": "area: update-cv", "category": "area", "color": "1d76db", "description": "update_cv subproject" },
+  { "name": "area: hardware-research", "category": "area", "color": "1d76db", "description": "hardware_research subproject" },
+  { "name": "area: claude-code-research", "category": "area", "color": "1d76db", "description": "claude_code_research subproject" },
+  { "name": "area: repo-meta", "category": "area", "color": "1d76db", "description": "Shared config, root housekeeping, or global ~/.claude/ infrastructure spanning subprojects" },
+
+  { "name": "effort: XS", "category": "effort", "color": "c2e0c6", "description": "Minutes" },
+  { "name": "effort: S", "category": "effort", "color": "c2e0c6", "description": "Under an hour" },
+  { "name": "effort: M", "category": "effort", "color": "c2e0c6", "description": "A session" },
+  { "name": "effort: L", "category": "effort", "color": "c2e0c6", "description": "Multiple sessions" },
+  { "name": "effort: XL", "category": "effort", "color": "c2e0c6", "description": "Substantial, consider breaking down" },
+
+  { "name": "status: blocked", "category": "status", "color": "ededed", "description": "Waiting on something external" },
+  { "name": "status: in-progress", "category": "status", "color": "ededed", "description": "Actively being worked" },
+  { "name": "status: needs-review", "category": "status", "color": "ededed", "description": "Awaiting review/decision" }
+]
