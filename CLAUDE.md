@@ -12,7 +12,7 @@ If you are reading this, you launched Claude Code from the **root** of `random_l
 - `leisure/` — games, puzzle apps, desktop setup
 - `tvfilm_recommendations/` — TV/film recommendation tooling
 - `update_cv/` — CV and resume work
-- `cex_tablet/` — CEX tablet project
+- `hardware_research/` — hardware buying and reviewing research (tablets, LLM inference machines, etc.)
 - `claude_code_research/` — Claude Code capability research and experiments
 
 **Exit this session, `cd` into the relevant subfolder, and relaunch Claude Code there.**
