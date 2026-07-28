@@ -490,4 +490,39 @@ If `enp5s0` shows `state DOWN` after a reboot involving GRUB changes:
 
 ---
 
+### §2.26 — CPU/DIMM temp creep + weak airflow despite audible fan (open, 2026-07-28)
+
+**Symptom:** User investigating unrelated intermittent SSH keystroke-echo lag to `uhet` (see below) asked about laptop heat. `just temps` showed CPU (Tctl) 78.4°C, GPU 65°C, both DIMMs in ALARM (HIGH) state (58.2°C / 62.8°C against a configured 55°C `sensors` threshold, crit at 85°C). User then reported: fan is audible under load but they cannot feel much air movement at the vents.
+
+**Trend (pulled from `logs/health-*.txt` `Tctl` lines, not previously tracked as a series — `logs/health-metrics.tsv` only records `dimm1_temp`, not CPU):**
+
+| Date | Peak CPU (Tctl) |
+|---|---|
+| 2026-06-28 | 59–61°C |
+| 2026-06-29 | 73–81°C |
+| 2026-07-05 | 61°C |
+| 2026-07-06 | 88.9 / 89.2°C |
+| 2026-07-09 – 07-11 | 62–69°C |
+| 2026-07-14 | 80.4 / 94.9°C |
+| 2026-07-15 | 83.6°C |
+| 2026-07-18 | 76.8°C |
+| 2026-07-28 | 78.4–85.0°C |
+
+Peak temps climbed roughly 25–30°C over the month from a ~60°C late-June baseline and have held in the 80s–90s since mid-July.
+
+**Fan control investigation:** No fan RPM sensor is exposed to userspace on this hardware (no `fan*_input` under `/sys/class/hwmon`, no matching `/sys/class/thermal/cooling_device*` fan type — only `Processor` and `PCIe_Port_Link_Speed` cooling devices). Fan control is entirely EC-managed via `tccd` (TUXEDO Control Center daemon, active). Active profile on AC power (`/etc/tcc/settings` → `stateMap.power_ac`) is a custom profile `thor_gaming` ("Thor Gaming" — *"Temperature-tracking fan curve optimised for gaming. Aggressive ramp, quiet at idle."*), with a custom CPU fan curve reaching **100% speed at 80°C**. Since Tctl is already sitting at 78–85°C, the curve should already be commanding near-max fan speed — so this is not a "curve too conservative" problem.
+
+**Working hypothesis:** fan audibly spinning but weak airflow at the vents, combined with the temp trend, points to **airflow obstruction** (dust in intake/exhaust vents, or vents blocked by surface placement) rather than fan/EC failure — the fan is confirmed to be responding (audible), just not moving air effectively. No software signal (no RPM read-back available) can confirm actual fan speed vs. commanded speed, so this can't be fully verified from software alone.
+
+**Not yet done:**
+1. Check external intake/exhaust vents for visible dust and confirm the laptop isn't resting on a surface that blocks bottom intake.
+2. Try short controlled bursts of compressed air into the vents (laptop off/unplugged) as a zero-risk first pass.
+3. If that doesn't resolve it, opening the bottom panel to clean the heatsink fins directly is the next step (may affect warranty — user sign-off needed before proceeding).
+
+**Status:** Open, physical inspection/cleaning not yet performed. Revisit `logs/health-metrics.tsv`/`health-*.txt` Tctl trend after any cleaning to confirm whether peak temps drop back toward the ~60°C late-June baseline.
+
+**Related, same session:** SSH keystroke-echo lag to `uhet` was separately investigated and the network-path-latency theory was ruled out (400-packet extended ping: 98.5% of samples in a tight 39–74ms band, sparse/non-periodic outliers up to 235ms, too rare to explain sustained lag) — current leading theories are host-side (`uhet` CPU/PTY scheduling) or client-side (Byobu/tmux redraw overhead), still unresolved. If local CPU is under load-induced scheduling pressure from the same thermal/airflow issue, that could plausibly connect to the terminal lag, but this has not been tested.
+
+---
+
 _End of draft._

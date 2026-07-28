@@ -41,6 +41,8 @@ Ubuntu 26.04 LTS · kernel 6.17.0-23-generic · nvidia-open 580.126.09 · tuxedo
 
 **VS Code Remote-SSH crashes to uhet, workaround only (2026-07-17):** intermittent renderer SIGABRT + extension host crash tied to a VS Code core transport bug (malformed JSON on the remote socket) plus an unrelated known Copilot Chat chatParticipant bug. Kill+relaunch (`pkill -f '/usr/share/code/'`) clears it short-term; root cause unresolved. Full detail: `doc/machine-history.md` §2.24.
 
+**CPU/DIMM temp creep + weak airflow despite audible fan, open (2026-07-28):** peak CPU (Tctl) climbed ~25–30°C over a month (~60°C late-June baseline → 80s–90s since mid-July), DIMMs in `sensors` ALARM (HIGH). No fan RPM sensor exists on this hardware to confirm actual speed; `tccd`'s active `thor_gaming` profile already commands 100% fan at 80°C, so the curve isn't the problem. User reports fan audible but weak airflow at vents — points to dust/vent obstruction, not fan/EC failure, but unconfirmed. Physical inspection/cleaning not yet done. Full detail: `doc/machine-history.md` §2.26.
+
 ## File layout
 ```
 acpi/                       — DSDT firmware artifacts (dsdt.dsl source, dsdt.dat binary, nvpcf_fix.asl patch)
