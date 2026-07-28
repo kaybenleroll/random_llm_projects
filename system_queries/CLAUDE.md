@@ -95,7 +95,7 @@ Runs full diagnostics + SMART + security. Some checks require sudo — if the se
 | `stremio-stop` | Stop Stremio server |
 
 ### Journal size
-Journald runs on defaults — no `SystemMaxUse` set, but systemd auto-caps at ~4 GB. On a 921 GB root this is fine; 1–2 GB is normal. Run `just journal-trim` to vacuum to 30 days if it looks large. Only add a `SystemMaxUse` drop-in if a specific service is generating log spam.
+An explicit cap is configured (verified 2026-07-28): `/etc/systemd/journald.conf.d/max-use.conf` sets `SystemMaxUse=8G`, `SystemMaxFileSize=200M`, `Storage=persistent`, `RateLimitIntervalSec=30s`, `RateLimitBurst=1000` (dated Jul 5 2026). Current actual usage is ~4.4G, well under the 8G cap. Run `just journal-trim` to vacuum to 30 days if it looks large.
 
 When the journal is pinned at its size cap and self-vacuuming, disk-usage checks report 0 growth regardless of actual write rate — detect real journal growth via log volume per interval (e.g. `journalctl` line counts), not disk usage.
 
