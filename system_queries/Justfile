@@ -203,10 +203,11 @@ health-network:
     @lsmod | grep -E 'r8125|r8169' && echo "WARNING: NIC driver loaded — blacklist not effective" || echo "NIC drivers not loaded (expected)"
 
 # Capture key metrics as a single timestamped line for trend tracking
+# cpu_tctl/gpu_temp/load1 added 2026-07-28 for the post-Turbo-mode sustained-load thermal trial (§2.26)
 health-snapshot:
     @mkdir -p logs
-    @[ -f logs/health-metrics.tsv ] || printf 'timestamp\tdisk_pct\tdimm1_temp\tzombies\tfailed_units\tgpu_pm\tjournal_size_mb\n' > logs/health-metrics.tsv
-    @printf '%s\n' "$(date +%Y-%m-%dT%H:%M:%S)	$(df / | awk 'NR==2{print $5}' | tr -d '%')	$(sensors 2>/dev/null | grep -A2 'spd5118-i2c-1-51' | grep 'temp1' | awk '{print $2}' | tr -d '+°C' || echo unknown)	$(ps aux | awk '{print $8}' | grep -c '^Z' || echo 0)	$(systemctl --failed --no-legend 2>/dev/null | wc -l | tr -d ' ')	$(grep -h NVreg_DynamicPowerManagement /etc/modprobe.d/nvidia-power.conf 2>/dev/null | head -1 | grep -o '0x[0-9a-fA-F]*' || echo unknown)	$(du -sm /var/log/journal 2>/dev/null | awk '{print $1}')" >> logs/health-metrics.tsv
+    @[ -f logs/health-metrics.tsv ] || printf 'timestamp\tdisk_pct\tdimm1_temp\tzombies\tfailed_units\tgpu_pm\tjournal_size_mb\tcpu_tctl\tgpu_temp\tload1\tdimm2_temp\n' > logs/health-metrics.tsv
+    @printf '%s\n' "$(date +%Y-%m-%dT%H:%M:%S)	$(df / | awk 'NR==2{print $5}' | tr -d '%')	$(sensors 2>/dev/null | grep -A2 'spd5118-i2c-1-51' | grep 'temp1' | awk '{print $2}' | tr -d '+°C' || echo unknown)	$(ps aux | awk '{print $8}' | grep -c '^Z')	$(systemctl --failed --no-legend 2>/dev/null | wc -l | tr -d ' ')	$(grep -h NVreg_DynamicPowerManagement /etc/modprobe.d/nvidia-power.conf 2>/dev/null | head -1 | grep -o '0x[0-9a-fA-F]*' || echo unknown)	$(du -sm /var/log/journal 2>/dev/null | awk '{print $1}')	$(sensors 2>/dev/null | grep 'Tctl' | awk '{print $2}' | tr -d '+°C' || echo unknown)	$(nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader 2>/dev/null || echo unknown)	$(awk '{print $1}' /proc/loadavg 2>/dev/null || echo unknown)	$(sensors 2>/dev/null | grep -A2 'spd5118-i2c-1-50' | grep 'temp1' | awk '{print $2}' | tr -d '+°C' || echo unknown)" >> logs/health-metrics.tsv
     @echo "Snapshot saved. Current metrics:"
     @tail -2 logs/health-metrics.tsv | column -t -s $'\t'
 
