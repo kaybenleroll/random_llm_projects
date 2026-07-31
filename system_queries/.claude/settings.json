@@ -14,5 +14,16 @@
       "Bash(sudo shred *)",
       "Bash(sudo wipefs *)"
     ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact|fork",
+        "hooks": [
+          { "type": "command",
+            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/load-machine-context.py" }
+        ]
+      }
+    ]
   }
 }
