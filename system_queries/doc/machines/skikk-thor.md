@@ -2,10 +2,16 @@
 
 # skikk-thor — SKIKK Thor 16 admin context
 
-Hardware/OS/driver identity (chassis, CPU, GPU, kernel, driver versions) lives in
-`~/.claude/MACHINE.md`, not here — see `doc/machines/README.md`'s division-of-labour
-rule. This file owns what has been done to the machine: active fixes, hard
-constraints, quirks, revert steps.
+Hardware/OS/driver identity (chassis, CPU, GPU, kernel, driver versions) is
+intended to live in `~/.claude/MACHINE.md`, not here — see `doc/machines/README.md`'s
+division-of-labour rule. This file owns what has been done to the machine: active
+fixes, hard constraints, quirks, revert steps.
+
+**Temporary, pending Scope C** (hardware identity duplicated here because
+`~/.claude/MACHINE.md` does not exist on this machine, is not chezmoi-managed, and
+is imported nowhere yet):
+SKIKK Thor 16 (Tongfang GM6HG7Y) · AMD Ryzen 9 9955HX3D · RTX 5070 Ti (Blackwell GB203M)
+Ubuntu 26.04 LTS · kernel 6.17.0-23-generic · nvidia-open 580.126.09 · tuxedo-drivers 4.22.2
 
 ## Hard constraints
 - **Keep `pcie_aspm=force` with `pcie_aspm.policy=default`** — `force` is required for s2idle (PCIe root ports cannot gate power without it); `policy=default` avoids over-aggressive L1 on remaining devices. Original r8125 hard-freeze resolved by blacklisting the driver — if NIC is ever re-enabled, test `policy=default` carefully before considering `powersave`
@@ -25,6 +31,7 @@ constraints, quirks, revert steps.
 | GNOME suspend triggers disabled (power-button/lid s2idle freeze) | `gsettings` (power-button-action, lid-close-*-action = 'nothing') | Live |
 | logind suspend/hibernate key ignored (defense-in-depth) | `.scratch/logind_suspend_key_fix.sh` → `/etc/systemd/logind.conf.d/98-suspend-key.conf` | Pending sudo+reboot |
 | unattended-upgrades honours mozillateam PPA pin (firefox downgrade ping-pong) | `/etc/apt/apt.conf.d/50unattended-upgrades` (`Allowed-Origins` += `LP-PPA-mozillateam`) | Live |
+| BIOS Operating Mode Balance → Turbo (CPU/DIMM temp creep mitigation, ~8–10°C idle drop) | BIOS setup → Operating Mode | Live |
 
 **NVPCF fix status:** superseded by BIOS (Dec 2025 fixes it natively); initrd override harmless but inert. Full detail: `doc/machine-history.md` §2.16.
 
@@ -44,6 +51,9 @@ constraints, quirks, revert steps.
 
 **VS Code Remote-SSH crashes to uhet, workaround only (2026-07-17):** intermittent renderer SIGABRT + extension host crash tied to a VS Code core transport bug (malformed JSON on the remote socket) plus an unrelated known Copilot Chat chatParticipant bug. Kill+relaunch (`pkill -f '/usr/share/code/'`) clears it short-term; root cause unresolved. Full detail: `doc/machine-history.md` §2.24.
 
+**CPU/DIMM temp creep, root cause found + mitigated (driver still broken, 2026-07-28):** peak CPU (Tctl) climbed ~25–30°C over a month. Root cause: `tuxedo_keyboard`/`tuxedo_io` fail to load (-ENODEV) because `tuxedo_compatibility_check.c` requires DMI vendor `"TUXEDO"` (this reads `"SKIKK"`) or CPU family ≤25 — this CPU (Ryzen 9 9955HX3D) is family 26 (Zen5), unsupported in every released driver version ever installed on this machine (checked back to 4.18.1), so there's no working version to pin/reconstruct. Upstream issue filed: [tuxedo-drivers#376](https://gitlab.com/tuxedocomputers/development/packages/tuxedo-drivers/-/work_items/376). **Partially mitigated** via BIOS `Operating Mode` (Balance → Turbo Mode), a separate OS-independent EC lever — idle temps dropped ~8–10°C (Tctl 73–75°C → 65.4°C, GPU 60–61°C → 56°C, DIMMs both back near/under alarm threshold). Restress test confirmed this does NOT help under sustained load (still hits ~97°C throttle, pinned there for the load duration, vs ~87°C sustained plateau under Balance Mode) — **"avoid sustained heavy load" guidance still stands.** **Multi-day real-usage trial in progress** before deciding on the community compatibility-gate-bypass patch — `just health-snapshot` now also logs `cpu_tctl`/`gpu_temp`/`load1`/`dimm2_temp`. Cron interval temporarily bumped 15min→2min (2026-07-28, backup at `.scratch/crontab_backup_20260728.txt`) to catch short bursts, not just sustained loads — **revert to `*/15` once the trial decision is made.** Full detail: `doc/machine-history.md` §2.26.
+
+## Machine-specific commands
 Check DSDT OEM revision (offset 24-28, not 32-36 which is Creator Revision): `sudo python3 -c "import struct; hdr=open('/sys/firmware/acpi/tables/DSDT','rb').read(36); rev=struct.unpack('<I',hdr[24:28])[0]; print(hex(rev))"` — firmware is `0x01072009` (Dec 2025 BIOS; Python prints as `0x1072009` with leading zero dropped)
 
 ## File layout (machine-specific entries)
@@ -53,11 +63,7 @@ SKIKK_Thor_ASPM_Bug_Report.md  — r8125 ASPM crash bug report filed with SKIKK 
 ```
 
 ## Journal size
-Journald runs on defaults — no `SystemMaxUse` set, but systemd auto-caps at ~4 GB. On a 921 GB root this is fine; 1–2 GB is normal. Run `just journal-trim` to vacuum to 30 days if it looks large. Only add a `SystemMaxUse` drop-in if a specific service is generating log spam.
-
-When the journal is pinned at its size cap and self-vacuuming, disk-usage checks report 0 growth regardless of actual write rate — detect real journal growth via log volume per interval (e.g. `journalctl` line counts), not disk usage.
-
-A journal anomaly threshold calibrated for one check interval doesn't transfer to a different interval — rescale it proportionally when changing check frequency, or a shortened interval (e.g. hourly to 10-minute) loses sensitivity and a lengthened one generates false positives.
+An explicit cap is configured (verified 2026-07-28): `/etc/systemd/journald.conf.d/max-use.conf` sets `SystemMaxUse=8G`, `SystemMaxFileSize=200M`, `Storage=persistent`, `RateLimitIntervalSec=30s`, `RateLimitBurst=1000` (dated Jul 5 2026). Current actual usage is ~4.4G, well under the 8G cap. Run `just journal-trim` to vacuum to 30 days if it looks large.
 
 ## Known platform quirks
 - GPE07 fires ~320/sec (EC Dynamic Boost polling) — hardware characteristic, not a bug
