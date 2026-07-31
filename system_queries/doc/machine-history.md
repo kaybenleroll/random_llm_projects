@@ -261,7 +261,7 @@ Both connections are required simultaneously. This BIOS mode setting is the reas
 
 **Root gap:** `logind.conf` only had `HandleLidSwitch*=ignore` — `HandleSuspendKey` was never set. Separately, **GNOME's own power daemon has an independent trigger path** (`org.gnome.settings-daemon.plugins.power` `power-button-action`/`lid-close-*-action`, both still `'suspend'`) that `logind.conf`'s `HandleLidSwitch=ignore` does *not* cover — GNOME can request suspend on lid-close or power-button press regardless of the logind-level setting.
 
-**Fix:** set all three GNOME actions to `'nothing'` (live, no reboot); staged a `HandleSuspendKey=ignore`/`HandleHibernateKey=ignore` logind drop-in for defense-in-depth (needs sudo+reboot — see CLAUDE.md Active fixes table for current status).
+**Fix:** set all three GNOME actions to `'nothing'` (live, no reboot); staged a `HandleSuspendKey=ignore`/`HandleHibernateKey=ignore` logind drop-in for defense-in-depth (needs sudo+reboot — see doc/machines/skikk-thor.md Active fixes table for current status).
 
 **If this recurs:** blank screens + machine still powered on this hardware means a hung s2idle resume, not a hang worth waiting out — hard power-cycle is the only recovery; try SSH from another device first if convenient, since this was a soft lockup (not a full panic) and another CPU may still answer.
 

@@ -359,7 +359,7 @@ Must all be `0x01`. If any is `0x02`, run `.scratch/fix_nvidia_dynpm.sh` (or set
 
 **When to revert to `0x02`:** Watch 610.x+ nvidia-open release notes for "NVPCF", "RTD3", or "D3cold" fix. Then: `sudo rm /etc/modprobe.d/nvidia-power.conf /etc/default/grub.d/99-nvidia-pm.cfg`, revert `nvidia.conf` to `0x02`, run `sudo update-grub && sudo update-initramfs -u -k all`, reboot.
 
-**Reference files:** `.scratch/handover-20260611-nvidia-dynamic-boost-storm.md`, `.scratch/freeze_investigation_20260613_164630.txt`, CLAUDE.md (Active fixes table)
+**Reference files:** `.scratch/handover-20260611-nvidia-dynamic-boost-storm.md`, `.scratch/freeze_investigation_20260613_164630.txt`, `doc/machines/skikk-thor.md` (Active fixes table)
 
 ---
 
@@ -377,7 +377,7 @@ Must all be `0x01`. If any is `0x02`, run `.scratch/fix_nvidia_dynpm.sh` (or set
 
 **Hard constraint:** `pcie_aspm=force` must remain. Only `policy=default` is the fix. Do not remove `force`.
 
-**Reference files:** `.scratch/apply_aspm_fix.sh`, CLAUDE.md (Hard constraints)
+**Reference files:** `.scratch/apply_aspm_fix.sh`, `doc/machines/skikk-thor.md` (Hard constraints)
 
 ---
 
