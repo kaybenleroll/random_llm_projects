@@ -555,6 +555,32 @@ Peak temps climbed roughly 25–30°C over the month from a ~60°C late-June bas
 
 **Related, same session:** SSH keystroke-echo lag to `uhet` was separately investigated and the network-path-latency theory was ruled out (400-packet extended ping: 98.5% of samples in a tight 39–74ms band, sparse/non-periodic outliers up to 235ms, too rare to explain sustained lag) — current leading theories are host-side (`uhet` CPU/PTY scheduling) or client-side (Byobu/tmux redraw overhead), still unresolved. If local CPU is under load-induced scheduling pressure from the same thermal/airflow issue, that could plausibly connect to the terminal lag, but this has not been tested.
 
+### §2.27 — Two freeze/cutoff events in short succession (2026-07-31)
+
+**Two abrupt power-loss events occurred today:** ~10:23 IST and ~12:12 IST. Both showed as hard cutoffs in the journal — no shutdown target reached, no OOM/panic/MCE/thermal-trip logged. `journalctl --list-boots` showed boot -2 lasting only 24s and boot -1 running ~107min before cutting off mid-normal-operation.
+
+**~10:23 event clarified, not benign:** user has since clarified the screen froze/hung (unresponsive) and they performed a **manual hard power reset** to recover — this is a genuine system freeze/fault symptom, not a voluntary reboot, and should not be treated as self-inflicted or dismissed as noise. It differs from the ~12:12 event in that the freeze itself was directly observed by the user before the cutoff, whereas at ~12:12 the journal simply stopped with no preceding hang witnessed — so from logs alone we cannot distinguish "froze then lost power" from "instantly lost power" for that second event; a freeze-then-cutoff mechanism is plausible there too.
+
+**Possible shared root cause (unconfirmed):** these are now the second and third abrupt-loss/freeze-adjacent events surfaced in this session's investigation (following the prior GNOME/logind s2idle suspend freeze in §2.18). Two freeze/cutoff incidents within ~2 hours of each other raises — but does not confirm — the possibility of a common underlying trigger (e.g. a GPU/driver hang, or an EC/thermal fault causing unresponsiveness ahead of a full cutoff). No journal evidence currently links the two events; this is a hypothesis to watch, not a conclusion.
+
+**Diagnostic steps taken for the 12:12 event:**
+- `journalctl` boot analysis: no clean shutdown target reached, no error burst preceding the cutoff.
+- sudo-level kernel ring buffer / MCE-EDAC grep / `dmesg` error-level check: all clean — no hardware error or thermal trip logged.
+- SMART health on both NVMe drives: PASSED, 0 media errors. "Unsafe Shutdowns" counter = **67 on both drives** at time of check — recorded here as a baseline for future comparison.
+- `health-save` log review: no failed systemd units, GPU PM fix still active (`NVreg_DynamicPowerManagement=0x01`), ASPM config as expected, no D3cold storm.
+
+**Anomaly noted, not confirmed causal:** NVRM `nvAssertFailedNoLog @ osapi.c:1939` (previously documented in §2.20 as a boot-only/3x/benign pattern) fired **repeatedly throughout the 12:12 boot's runtime** — this deviates from the boot-only pattern and is worth tracking if it recurs.
+
+**Root cause: INCONCLUSIVE.** Consistent with either:
+1. An EC-level thermal cutoff — BIOS is in Turbo Mode (§2.26), documented as throttling ~97°C under sustained load; an EC-level thermal cutoff would bypass the OS ACPI thermal-trip logging path entirely, so absence of a logged trip doesn't rule it out.
+2. Another EC/firmware-level power fault.
+
+No software-side cause (OOM/panic/MCE/failed unit) is implicated.
+
+**Independent corroboration:** the health-snapshot cron cadence (`*/2` min, from the ongoing §2.26 thermal trial) caught the gap — the 12:12:01 scheduled snapshot never ran (4-min gap between 12:10:01 and 12:14:01 in `logs/health-metrics.tsv`), independently confirming the cutoff time.
+
+**Status: MONITORING.** Watch for recurrence; if the SMART "Unsafe Shutdowns" counter increments again without a known manual-reset explanation, that's stronger evidence of a real recurring hardware/firmware fault. User noted that going forward they will report any future freeze/reset events to Claude after getting back online, so future investigations know upfront which events were manual resets vs unexplained cutoffs.
+
 **Decision (2026-07-28): run a multi-day real-usage trial before committing to the compatibility-gate-bypass patch.** BIOS Turbo Mode fixed idle temps (~8–10°C cooler) but confirmed NOT to fix sustained-load throttling (Tctl still pins ~97°C under sustained 8-thread load, see above). Rather than deciding on the community `tuxedo-drivers-nocompatcheck-dkms` patch (untested third-party EC-write code) from synthetic load data alone, plan is to use the laptop normally for the next few days under Turbo Mode and revisit the risk/benefit call using real usage data.
 
 **Auto-logging set up to support the trial.** `just health-snapshot` (`Justfile`) previously logged `dimm1_temp` but not CPU Tctl, GPU temp, or system load — the metric that actually matters for this decision (sustained-load throttling) was invisible in the trend data. Extended the same recipe, append-only (existing 7 columns unchanged, 4 new columns added at the end: `cpu_tctl`, `gpu_temp`, `load1`, `dimm2_temp`) using the same `sensors`/`nvidia-smi`/`/proc/loadavg` commands as the `temps` target. Also fixed a pre-existing, unrelated bug hit along the way: `grep -c '^Z' || echo 0` for the zombie-process count — `grep -c` exits 1 (but still prints `0`) whenever there are zero zombies, the normal case, so `|| echo 0` fired spuriously and appended a duplicate field with an embedded newline, splitting the TSV row across two physical lines. This corrupted roughly a third of historical rows (confirmed: 199/1185 lines had 4 fields instead of 7) and would have corrupted every future row including the new columns; fixed by dropping the redundant `|| echo 0`. Automatic periodic execution was already in place and did not need new infrastructure: `crontab -l` shows `*/15 * * * * cd .../system_queries && just health-snapshot >> logs/health-snapshot-cron.log 2>&1`, confirmed actively firing (verified `cron.service` active, log entries current to the minute). No systemd --user timer was added — it would only duplicate the existing cron job. Verified end-to-end: post-fix rows are single-line, 11 fields, all populated (e.g. `cpu_tctl=94.5`, `gpu_temp=58`, `load1=1.65`, `dimm2_temp=55.5`).

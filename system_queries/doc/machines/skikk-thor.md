@@ -2,16 +2,10 @@
 
 # skikk-thor — SKIKK Thor 16 admin context
 
-Hardware/OS/driver identity (chassis, CPU, GPU, kernel, driver versions) is
-intended to live in `~/.claude/MACHINE.md`, not here — see `doc/machines/README.md`'s
+Hardware/OS/driver identity (chassis, CPU, GPU, kernel, driver versions) lives in
+`~/.claude/MACHINE.md`, not here — see `doc/machines/README.md`'s
 division-of-labour rule. This file owns what has been done to the machine: active
 fixes, hard constraints, quirks, revert steps.
-
-**Temporary, pending Scope C** (hardware identity duplicated here because
-`~/.claude/MACHINE.md` does not exist on this machine, is not chezmoi-managed, and
-is imported nowhere yet):
-SKIKK Thor 16 (Tongfang GM6HG7Y) · AMD Ryzen 9 9955HX3D · RTX 5070 Ti (Blackwell GB203M)
-Ubuntu 26.04 LTS · kernel 6.17.0-23-generic · nvidia-open 580.126.09 · tuxedo-drivers 4.22.2
 
 ## Hard constraints
 - **Keep `pcie_aspm=force` with `pcie_aspm.policy=default`** — `force` is required for s2idle (PCIe root ports cannot gate power without it); `policy=default` avoids over-aggressive L1 on remaining devices. Original r8125 hard-freeze resolved by blacklisting the driver — if NIC is ever re-enabled, test `policy=default` carefully before considering `powersave`
@@ -52,6 +46,8 @@ Ubuntu 26.04 LTS · kernel 6.17.0-23-generic · nvidia-open 580.126.09 · tuxedo
 **VS Code Remote-SSH crashes to uhet, workaround only (2026-07-17):** intermittent renderer SIGABRT + extension host crash tied to a VS Code core transport bug (malformed JSON on the remote socket) plus an unrelated known Copilot Chat chatParticipant bug. Kill+relaunch (`pkill -f '/usr/share/code/'`) clears it short-term; root cause unresolved. Full detail: `doc/machine-history.md` §2.24.
 
 **CPU/DIMM temp creep, root cause found + mitigated (driver still broken, 2026-07-28):** peak CPU (Tctl) climbed ~25–30°C over a month. Root cause: `tuxedo_keyboard`/`tuxedo_io` fail to load (-ENODEV) because `tuxedo_compatibility_check.c` requires DMI vendor `"TUXEDO"` (this reads `"SKIKK"`) or CPU family ≤25 — this CPU (Ryzen 9 9955HX3D) is family 26 (Zen5), unsupported in every released driver version ever installed on this machine (checked back to 4.18.1), so there's no working version to pin/reconstruct. Upstream issue filed: [tuxedo-drivers#376](https://gitlab.com/tuxedocomputers/development/packages/tuxedo-drivers/-/work_items/376). **Partially mitigated** via BIOS `Operating Mode` (Balance → Turbo Mode), a separate OS-independent EC lever — idle temps dropped ~8–10°C (Tctl 73–75°C → 65.4°C, GPU 60–61°C → 56°C, DIMMs both back near/under alarm threshold). Restress test confirmed this does NOT help under sustained load (still hits ~97°C throttle, pinned there for the load duration, vs ~87°C sustained plateau under Balance Mode) — **"avoid sustained heavy load" guidance still stands.** **Multi-day real-usage trial in progress** before deciding on the community compatibility-gate-bypass patch — `just health-snapshot` now also logs `cpu_tctl`/`gpu_temp`/`load1`/`dimm2_temp`. Cron interval temporarily bumped 15min→2min (2026-07-28, backup at `.scratch/crontab_backup_20260728.txt`) to catch short bursts, not just sustained loads — **revert to `*/15` once the trial decision is made.** Full detail: `doc/machine-history.md` §2.26.
+
+**Two freeze/cutoff events in short succession (2026-07-31):** ~10:23 IST was a genuine screen freeze/hang requiring a manual hard power reset (not benign); ~12:12 IST is an unexplained abrupt power-loss with no preceding hang observed (no OOM/panic/MCE/thermal-trip logged, SMART "Unsafe Shutdowns" = 67 baseline recorded) — inconclusive between EC-level thermal cutoff (Turbo Mode per §2.26) and another firmware power fault, and a shared root cause with the 10:23 freeze is possible but unconfirmed. Status: monitoring. Full detail: `doc/machine-history.md` §2.27.
 
 ## Machine-specific commands
 Check DSDT OEM revision (offset 24-28, not 32-36 which is Creator Revision): `sudo python3 -c "import struct; hdr=open('/sys/firmware/acpi/tables/DSDT','rb').read(36); rev=struct.unpack('<I',hdr[24:28])[0]; print(hex(rev))"` — firmware is `0x01072009` (Dec 2025 BIOS; Python prints as `0x1072009` with leading zero dropped)
