@@ -618,4 +618,20 @@ systemd[1]: Finished systemd-poweroff.service - System Power Off. (last clean sh
 
 ---
 
+### §2.29 — Post-upgrade boot hang, different signature from §2.28, AC-state hypothesis (2026-08-04)
+
+**Context:** Immediately after upgrading `nvidia-driver-580-open` (2:580.126.09-2tux1) → `nvidia-driver-595-open` (595.84-0ubuntu0.26.04.1) to address §2.28's `rmapiLockIsOwner()` freeze (clean apt install, DKMS rebuilt and signed all 5 modules without error — see `.scratch/upgrade_nvidia_595.log`), the user rebooted to activate the new driver. Boot hung again. User waited ~30s, unplugged the AC adapter, power-cycled — it booted successfully on the second attempt.
+
+**Investigation:** The failed boot (`531b673baad149508fa467059ca1b813`, started 13:10:49 IST) is **not** a recurrence of §2.28's signature — `rmapiLockIsOwner()`/`rmapi.c:563` does not appear anywhere in its log, and it never reached GPU driver load at all. It died during early systemd userspace bring-up (last activity: `systemd-modules-load` inserting `yt6801`/`msr`/`ppdev`/`lp`, then `systemd-oomd.service` started, then journal capture stops mid-stream with no shutdown-target reached — no panic, OOPS, or `-p err` entries beyond benign `usbhid` warnings). A materially earlier and different failure point than §2.28.
+
+The successful boot (`bbb354f5f1e7457293397981177b0b7b`, 13:12:46 IST, ~2 min after the hang) loaded `nvidia-driver-595-open` (595.84) cleanly — `NVRM: loading NVIDIA UNIX Open Kernel Module ... 595.84`, DRM/modeset init, persistenced registered the GPU — confirmed via `nvidia-smi` (`Driver Version: 595.84`, GPU active). No `rmapiLockIsOwner()` assertion. `/proc/cmdline` intact (`pcie_aspm=force`, `pcie_aspm.policy=default`, `amd_pstate=active`, `nvidia-drm.modeset=1`, `nvidia.NVreg_DynamicPowerManagement=0x01`).
+
+**New data point — AC adapter state correlation (single occurrence, not yet confirmed causal):** the failed boot logged `ACPI: AC: AC Adapter [AC0] (on-line)` (AC plugged in); the successful boot logged `ACPI: AC: AC Adapter [AC0] (off-line)` (AC unplugged, confirming "took out the cable" = pulled the AC adapter, not some other cable). §2.28's resolution only recorded "30s+ power-off then normal boot" with no AC-state tracking, so this wasn't ruled in or out there. One data point each way is not enough to confirm causation — noting as a hypothesis to test on the next occurrence (check/vary AC state deliberately before power-cycling), not a settled explanation. Possible loose tie to §2.27 (unexplained abrupt power-loss event, EC-level thermal cutoff suspected but unconfirmed) if this points at EC/power-delivery flakiness generally, but no direct evidence links them yet.
+
+**Separately, boot 0 (595.84) shows a new benign-so-far NVRM assertion during runtime GPU-context churn** (not at boot, not fatal): `NVRM: nvAssertFailedNoLog: Assertion failed: 0 @ osapi.c:2075`, ~31 occurrences correlated with RustDesk/Chrome creating GPU contexts. System stayed fully responsive throughout both bursts. Different code path from both `rmapi.c:563` (§2.28) and the previously-logged `osapi.c:1939` (580.126.09, see §2.28's closing note) — driver-version-specific assertion, same class of apparently-cosmetic NVRM logging noise. Watch only.
+
+**Status: MONITORING.** The driver upgrade cannot be credited with fixing §2.28 yet — this incident didn't exercise that code path (never reached GPU driver load), so §2.28's original bug remains unconfirmed-fixed-or-not under 595.84. This is a distinct, not-yet-understood early-boot hang. If it recurs: (1) note AC adapter state before and during the power-cycle attempt to test the correlation hypothesis, (2) capture `journalctl -b -1` immediately after recovery per this entry's method, (3) if the *original* `rmapiLockIsOwner()` signature reappears under 595.84, that reopens §2.28 as unresolved-by-upgrade; if this early-userspace hang signature recurs instead, treat it as its own bug independent of NVIDIA driver version.
+
+---
+
 _End of draft._
