@@ -589,4 +589,33 @@ No software-side cause (OOM/panic/MCE/failed unit) is implicated.
 
 ---
 
+### §2.28 — Boot-screen hard freeze — NVIDIA RM lock assertion during driver init (2026-08-04, RESOLVED)
+
+**Symptom:** Laptop froze on the boot screen; user power-cycled repeatedly. Last known clean shutdown 2026-08-04 09:45:22 (`systemd-poweroff` completed). 6 failed boot attempts logged between 10:37–10:43 IST, followed by a recovery-mode (`nomodeset`) boot which came up stable — that recovery boot is the current state, not a resolved normal boot.
+
+**Investigation:** `journalctl -b -1` (the boot attempt that got furthest, 10:37:46–10:38:04, ~18s) showed clean amdgpu init (`[drm] Initialized amdgpu 3.64.0 for 0000:07:00.0 on minor 2`) followed immediately by NVIDIA open-kernel-module (580.126.09) load, which hit repeated `NVRM: nvAssertFailedNoLog: Assertion failed: !rmapiLockIsOwner() @ rmapi.c:563` (5 occurrences total), then hung dead with no further log activity (11s gap then journal ends). The subsequent 5 boot attempts each died progressively earlier (fsck stage → modules-load → udevd), never reaching NVIDIA init at all; one showed "System Journal ... corrupted or uncleanly shut down". No ACPI/DSDT, PCIe/ASPM, NVMe, OOM, or watchdog errors were present anywhere in the window. `/etc/modprobe.d/nvidia-power.conf` and all `/etc/default/grub.d/*.cfg` drop-ins (`10-skikk-platform.cfg`, `99-nvidia-pm.cfg`, `50-tuxedo-fix-nvidia-preserve-vram-suspend.cfg`) were verified intact and unmodified — not implicated. No kernel/nvidia/grub package updates in `dpkg.log` correlate with this — single kernel `6.17.0-23-generic` installed, matches running kernel. Only loosely-correlated recent package change: `tuxedo-control-center` 3.0.7→3.0.8 upgraded 2026-08-03 13:25 (touches GPU/fan power profiles but no direct log evidence linking it).
+
+**Root cause assessment:** Distinct failure class from the already-fixed `pm_runtime_work` runtime-PM freeze (§2.17). This is an NVIDIA RM (Resource Manager) internal locking-discipline assertion firing during driver *init*, not runtime PM. Not caused by this system's config — ASPM/PM cmdline params and `nvidia-power.conf` all verified intact. Leading hypothesis: intermittent driver-internal init race in nvidia-open 580.126.09 on Blackwell (RTX 5070 Ti), possibly triggered by GPU/EC state left over from pre-freeze session activity (suspend/sleep history) that a full power cycle (not just repeated quick power-button presses) would clear — the 5 repeat failures dying progressively earlier without reaching NVIDIA init at all is more consistent with insufficient state-reset between rapid power cycles than with a deterministic driver bug (a deterministic bug should hang at the same point every time).
+
+**Status: RESOLVED (2026-08-04, same day).** Full power-off (30s+, not a quick power-cycle) followed by a normal (non-recovery) boot came up clean — confirms the "insufficient state-reset between rapid power cycles" hypothesis over a deterministic driver bug. `journalctl --list-boots` shows a genuinely new, distinct boot (`bf5bfb9081084ab9bac0fb9cb39ae84d`, 2026-08-04 11:12:30 IST) separate from the prior death sequence (boots -1 through -6, all within 10:37–10:47). `journalctl -b 0` contains **no** occurrence of `rmapiLockIsOwner()` / `rmapi.c:563`. NVIDIA driver init completed cleanly (`NVRM: loading NVIDIA UNIX Open Kernel Module ... 580.126.09`, modeset + DRM init, persistenced started), `nvidia-smi` reports the RTX 5070 Ti Laptop GPU functional and actively rendering the desktop session, no Xid/OOPS/BUG/Call Trace anywhere in the boot. `/proc/cmdline` still carries every expected param from `10-skikk-platform.cfg` and `99-nvidia-pm.cfg` (`pcie_aspm=force`, `pcie_aspm.policy=default`, `amd_pstate=active`, `nvidia-drm.modeset=1`, `nvidia.NVreg_DynamicPowerManagement=0x01`) — none dropped by the recovery-mode detour.
+
+A separate, apparently benign NVRM debug assertion recurred ~30 times this boot, correlated with ordinary GUI/app activity (gnome-shell, Chrome, Guake launches): `NVRM: nvAssertFailedNoLog: Assertion failed: 0 @ osapi.c:1939`. This is a different code path from the freeze-causing `rmapi.c:563` assertion and did not cause any hang — driver stayed responsive and functional throughout. Not treated as resolved-or-not for this entry; flagged as a separate lower-severity item to watch (no independent action taken this session — revisit only if it correlates with an actual freeze or perf issue in future).
+
+**Evidence (key log lines, `journalctl -b -1`):**
+
+```
+NVRM: loading NVIDIA UNIX Open Kernel Module for x86_64 580.126.09
+NVRM: testIfDsmSubFunctionEnabled: GPS ACPI DSM called before ... init
+NVRM: nvAssertFailedNoLog: Assertion failed: !rmapiLockIsOwner() @ rmapi.c:563  (x2)
+[drm] Initialized amdgpu 3.64.0 for 0000:07:00.0 on minor 2
+systemd-rfkill.service: Deactivated successfully.
+--- 11s gap, no log activity ---
+NVRM: nvAssertFailedNoLog: Assertion failed: !rmapiLockIsOwner() @ rmapi.c:563  (x3)
+--- journal ends, boot dead ---
+systemd-journald: File system.journal corrupted or uncleanly shut down, renaming and replacing.
+systemd[1]: Finished systemd-poweroff.service - System Power Off. (last clean shutdown, 09:45:22)
+```
+
+---
+
 _End of draft._
