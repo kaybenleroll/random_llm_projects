@@ -23,11 +23,11 @@ health-quick:
     @echo "=== Q5: Root filesystem headroom ==="
     df -h / /data 2>/dev/null
 
-# Full health check: runs health-quick plus GPU firmware, storage, networking, thermal, processes, mounts
+# Full health check: runs health-quick plus GPU firmware, storage, networking, thermal, processes, mounts, power wakeups
 health-full: health-quick
     @echo ""
     @echo "=== 3A: ACPI DSDT OEM revision ==="
-    sudo python3 -c "import struct; hdr=open('/sys/firmware/acpi/tables/DSDT','rb').read(36); rev=struct.unpack('<I',hdr[24:28])[0]; print(hex(rev))"
+    sudo cat /sys/firmware/acpi/tables/DSDT | python3 -c "import sys,struct; hdr=sys.stdin.buffer.read(36); rev=struct.unpack('<I',hdr[24:28])[0]; print(hex(rev))"
     @echo ""
     @echo "=== 3A: GRUB cmdline ==="
     cat /proc/cmdline
@@ -72,6 +72,9 @@ health-full: health-quick
     @echo "=== 3G: rclone mounts ==="
     mount | grep rclone || echo "(no rclone mounts)"
     systemctl list-units --type=service --no-pager 2>/dev/null | grep -i rclone || echo "(no rclone systemd units found)"
+    @echo ""
+    @echo "=== 3H: Power usage & wakeup diagnostics ==="
+    @just power-wakeups
 
 # Run all health checks and save timestamped output to logs/
 health-save:
@@ -254,6 +257,12 @@ aspm-status:
 # Show NVreg_DynamicPowerManagement value across all modprobe.d files
 gpu-pm-status:
     grep NVreg_DynamicPowerManagement /etc/modprobe.d/nvidia-power.conf /etc/modprobe.d/nvidia.conf 2>/dev/null
+
+# Power usage & wakeup diagnostics report (read-only dump, ~15-20s sample, exits — not the interactive TUI)
+power-wakeups:
+    sudo powertop --csv=/home/mcooney/workspace/random_llm_projects/system_queries/.scratch/powertop-report.csv --time=10
+    @cat /home/mcooney/workspace/random_llm_projects/system_queries/.scratch/powertop-report.csv
+    @rm -f /home/mcooney/workspace/random_llm_projects/system_queries/.scratch/powertop-report.csv
 
 # Show CPU, GPU, and DIMM temperatures from sensors
 temps:

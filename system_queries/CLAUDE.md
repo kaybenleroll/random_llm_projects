@@ -25,7 +25,7 @@ Runs full diagnostics + SMART + security. Some checks require sudo — if the se
 | Target | Domain | Sudo |
 |--------|---------|------|
 | `health-quick`† | 5 key spot-checks (failed units, GPU PM, ASPM, D3cold, disk) | partial |
-| `health-full`† | Core hardware/firmware (depends on health-quick) | yes |
+| `health-full`† | Core hardware/firmware, incl. power wakeups (depends on health-quick) | yes |
 | `health-boot` | Uptime, boot time, installed kernels, pending reboot, coredumps, failed timers | no |
 | `smart-check`† | NVMe SMART diagnostics on both drives | yes |
 | `security-check` | UFW firewall, external listeners, SSH hardening | yes |
@@ -45,6 +45,7 @@ Runs full diagnostics + SMART + security. Some checks require sudo — if the se
 |--------|-------------|
 | `temps`† | CPU / GPU / DIMM temperatures |
 | `gpu-pm-status`† | Verify GPU PM fix is active (should show `0x01`) |
+| `power-wakeups`† | `powertop --dump` power-usage/wakeup-count report (read-only, ~15-20s sample; called from health-full) |
 | `aspm-status`† | Verify PCIe ASPM policy |
 | `disk-usage` | Storage consumers in /home and /var |
 | `journal-trim` | Vacuum journal to 30 days then show size |
