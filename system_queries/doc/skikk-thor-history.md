@@ -618,7 +618,7 @@ systemd[1]: Finished systemd-poweroff.service - System Power Off. (last clean sh
 
 ---
 
-### §2.29 — Post-upgrade boot hang, different signature from §2.28, AC-state hypothesis (2026-08-04)
+### §2.29 — Post-upgrade boot hang, different signature from §2.28, AC-state hypothesis (2026-08-04, recurred 2026-08-06)
 
 **Context:** Immediately after upgrading `nvidia-driver-580-open` (2:580.126.09-2tux1) → `nvidia-driver-595-open` (595.84-0ubuntu0.26.04.1) to address §2.28's `rmapiLockIsOwner()` freeze (clean apt install, DKMS rebuilt and signed all 5 modules without error — see `.scratch/upgrade_nvidia_595.log`), the user rebooted to activate the new driver. Boot hung again. User waited ~30s, unplugged the AC adapter, power-cycled — it booted successfully on the second attempt.
 
@@ -630,7 +630,22 @@ The successful boot (`bbb354f5f1e7457293397981177b0b7b`, 13:12:46 IST, ~2 min af
 
 **Separately, boot 0 (595.84) shows a new benign-so-far NVRM assertion during runtime GPU-context churn** (not at boot, not fatal): `NVRM: nvAssertFailedNoLog: Assertion failed: 0 @ osapi.c:2075`, ~31 occurrences correlated with RustDesk/Chrome creating GPU contexts. System stayed fully responsive throughout both bursts. Different code path from both `rmapi.c:563` (§2.28) and the previously-logged `osapi.c:1939` (580.126.09, see §2.28's closing note) — driver-version-specific assertion, same class of apparently-cosmetic NVRM logging noise. Watch only.
 
-**Status: MONITORING.** The driver upgrade cannot be credited with fixing §2.28 yet — this incident didn't exercise that code path (never reached GPU driver load), so §2.28's original bug remains unconfirmed-fixed-or-not under 595.84. This is a distinct, not-yet-understood early-boot hang. If it recurs: (1) note AC adapter state before and during the power-cycle attempt to test the correlation hypothesis, (2) capture `journalctl -b -1` immediately after recovery per this entry's method, (3) if the *original* `rmapiLockIsOwner()` signature reappears under 595.84, that reopens §2.28 as unresolved-by-upgrade; if this early-userspace hang signature recurs instead, treat it as its own bug independent of NVIDIA driver version.
+**Status (as of 2026-08-04): MONITORING.** The driver upgrade cannot be credited with fixing §2.28 yet — this incident didn't exercise that code path (never reached GPU driver load), so §2.28's original bug remains unconfirmed-fixed-or-not under 595.84. This is a distinct, not-yet-understood early-boot hang. If it recurs: (1) note AC adapter state before and during the power-cycle attempt to test the correlation hypothesis, (2) capture `journalctl -b -1` immediately after recovery per this entry's method, (3) if the *original* `rmapiLockIsOwner()` signature reappears under 595.84, that reopens §2.28 as unresolved-by-upgrade; if this early-userspace hang signature recurs instead, treat it as its own bug independent of NVIDIA driver version.
+
+**Update 2026-08-06 — recurrence, same signature.** Timeline (verified via `journalctl --list-boots` / `journalctl -b`):
+
+- Boot -2 ran normally 10:01–15:20 IST, then the journal abruptly stopped mid-stream at 15:20:26 with no shutdown-target, poweroff, panic, OOM, or thermal log — a hard freeze. Machine was hard-power-cycled.
+- 72-minute gap with no journal activity (machine fully off).
+- 16:32:45 IST: power-on attempt (boot -1) failed after ~31ms / 1126 log lines — died right after `systemd-oomd`/`systemd-resolved` start, before udev or GPU driver load. No NVIDIA driver lines, no panic/thermal/OOM signature. Structurally matches this entry's original 2026-08-04 pattern (early-userspace death, well before GPU init), not §2.28's NVRM assertion pattern.
+- 16:33:29 IST: user unplugged the AC adapter, then retried — second attempt (boot 0) succeeded on battery power. This is the boot the investigation was run from.
+
+**AC-power correlation update (confirmed both sides, 2/2):** AC was confirmed plugged in during the failed 16:32:45 attempt — consistent with the 2026-08-04 occurrence (AC on-line during that failure too), so "AC plugged in during hang" is now **2-for-2**. This time the user also deliberately unplugged AC before the successful 16:33:29 retry, so "AC unplugged → successful retry" is now confirmed for occurrence 2 as well, matching occurrence 1 (also AC-off-line on its successful retry). The correlation AC-plugged=fail / AC-unplugged=success is therefore **confirmed on both sides across both occurrences (2/2)**. n=2 is not exhaustive proof of causation — it does not rule out coincidence or a confound (e.g. a charger/PD negotiation transient that happens to correlate with AC presence rather than AC presence itself being causal) — but two-for-two on both halves of the pattern is a meaningfully stronger basis than the prior single-sided confirmation, and warrants treating AC state as the leading hypothesis pending a root-cause identification.
+
+**Status (as of 2026-08-06): RECURRING PATTERN (2 occurrences, 2026-08-04 and 2026-08-06), same early-userspace-death signature both times.** AC-plugged-in-during-hang confirmed on both occurrences; AC-unplugged-during-successful-retry now also confirmed on both occurrences. Root cause not yet identified — see root-cause research notes below. Escalation trigger: if a third occurrence happens despite the AC-avoidance workaround (boot on battery, plug in after boot), treat as strong evidence of a distinct fault worth deeper EC/power-delivery investigation, per the loose §2.27 tie noted above.
+
+**Cross-reference (2026-08-06, later same day):** This AC-boot-hang has now co-occurred with a §2.34 hard-freeze **twice in one day** — the 15:20 freeze immediately preceded the 16:32/16:33 occurrence above, and a second freeze at 17:04 was followed by another failed/successful AC-boot-hang pair at 17:05:13/17:05:54. §2.34 now tracks 6 total freeze occurrences across the Jul 23–Aug 6 window, with podman/container workload ruled out as a trigger, elevating this to a recurring-enough pattern to prioritize a BIOS/EC firmware check. See §2.34's 2026-08-06 (later) update for full detail — the working hypothesis is that this hang and the §2.34 freezes are the same underlying EC/PM fault manifesting two ways, though not yet proven at n=2 co-occurrences.
+
+**Root-cause research (2026-08-06):** the failure profile — hangs before GPU driver load, in early userspace, specifically when AC is connected at cold boot — points toward EC/BIOS-level USB-C PD (or barrel-jack AC-detection) handshake stalling, not a kernel/NVIDIA driver bug. This class of fault is documented across vendors: AMD Framework laptops have known charger-negotiation compatibility issues with certain USB-C PD sources; several vendor forums (Dell, HP, Lenovo, generic Tongfang/Clevo barebone rebrand threads on badcaps.net and Win-Raid) report BIOS/EC firmware bugs where AC/USB-C power detection at boot stalls EC-to-BIOS handoff, fixable by BIOS/EC firmware updates or by an EC reset (power off, disconnect AC and battery if possible, hold power button 30s, reconnect, boot). No Tongfang GM6HG7Y-specific report was found (rebrand chassis, thin public documentation), so no confirmed matching erratum — this is pattern-matching to the general class of bug, not a verified root cause. Recommended next steps, easiest/lowest-risk first: (1) adopt "boot on battery, plug AC in after boot" as the standing workaround — trivial, zero risk, already validated 2/2; (2) check for a BIOS/EC firmware update beyond the current version (doc/machines/skikk-thor.md notes a Dec 2025 BIOS already fixed one unrelated bug, so the vendor is shipping updates) and check BIOS setup for a USB-C/Type-C PD charging toggle to test disabling; (3) test whether the phenomenon is charger-specific by trying a different PD source/wattage if a second charger is available; (4) if it recurs a third time despite the workaround, file with SKIKK/Tongfang's BIOS support channel with both journal captures attached.
 
 ---
 
@@ -707,6 +722,103 @@ The successful boot (`bbb354f5f1e7457293397981177b0b7b`, 13:12:46 IST, ~2 min af
 **To switch the target monitor:** edit `TARGET_CONNECTOR` in `extension.js` (`eDP-2` ↔ `DP-1`), then `gnome-extensions disable guake-reposition@skikk-thor.local && gnome-extensions enable guake-reposition@skikk-thor.local` — no logout needed for a code-only change to an already-registered extension. No hotkey exists for this yet (not built — not currently needed).
 
 **Status: Resolved.** User confirmed Guake opens on the laptop screen (`eDP-2`) after logout/login. `~/.config/autostart/guake.desktop` reverted to plain `Exec=guake` (native Wayland, no XWayland override needed anymore). Genuinely Wayland-native, no legacy-protocol fallback. Revert trigger: none currently anticipated — if Guake ever moves to GTK4 with native Wayland positioning support, the extension becomes unnecessary but is harmless to leave in place.
+
+---
+
+### §2.34 — Full journal survey: idle-state hard-freeze pattern, distinct from §2.29's AC-boot-hang (2026-08-06)
+
+**Context:** Following the Aug 6 15:20:26 freeze (already logged under §2.29's timeline as the boot -2 abrupt stop preceding that entry's AC-boot-hang), ran a full journal survey (2026-07-23 – 2026-08-06, retention confirmed back to 2026-07-07) to check for any other unexplained abrupt boot-ends and to characterize the Aug 6 event specifically. This is a separate issue from §2.29 (AC-plugged boot hang, early-userspace, pre-GPU-init) — do not conflate; this entry is about mid-session freezes with no boot-hang signature.
+
+**Survey results — 8 abrupt/unclean boot-ends found (journal stops with no shutdown/reboot/panic/OOM/thermal signature logged):**
+
+| Time | Gap to next boot | Assessment |
+|------|-------------------|------------|
+| 2026-07-29 21:45:47 | 47s | No error signature. UNEXPLAINED, not previously documented. |
+| 2026-07-30 10:06:33 | 75s | Tail shows "snap mount timed out" cascade — likely benign shutdown-teardown artifact, not a freeze. |
+| 2026-07-30 22:43:31 | 62s | No error signature. UNEXPLAINED, not previously documented. |
+| 2026-07-31 10:23:21 | 108s | Already §2.27 — confirmed hard freeze (user observed screen hang, manual reset). |
+| 2026-07-31 12:12:11 | 38s | Already §2.27 — NVRM `osapi.c:1939` assertion firing repeatedly before stop. |
+| 2026-08-04/06 10:37–10:43 | rapid failed boots | Already §2.28, RESOLVED — different mechanism (NVRM boot-init assertion loop), not a runtime freeze. |
+| 2026-08-06 10:00:23 | 83s | Same benign "snap mount timed out" pattern as 2026-07-30 10:06. |
+| 2026-08-06 15:20:26 | **72 minutes** | Today's incident — the only event with a real multi-minute gap consistent with sitting powered-off until manually discovered/power-cycled. |
+
+**Aug 6 15:20:26 event — confirmed idle/AFK at time of freeze.** User has confirmed the laptop was idle and unattended: left running, found dead on return. This is a distinguishing detail — it points to an idle-state transition (autosuspend, GPU runtime PM/D3cold attempt, screen blank/DPMS) as the trigger, not a load-triggered crash. This idle-freeze signature is a closer match to this machine's known PM-freeze history (NVPCF D3cold storm, §2.16; `pm_runtime_work` Blackwell freeze under fine-grained PM, §2.17) than a random crash would be — those were also idle/PM-transition-triggered, not load-triggered.
+
+**Assessment — root cause NOT confirmed, working hypothesis only:**
+- The short-gap events (2026-07-29 21:45, 2026-07-30 22:43) remain unexplained: too fast (<2min) to be "sat dead until discovered," more consistent with a fast auto-reboot or transient kernel-level event. Not enough evidence yet to link them to the idle-PM-freeze hypothesis below.
+- §2.27's 2026-07-31 12:12 event (NVRM `osapi.c:1939` assertion firing before stop) is the closest prior analog — at least a partial signature — but not proven identical: today's event left **no error signature at all**, not even an NVRM assertion, before the journal stopped. Either whatever hung, hung hard enough that even the NVRM assertion path (if that's the mechanism) never got a chance to log, or this is a different mechanism entirely.
+- Working hypothesis: idle-state PM freeze, possibly GPU runtime PM/D3cold related, family-matches prior known PM bugs on this machine — not a diagnosis.
+
+**Recommended next steps (not yet actioned):**
+- If willing to test: monitor `powertop` or `cat /sys/bus/pci/devices/*/power/runtime_status` for the GPU during an idle stretch.
+- Run `journalctl -f` live during an idle/AFK period to check whether *any* log line appears at the moment of freeze — today's event logged literally nothing, worth confirming that's consistent rather than a one-off.
+- If a reliable repro pattern emerges (e.g. "freezes after ~N hours idle"), poll `nvidia-smi`/GPU state just before the expected window.
+
+**Update 2026-08-06 (later same day) — second freeze today, not idle-triggered; podman ruled out as trigger.**
+
+A second freeze occurred at **17:04:26 IST**, this time during active use, not idle — the machine was in active session, contradicting the "idle-state hard-freeze" framing this entry opened with. An AC-boot-hang immediately followed: failed AC-plugged retry at 17:05:13, successful AC-unplugged retry at 17:05:54. This is the same tight freeze→AC-boot-hang coupling seen with the first Aug 6 occurrence (15:20:26 freeze → 16:32:45 failed/16:33:29 successful AC-boot-hang, logged under §2.29). See cross-reference note added to §2.29 below.
+
+**Podman/container activity investigated as a possible trigger — RULED OUT.** The `poc_planning_tool` compose stack runs a DB healthcheck (`kompreno-db`) roughly every 5s continuously whenever the stack is up, which produces dense, regularly-spaced journal lines. Checked all 6 freeze events identified across this investigation (Jul 29 21:45, Jul 30 22:43, Jul 31 10:23, Jul 31 12:12, Aug 6 15:20, Aug 6 17:04) against podman stack state at time of freeze: **two of the six (Jul 30 22:43 and Jul 31 10:23) occurred with the podman stack not running at all**, and the machine still froze. This rules out podman/container workload as the cause outright — a freeze that happens with the workload absent cannot be caused by that workload. The apparent correlation visible in the other four events is a logging-density artifact: at a 5s healthcheck cadence, podman lines appear near *any* freeze timestamp by construction (there's always one within a few seconds of any given moment the stack is up), not because the healthchecks triggered anything.
+
+**NVRM assertion remains the only recurring anomaly, still not conclusively causal.** The `NVRM: nvAssertFailedNoLog` assertion recurs near freeze events (`osapi.c:1939` in one, `osapi.c:2075` in another — see §2.29's 2026-08-04 note), but it also fires harmlessly during normal healthy operation elsewhere in the journal survey, so its presence near a freeze doesn't distinguish causal from coincidental. Flagging as the closest lead, not a diagnosis.
+
+**Freeze count now 6 in the Jul 23–Aug 6 window (~2 weeks).** This elevates the pattern from "occasional, monitor" to "recurring enough to warrant escalation." With no software-workload trigger identified (podman ruled out this update; NVRM assertion unconfirmed as causal), a BIOS/EC firmware update should be prioritized as the next step — see §2.29's root-cause research notes on EC/PM fault class matching and recommended escalation path, which now applies to this entry's freeze pattern as well given the strengthened AC-boot-hang coupling below.
+
+**Working hypothesis strengthened, still not proven: freezes and §2.29's AC-boot-hang may be the same underlying EC/PM fault manifesting two ways.** The AC-boot-hang has now co-occurred with a freeze twice — Aug 6 15:20 freeze → 16:32 hang, and Aug 6 17:04 freeze → 17:05 hang — both within roughly an hour of the freeze and both resolved by the same AC-unplug workaround. Two-for-two co-occurrence is suggestive but n=2 does not establish causation any more than §2.29's own AC-plugged/unplugged correlation does at the same sample size. Treat as the working hypothesis pending a shared root cause (or disconfirming evidence on a future occurrence where one happens without the other).
+
+**Status: MONITORING → ESCALATE.** No longer purely idle-triggered (17:04 occurrence was during active use) — the "idle-state hard-freeze" framing in this entry's title/opening no longer holds as the full explanation; idle-PM remains one plausible trigger among freezes with no confirmed common cause. Podman/container workload is ruled out as a cause. 6 occurrences in ~2 weeks with two now tightly coupled to §2.29's AC-boot-hang is enough to prioritize a BIOS/EC firmware check over further passive log monitoring. Not merged with §2.29 as a single entry — root cause still unconfirmed, and the freeze/hang relationship, while increasingly suggestive, isn't proven identical.
+
+---
+
+### §2.35 — AC-adapter flapping (ACPI `ac_adapter`) caught live, likely shared root cause for §2.29 + §2.34 + the "double chime" (2026-08-06)
+
+**Context:** During a chime-reporting cluster this session (user heard a repeated "double chime" resembling a USB-connect sound, unsure of actual source), started a live background watcher — `journalctl -kf` + `sudo acpi_listen`, both piped with timestamps into `.scratch/chime_watch.log` — covering ~17:39:44 to 18:06 IST (~22 minutes actively logged, with a denser capture window ~17:50–18:06 during active chime reports).
+
+**Finding — ACPI `ac_adapter` event (device `ACPI0003:00`) is flapping in tight bursts, not polling evenly:**
+
+| Time | Event | Gap from prior |
+|------|-------|-----------------|
+| 17:50:02.253 | `ac_adapter` → `00000000` (offline) | — |
+| 17:50:06.264 | `ac_adapter` → `00000001` (online) | 4s |
+| 18:01:22.226 | `ac_adapter` → `00000001` (online) | (gap, ~11 min quiet) |
+| 18:01:30.251 | `ac_adapter` → `00000000` (offline) | 8s |
+| 18:01:34.272 | `ac_adapter` → `00000001` (online) | 4s |
+
+Only 11 `ac_adapter` events total across the ~22-minute window — not constant/evenly-spaced polling, but tight bursts (multiple flaps within seconds) separated by long quiet gaps. This shape is consistent with an intermittent physical fault (loose charging connector, flaky USB-C PD contact, failing charging IC), not a software polling artifact.
+
+Each flap was accompanied within ~0.1–0.4s by a `battery` re-poll ACPI event and a `wmi` (device `PNP0C14:00`) ACPI event, and the flap clusters coincided closely with bursts of the known `NVRM: nvAssertFailedNoLog: Assertion failed: 0 @ osapi.c:2075` assertion (dozens of hits within ~150ms windows, same assertion family already tracked as benign/unconfirmed-causal under §2.20/§2.29/§2.34) firing right alongside.
+
+**Assessed as the single most likely unifying root cause for three previously-separate-looking symptoms:**
+- **The "double chime"** — plausibly the OS's power-source-changed audio/notification cue firing on every online/offline flap. Explains why it sounded USB-like but the user wasn't sure.
+- **§2.29 (AC-plugged boot hang)** — plausibly the same flaky AC-sense/charging-IC signal disrupting early boot specifically when AC is connected; unplugging AC removes the disruptive signal, which matches the confirmed 2/2 (now 3/3 as of today) AC-unplug-fixes-it pattern.
+- **§2.34 (recurring hard freezes)** — plausibly the same AC power-source flapping wedging a PM/EC subsystem at runtime, consistent with §2.34's own working hypothesis of an idle/PM-transition-class fault and its NVRM-assertion correlation.
+
+If confirmed, this reframes §2.29 and §2.34 from two-or-three separate "unconfirmed PM/EC fault" entries into one shared hardware fault with three manifestations (boot hang, runtime freeze, audible chime), rather than independent bugs needing independent software fixes.
+
+**Honesty check — this is NOT yet a confirmed root cause:**
+- Single ~25-minute observation window (n=1 watch session). No controlled wiggle-test performed yet.
+- Does not explain the July freeze occurrences (Jul 29, Jul 30 x2, Jul 31 x2) that predate this watcher's existence — no way to retroactively check ACPI flapping for those; the only artifact available for them (journal/kernel logs) shows no signature either way for this specific mechanism, so they're neither confirmed nor ruled out against this hypothesis.
+- Correlation between ac_adapter flaps and NVRM assertion bursts is temporal, not yet causally demonstrated.
+
+**Recommended next steps:**
+1. **Wiggle test (immediate, cheap):** physically wiggle the charger cable at the connector while plugged in and watch for the chime / re-run the ACPI watcher — reproducing the flap on demand vs. not distinguishes a loose connector/cable from an internal IC/firmware fault. Not yet performed by the user as of this entry.
+2. **If reproducible via wiggle:** points to connector/cable — try a different cable/charger first (cheapest elimination step) before assuming the port itself is at fault.
+3. **If not reproducible via wiggle (intermittent regardless of physical manipulation):** points to the charging IC or EC-level AC-sense circuitry — this is a hardware repair/RMA matter, not something a kernel parameter or driver update can fix. Given this is a fairly new SKIKK Thor 16, check warranty status and pursue RMA/hardware inspection rather than continuing to chase a software-side fix for §2.29/§2.34.
+4. Keep the background watcher pattern (`journalctl -kf` + `acpi_listen`, timestamped) available for capturing the next chime/freeze/hang occurrence with more data — 25 minutes was enough to catch the pattern but a longer/repeated capture would strengthen (or break) the correlation.
+
+**Status: HYPOTHESIS, ELEVATED PRIORITY.** Recommend treating as the leading root-cause theory for §2.29 and §2.34 pending the wiggle-test result, and flagging in `doc/machines/skikk-thor.md` prominently given it points to a hardware fault rather than a software one.
+
+---
+
+### §2.36 — Guake top edge hidden under GNOME top bar — reposition extension used raw monitor geometry instead of work area (2026-08-06)
+
+**Symptom:** Guake's top edge was rendered underneath the GNOME top bar (~1-2 lines of terminal content obscured), distinct from the §2.31–2.33 wrong-monitor bug — this time the monitor was correct, only the vertical position was wrong.
+
+**Root cause:** The `guake-reposition@skikk-thor.local` extension (from §2.33) places Guake with `win.move_frame(true, x, geom.y)`, where `geom` comes from `global.display.get_monitor_geometry(monitorIndex)`. Monitor geometry is the *full physical* monitor rectangle, including the strip the GNOME top bar occupies — the panel is an overlay, not a geometry-reducing region. Placing the window at `geom.y` (0) puts its top-left corner at the physical top of the screen, directly behind the bar.
+
+**Fix applied:** Changed the Y calculation to use the workspace's work area instead of raw monitor geometry: `global.display.get_workspace_manager().get_active_workspace().get_work_area_for_monitor(monitorIndex).y`, which Mutter already computes as monitor geometry minus panel/dock reservations. X centering is unchanged (still computed off full monitor geometry, since only the top bar reduces work area on this machine). Edited `~/.local/share/gnome-shell/extensions/guake-reposition@skikk-thor.local/extension.js`.
+
+**Reload caveat confirmed (matches §2.30's Edge-icon precedent):** `gnome-extensions disable`/`enable` and the `org.gnome.Shell.Extensions` D-Bus interface's `ReloadExtension` (present in introspection but returns `UnknownMethod` on this shell version) do **not** force a genuine reload of the extension's ES module under GNOME Shell on Wayland — `journalctl` showed the *old* `y=0` placement logged even after disable/enable and a fresh Guake relaunch. GNOME Shell caches the ESM import; only a full logout/login (Wayland has no `Alt+F2 r` soft-restart) actually reloads extension code. **Status: Resolved.** User confirmed post-logout/login that Guake's top edge no longer sits under the GNOME top bar.
 
 ---
 
