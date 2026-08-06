@@ -36,6 +36,6 @@ in a machine file here otherwise** — once Scope C lands, reference
 `~/.claude/MACHINE.md` instead. Both files are hand-curated, so this boundary is a
 convention to check against, not something enforced structurally.
 
-`doc/machine-history.md` is Thor-specific narrative decision-log detail, referenced
+`doc/skikk-thor-history.md` is Thor-specific narrative decision-log detail, referenced
 by `§2.N` pointers from `skikk-thor.md`. It stays where it is — read on demand, never
 auto-loaded. Future machines get their own `doc/<slug>-history.md` if warranted.
