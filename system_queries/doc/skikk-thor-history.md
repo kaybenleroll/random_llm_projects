@@ -634,4 +634,80 @@ The successful boot (`bbb354f5f1e7457293397981177b0b7b`, 13:12:46 IST, ~2 min af
 
 ---
 
+### §2.30 — Microsoft Edge dock icon unpinnable — local .desktop override lost StartupWMClass (2026-08-05)
+
+**Symptom:** Launching Microsoft Edge from its pinned ubuntu-dock icon spawned a second, unpinnable icon alongside the pinned one instead of activating the existing pinned favorite.
+
+**Root cause:** `~/.local/share/applications/microsoft-edge.desktop` is a local override that shadows the vendor file at `/usr/share/applications/microsoft-edge.desktop` per XDG desktop-file precedence. The local copy had previously been hand-edited to add `--ozone-platform=x11` to its `Exec=` line, and that edit dropped the `StartupWMClass=microsoft-edge` line present in the vendor original. Without `StartupWMClass`, GNOME Shell (ubuntu-dock extension) cannot match the running Edge window back to the pinned favorite's `.desktop` identity, so it treats the launched window as a new, unpinned app and creates a second icon.
+
+**Fix applied:** Added `StartupWMClass=microsoft-edge` back to the `[Desktop Entry]` section of `~/.local/share/applications/microsoft-edge.desktop`, then ran `update-desktop-database ~/.local/share/applications`. Session is Wayland, so GNOME Shell only picks up desktop-file changes on next login — a quick reload (Alt+F2 `r`) does not work under Wayland; logout/login required.
+
+**Status: Live (fix applied), pending logout/login to take effect.** General lesson: any future hand-edit of a locally-overridden `.desktop` file's `Exec=` line must preserve `StartupWMClass=`, or dock/taskbar pinning breaks again.
+
+---
+
+### §2.31 — Guake landed on wrong monitor despite matching prior known-good display-n (2026-08-05)
+
+**Context:** Builds on the existing GDK-index-vs-xrandr-index quirk for Guake's `display-n` setting (see `random_llm_projects/.claude/rules/skill-hygiene.md`, Desktop-Linux section) — this entry records a session-specific empirical finding, not a new mechanism.
+
+**Symptom:** Guake dropdown terminal was opening on the external monitor instead of the laptop's built-in screen.
+
+**Investigation:** Queried GDK monitor geometry directly (`Gdk.Display.get_default()` via `/usr/bin/python3`, not the mise-shimmed `python3`) and matched it to physical hardware: GDK index 1 = laptop built-in screen (`eDP-2`, model `NE160QDM-NZL`); GDK index 0 = external monitor (`DP-1`). `gsettings get guake.general display-n` returned `1` — which, per the established mapping, should have been correct — yet Guake was landing on the external monitor anyway. This contradicts the theoretical mapping and most likely reflects a GDK index reassignment (from a monitor hotplug or session restart) since `display-n` was last set, not a wrong understanding of the mapping itself.
+
+**Fix applied:** `gsettings set guake.general display-n 0`, then restarted the Guake process (`guake --quit`, falling back to `pkill -x guake`, then relaunched detached). Existing shells inside open Guake tabs are unaffected by an app restart (Guake init only re-reads monitor assignment at startup; running shell processes live independently). User confirmed post-restart that Guake now lands on the correct (built-in/laptop) screen.
+
+**Status: Resolved for this session.** General lesson: GDK monitor index → physical screen mapping for Guake is **not stable** across sessions/hotplugs on this machine — a previously-recorded `display-n` value can silently go stale after any monitor topology change. Always re-verify the GDK index-to-physical-screen mapping empirically (per skill-hygiene.md's documented method) before reapplying a remembered `display-n` value; don't assume yesterday's value is still correct.
+
+**Addendum (2026-08-05, later same day):** Recurred a second time within hours — `display-n` went 0 (fix above) → 1 (re-fix after mapping flipped again) → 0 (this correction), all on the same day with no reported hotplug in between. Confirms the GDK index reassignment is more frequent than a one-off hotplug event; likely correlates with session/display state changes generally, not just physical monitor plug/unplug. Same fix procedure applied (`gsettings set` + Guake restart); no new mechanism, just faster recurrence than expected.
+
+**Superseded by §2.32 (2026-08-06):** The "GDK index reassignment" theory was wrong. The real cause is that `window.move()` is a silent no-op under native Wayland — `display-n` was never actually being acted on, at any value, on any day. What looked like index instability was noise from that no-op; recurrence had nothing to do with monitor topology.
+
+---
+
+### §2.32 — Guake wrong-monitor bug, actual root cause: native Wayland `window.move()` is a no-op (2026-08-06, RESOLVED, supersedes §2.31)
+
+**Context:** §2.31 (previous day) misdiagnosed this as GDK-index instability and "fixed" it by flipping `display-n` back and forth, which appeared to work only because Guake was being manually toggled/observed inconsistently. Today's session re-broke and properly root-caused it.
+
+**Symptom:** Guake kept opening on the external monitor (`DP-1`) regardless of `display-n` value (0 or 1), regardless of restart method (`pkill`, `guake --quit`), and regardless of switching to `mouse-display=true` (cursor-follows) mode. Every fix attempt had zero observable effect.
+
+**Investigation:**
+1. Confirmed `gsettings get org.guake.general display-n` fails outright — `No such schema "org.guake.general"`. Guake 3.10.1 stores config via **dconf directly** under `/org/guake/general/`, not a registered GSettings schema — use `dconf read`/`dconf write /org/guake/general/<key>`, not `gsettings`. (Corrects the tool used in §2.31 and the original skill-hygiene.md note.)
+2. Discovered Guake uses a **D-Bus single-instance model**: running `guake` (or `guake -t`) when an instance is already registered just sends it a toggle-visibility signal rather than starting a fresh process. `pkill -x guake` followed immediately by relaunch could race a GNOME media-key binding (`custom-guake` → `guake -t`) that auto-respawns it, making "restarts" not actually restart the process reading new settings. Confirmed via `pgrep -af`/PID/start-time checks.
+3. Read Guake's source (`/usr/lib/python3/dist-packages/guake/utils.py`, `get_final_window_monitor` / `set_final_window_rect`): monitor selection logic (`display-n` lookup, `mouse-display` pointer query, primary-monitor fallback) was correctly resolving a target monitor every time. The bug is downstream: `window.move(x, y)` is called at the end, and **GTK3's Wayland backend silently no-ops `move()`** — Wayland's `xdg-shell` protocol has no client API for absolute window placement (a deliberate Wayland security/isolation design, unlike X11). No error, no log — the call just does nothing.
+4. Verified fix: relaunching Guake with `GDK_BACKEND=x11` (forcing it through XWayland) made `window.move()` take effect — confirmed via `wmctrl -l -G` showing the window moving to a different absolute position between attempts, vs. the frozen position under native Wayland.
+5. **Second-order gotcha:** GDK's monitor index-to-output mapping is *not* the same under the X11/XWayland backend as under native Wayland. Native-Wayland query: index 0 = `DP-1`, index 1 = `eDP-2` (`primary` flag unset on both — GDK reports no primary monitor at all on this Wayland session, which is also why `mouse-display`'s `get_primary_monitor()` fallback returns `None`). XWayland query (`GDK_BACKEND=x11 python3 ...`): index 0 = `eDP-2` (correctly flagged `primary=True`), index 1 = `DP-1` — **reversed**. Since Guake now runs under XWayland, the XWayland ordering is what matters; a `display-n` value tuned against the native-Wayland query will silently pick the wrong monitor.
+6. **Third-order gotcha, noted but not fully resolved:** XWayland's coordinate space did not match `xrandr`'s reported physical geometry — a moved window's `wmctrl -G` position (e.g. x=9216) exceeded the real combined desktop width (~7680px per `xrandr`), consistent with GNOME's fractional/HiDPI scaling giving XWayland a virtual canvas larger than physical pixels (~2x observed). Mutter appears to clamp/map this back onto a real monitor rather than actually placing the window off-screen — final visual placement was correct despite the numeric mismatch — but the exact scale factor was not derived. Anyone debugging XWayland window coordinates on this machine should expect them to disagree with `xrandr` and not assume 1:1.
+
+**Fix applied:**
+- `dconf write /org/guake/general/display-n 0` (targets `eDP-2` under the now-relevant XWayland ordering) and `mouse-display false`.
+- `~/.config/autostart/guake.desktop`: `Exec=guake` → `Exec=env GDK_BACKEND=x11 guake`, so the XWayland backend (and therefore working positioning) survives login/logout, not just this session's manually-launched process.
+
+**Status: Superseded same day by §2.33** — the XWayland fallback worked but user flagged it as relying on legacy machinery rather than a proper fix; replaced with a GNOME Shell extension doing compositor-side placement instead. `GDK_BACKEND=x11` override removed from autostart.
+
+---
+
+### §2.33 — Guake wrong-monitor bug, proper Wayland-native fix via GNOME Shell extension (2026-08-06, RESOLVED, supersedes §2.32's XWayland workaround)
+
+**Context:** §2.32 fixed the bug by forcing Guake through XWayland (`GDK_BACKEND=x11`), which works but is a compatibility-layer workaround, not a native fix, and introduced its own coordinate-scaling headache (§2.32 point 6). User asked for a genuinely modern alternative rather than falling back to legacy X11 positioning.
+
+**Why client-side positioning can't be fixed on the client:** Wayland's `xdg-shell` protocol deliberately gives clients no API for absolute self-positioning (a security/sandboxing design choice, unlike X11). No GTK3 flag or Guake config change works around this — it's not a bug in Guake, it's the protocol. GNOME/Mutter also doesn't implement `wlr-layer-shell` (the protocol wlroots compositors like Sway/Hyprland use for native anchored dropdown terminals), so there's no clean cross-compositor answer on GNOME specifically. The one thing Wayland *does* still allow is the **compositor** moving a window on its own initiative — `window.move()` from inside the client is forbidden, but Mutter calling `MetaWindow.move_frame()` on a window it manages is not, because that's the compositor's own prerogative, not a client request.
+
+**Fix:** Wrote a minimal GNOME Shell extension (`guake-reposition@skikk-thor.local`, `~/.local/share/gnome-shell/extensions/guake-reposition@skikk-thor.local/`) that:
+1. Connects to `global.window_manager`'s `'map'` signal (fires each time Guake's window is (re)shown — Guake fully unmaps/remaps its surface on hide/show rather than just hiding).
+2. Filters for `wm_class === 'Guake'`.
+3. Looks up the target monitor by **connector name** (`eDP-2`) via `global.backend.get_monitor_manager().get_monitor_for_connector()`, not by numeric index — sidesteps the index-reordering problem entirely (§2.31/§2.32 point 5: GDK monitor index order is not stable across backends/sessions; connector name is).
+4. Calls `win.move_frame(true, x, y)` to center it on that monitor — a genuine Mutter/compositor API call, not a client self-positioning request, so it isn't subject to the Wayland restriction.
+
+**Eval/scripting note:** GNOME 45+ locks `org.gnome.Shell.Eval` behind `global.context.unsafe_mode`, which can only be toggled interactively via Looking Glass (Alt+F2 → `lg`) — not scriptable, not persistable via `gsettings`. This ruled out a quick D-Bus one-liner; a real extension was the only scriptable path with full Meta/Mutter API access.
+
+**Discovery gotcha:** the shell only scans `~/.local/share/gnome-shell/extensions/` for *new* UUIDs at process startup. Neither `gnome-extensions enable` nor manually appending to `org.gnome.shell enabled-extensions` (dconf/gsettings) triggered a live rescan. On X11 this is normally solved with "Restart Shell" (Alt+F2 → `r`); **that restart path does not exist on Wayland** — a full logout/login was required, one time, for the shell to discover the extension. Editing the JS of an *already-registered* extension afterward does not require this — `gnome-extensions disable`/`enable` (or `ReloadExtension` over D-Bus) picks up code changes live.
+
+**Coordinate systems note:** confirmed empirically that `wmctrl`/XWayland-based tools report window position in a coordinate space scaled ~4x relative to Mutter's own logical coordinates on this HiDPI dual-monitor setup — e.g. the extension's own log recorded `moved to 2304,0`, while `wmctrl -l -G` reported `9216,128` for the same window at the same moment (2304×4=9216). Don't use `wmctrl` to sanity-check Mutter-side placement math on this machine; trust the extension's own logged coordinates (`log()` output visible via `journalctl --user -b 0`) or direct visual confirmation instead.
+
+**To switch the target monitor:** edit `TARGET_CONNECTOR` in `extension.js` (`eDP-2` ↔ `DP-1`), then `gnome-extensions disable guake-reposition@skikk-thor.local && gnome-extensions enable guake-reposition@skikk-thor.local` — no logout needed for a code-only change to an already-registered extension. No hotkey exists for this yet (not built — not currently needed).
+
+**Status: Resolved.** User confirmed Guake opens on the laptop screen (`eDP-2`) after logout/login. `~/.config/autostart/guake.desktop` reverted to plain `Exec=guake` (native Wayland, no XWayland override needed anymore). Genuinely Wayland-native, no legacy-protocol fallback. Revert trigger: none currently anticipated — if Guake ever moves to GTK4 with native Wayland positioning support, the extension becomes unnecessary but is harmless to leave in place.
+
+---
+
 _End of draft._
