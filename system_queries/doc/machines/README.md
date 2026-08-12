@@ -12,7 +12,7 @@ files applies to the current session without checking the injected sentinel.
 | Slug | Machine | Status |
 |---|---|---|
 | `skikk-thor` | Native Ubuntu 26.04, SKIKK Thor 16 (Tongfang GM6HG7Y) | Populated |
-| `skikklaptop` | Windows laptop + WSL2 (this machine's project context) | Near-empty, backfill as issues are found |
+| `skikklaptop` | Windows laptop + WSL2 (this machine's project context) | Populated |
 | `s3rbase` | Remote server | Stub |
 
 Hostnames are **not** auto-derived — `registry.json` is an explicit alias registry,
@@ -22,19 +22,16 @@ machine, or absorbing a rename, is a `registry.json` edit plus a new file here.
 
 ## Division of labour with `~/.claude/MACHINE.md`
 
-**Intended end state** (Scope C, not yet landed): `~/.claude/MACHINE.md` (global,
-loaded in every project on every machine) owns **what the box is** — chassis, CPU,
-GPU, RAM, OS, kernel, driver versions, shell, container runtime. Files in this
-directory own **what has been done to it** — active fixes, quirks, hard
-constraints, revert steps, specific to `system_queries/` sysadmin work.
-
-Today, `~/.claude/MACHINE.md` does not exist, is not chezmoi-managed, and is
-imported nowhere — so it is not actually loaded anywhere yet. As a bridge until
-Scope C lands, `skikk-thor.md` temporarily carries Thor's hardware identity lines
-itself, marked explicitly as temporary. **Do not restate hardware/OS/driver facts
-in a machine file here otherwise** — once Scope C lands, reference
-`~/.claude/MACHINE.md` instead. Both files are hand-curated, so this boundary is a
-convention to check against, not something enforced structurally.
+**Landed (Scope C):** `~/.claude/MACHINE.md` (global, chezmoi-managed as
+`dot_claude/MACHINE.md.tmpl`, imported via `@~/.claude/MACHINE.md` in
+`~/.claude/CLAUDE.md`, loaded in every project on every machine) owns **what the
+box is** — chassis, CPU, GPU, RAM, OS, kernel, driver versions, shell, container
+runtime, one branch per hostname. Files in this directory own **what has been done
+to it** — active fixes, quirks, hard constraints, revert steps, specific to
+`system_queries/` sysadmin work. **Do not restate hardware/OS/driver facts in a
+machine file here** — reference `~/.claude/MACHINE.md` instead. Both files are
+hand-curated, so this boundary is a convention to check against, not something
+enforced structurally.
 
 `doc/skikk-thor-history.md` is Thor-specific narrative decision-log detail, referenced
 by `§2.N` pointers from `skikk-thor.md`. It stays where it is — read on demand, never
