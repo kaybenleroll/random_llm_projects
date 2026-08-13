@@ -8,9 +8,12 @@ doc/                        — decision logs, runbooks, machine history, doc/ma
 
 ## Working approach
 - **When a session diagnoses or fixes a machine/system-specific issue, document it directly in the same session — don't defer to the `/reflect` learnings queue for this.** Route findings to `doc/machines/<slug>.md` for the machine named by the injected `<!-- machine-context: <slug> -->` sentinel; if no sentinel was injected, stop and fix the registry rather than guessing which machine's file to edit. Keep the entry there terse: a one-line Active fixes table row or Known-quirks bullet, plus a pointer (e.g. `doc/skikk-thor-history.md §2.N`). The narrative — root cause, what was tried, revert steps — goes in that machine's own history doc (e.g. `doc/skikk-thor-history.md` for skikk-thor) as a new dated `§2.N` decision-log entry (or a standalone `doc/decision-<topic>.md` for a large self-contained investigation), read on demand rather than paid for every turn.
-- All temp and output files go in `.scratch/` — never `/tmp/`
+- All temp and output files go in `.scratch/` — never `/tmp/`. Exception: a script meant to run *after* `wsl --shutdown`, or handed to the user as a native Windows/PowerShell script, must live on the Windows filesystem (e.g. under `/mnt/c/...`), not `.scratch/` — `.scratch/` is inside the WSL filesystem and becomes unreachable (`\\wsl.localhost\...` unmounts) the moment the shutdown it's meant to survive happens.
 - Scripts that need root use `sudo` internally; run them as `bash .scratch/script.sh`, not `sudo bash`
 - Subagents do implementation; this session orchestrates
+- This repo's disposable scratch layer (`.scratch/` contents, one-off diagnostic scripts) is fair game to tear down and rebuild without ceremony. This does **not** extend to `doc/`, `registry.json`, the `.claude/hooks/` machine-context mechanism, or the `Justfile` — those are the load-bearing record and interface (registry resolution, health-check targets tracked in issue #31), not scratch, and the administered machines themselves carry their own real (sometimes hard-to-reverse) risk — see each machine's own Hard constraints.
+- This repo's docs have drifted from actual implementation state more than once (a README status line claiming a landed refactor hadn't happened; `doc/machines/skikklaptop.md` describing a container-runtime setup that had since migrated) — verify live state (config files, running processes/services) before trusting a doc's claim, especially right after a refactor or migration.
+- After adding, renaming, or removing a Justfile recipe, run `just docs-check` — it diffs recipe names against this file's target tables and flags undocumented or stale rows.
 
 ## Recurring operations
 
@@ -46,12 +49,25 @@ Runs full diagnostics + SMART + security. Some checks require sudo — if the se
 | `temps`† | CPU / GPU / DIMM temperatures |
 | `gpu-pm-status`† | Verify GPU PM fix is active (should show `0x01`) |
 | `aspm-status`† | Verify PCIe ASPM policy |
+| `fan-performance`† | Switch TCC fan profile to gaming/performance |
+| `fan-balanced`† | Switch TCC fan profile to balanced (TUXEDO default) |
+| `fan-auto`† | Switch TCC fan profile back to automatic/default |
 | `disk-usage` | Storage consumers in /home and /var |
 | `journal-trim` | Vacuum journal to 30 days then show size |
+| `journal-watch` | Check journal entry-count growth vs last check; warns on unusual volume or cap proximity |
+| `logs-cleanup` | Remove `health-save` snapshot files older than 30 days |
+| `logs-trim-cron` | Trim `logs/health-snapshot-cron.log` to last 5000 lines if over 5 MB |
+| `logs-maintain` | Runs `logs-cleanup` + `logs-trim-cron` together — safe to cron weekly |
+| `dotfiles-diff` | Show pending chezmoi dotfile changes |
+| `dotfiles-apply` | Apply chezmoi dotfile changes |
+| `dotfiles-update` | Pull upstream and apply chezmoi dotfile changes |
+| `ports` | List listening TCP/UDP sockets with owning processes |
+| `docs-check` | Diff Justfile recipes against this file's target tables — flags undocumented/stale rows |
 | `pkg-upgrade` | Update and upgrade packages |
 | `pkg-purge` | Purge removed-package config leftovers |
 | `snap-clean` | Remove disabled snap revisions |
 | `stremio`† | Start Stremio server + Chrome |
+| `stremio-server`† | Start Stremio server container only (podman, no Chrome) |
 | `stremio-stop`† | Stop Stremio server |
 
 ### Journal monitoring

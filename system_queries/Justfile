@@ -308,6 +308,10 @@ dotfiles-update:
 
 # ─── Maintenance & Security ──────────────────────────────────────────────────
 
+# Check CLAUDE.md's target tables are in sync with this Justfile's recipes
+docs-check:
+    @bash scripts/check-justfile-docs.sh
+
 # Show all listening TCP and UDP sockets with owning processes
 ports:
     @echo "=== Listening TCP ==="

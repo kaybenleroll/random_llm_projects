@@ -2,6 +2,10 @@
 
 # skikk-thor — SKIKK Thor 16 admin context
 
+**Ownership: the user's own machine.** Available for personal
+infrastructure/experimentation without the client-ownership caveat that applies
+to `s3rbase`.
+
 Hardware/OS/driver identity (chassis, CPU, GPU, kernel, driver versions) lives in
 `~/.claude/MACHINE.md`, not here — see `doc/machines/README.md`'s
 division-of-labour rule. This file owns what has been done to the machine: active

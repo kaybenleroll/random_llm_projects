@@ -36,3 +36,12 @@ enforced structurally.
 `doc/skikk-thor-history.md` is Thor-specific narrative decision-log detail, referenced
 by `§2.N` pointers from `skikk-thor.md`. It stays where it is — read on demand, never
 auto-loaded. Future machines get their own `doc/<slug>-history.md` if warranted.
+
+## Required field: Ownership
+
+Every machine file must state near the top who owns/controls the machine (the
+user's own hardware vs. a client's/employer's, e.g. `s3rbase`). An agent has
+nothing to check an ownership-verification instinct against if the field is
+silently absent — silence reads as "not yet checked", not as "confirmed the
+user's own". Add it when creating a new machine file, and backfill it into any
+existing file missing it.
