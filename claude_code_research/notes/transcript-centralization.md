@@ -36,6 +36,26 @@ The 2026-08-14 report ran five parallel research angles:
 4. **Existing ready-made tools** (strongest finding) — `claude-code-sync` (git-based sync CLI) and `claude-history` (local search CLI) purpose-built for exactly this problem; see Recommendation below.
 5. **Search quality** — independent of transport/storage choice; raw JSONL search is poor (per noise ratio above) regardless of where files live. `jq`-based extraction of `text`/`tool_use` cuts ~97% of noise; SQLite FTS5 on top of that is the recommended real solution if built custom.
 
+### Earlier options considered (2026-08-06)
+
+Before the 2026-08-14 report, an earlier pass had landed on Google Drive +
+rclone as a stopgap, evaluating options later superseded above but not
+otherwise recorded here:
+
+- **GCP e2-micro VM** (rejected as oversized once corpus size was measured):
+  Always-Free-tier eligible indefinitely (vs. AWS's 12-month-only trial), with
+  IAP TCP forwarding giving SSH access with no public IP needed. Priced at
+  ~$1.50/month (disk only, compute free). Caveat: the pricing was sourced
+  partly from a low-quality SEO site (`agentdeals.dev`) and needs
+  re-verification against `cloud.google.com/free` before acting on it.
+- **`rclone mount` vs `rclone sync`**: live-mounting and grepping over the
+  mount was considered and rejected — each file open is a network round-trip,
+  too slow for full-corpus search. `rclone sync` (pull changes locally, then
+  grep locally) was the workaround used instead.
+- **Google Drive preferred over OneDrive**: OneDrive's rclone integration,
+  especially for personal (non-business) accounts, has more known quirks
+  around sync tokens/API changes than Google Drive's.
+
 ## Final Recommendation
 
 1. **Try `claude-code-sync` + `claude-history` first**, pointed at a private git remote:
