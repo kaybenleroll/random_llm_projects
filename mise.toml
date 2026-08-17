@@ -1,5 +1,5 @@
 [tools]
-copilot = "latest"
+gh = "latest"
 just = "latest"
 python = "latest"
 ripgrep = "latest"
