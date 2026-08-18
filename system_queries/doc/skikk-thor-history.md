@@ -822,4 +822,128 @@ If confirmed, this reframes §2.29 and §2.34 from two-or-three separate "unconf
 
 ---
 
+### §2.37 — Kernel panic captured by kdump: stack overflow / double fault in `smp_text_poke_int3_handler`, distinct signature from the AC-adapter cluster (2026-08-08)
+
+**Context:** Boot `51c2e05e...` started Aug 06 22:54:31 IST, journal normal throughout (podman healthcheck logging at 10s cadence), then ends abruptly Aug 08 18:29:24 IST with no shutdown/panic message in the journal itself. 23 seconds later a kdump crash-kernel boot (`24e1f71b...`, 31s) ran and captured `/proc/vmcore` — the first time this freeze cluster has left a crash artifact; prior freezes (e.g. §2.34) left no trace at all.
+
+**Pre-crash anomaly, ~3.4h before the panic:** at kernel uptime ~144385s–144877s (5 occurrences at ~123s intervals, roughly Aug 08 15:03–15:11 IST), task `T216` logged an identical hung/stuck trace each time — `RIP: 0033:0x7fa02d134c8d`, same userspace IP every occurrence, consistent with a process spinning or stuck for several minutes. Coincides with the user's report of heavy fan spin-up during this window.
+
+**The panic itself, kernel uptime ~156908.89s (matches the 18:29:24 journal cutoff), cascading within <0.1s wall-clock:**
+`BUG: IRQ stack guard page was hit` → repeated `BUG: #DF stack guard page was hit` (double fault) → `BUG: TASK stack guard page was hit` → `Oops: stack guard page: 0000 [#1] SMP NOPTI` → `RIP: 0010:error_entry+0x17/0x140` → self-recursive double-fault cascade inside `smp_text_poke_int3_handler+0x1c/0x2a0` / `__entry_text_end` (kernel's int3-breakpoint / live-patching machinery used by ftrace/kprobes/static-key patching) → `WARNING: stack recursion on stack type 5`. This is a stack-overflow-triggered double-fault death spiral.
+
+**Ruled out:** no thermal/throttle/MCE/Machine-Check lines anywhere in the dump. No `ac_adapter`/`ACPI0003` activity near the crash — this does **not** match the §2.29/§2.34/§2.35 AC-adapter-flapping pattern. Two unrelated correctable NVIDIA PCIe "BadTLP" bus errors ~17h earlier (Aug 08 ~01:01/01:04) are noise, not causal.
+
+**Taint/modules at crash time:** `(OE)` — out-of-tree modules loaded: `nvidia`, `nvidia_drm`, `nvidia_modeset`, `nvidia_uvm`, `ite_8291`/`ite_8291_lb` (TUXEDO per-key RGB keyboard driver), `tuxedo_compatibility_check`. `amdgpu` also loaded (hybrid graphics).
+
+**Assessment: this is a DISTINCT, NEW failure signature, not the AC-adapter fault.** A genuine kernel stack-overflow → double-fault panic in the int3/text-patching path, likely triggered while a process was already stuck/spinning under heavy CPU load (matches the reported fan spin-up). Root cause of the underlying stack overflow is **not yet identified** — candidates for future investigation: the out-of-tree `ite_8291`/`tuxedo_compatibility_check`/`nvidia` modules (common source of this class of bug), or a kernel/ftrace bug in `smp_text_poke_int3_handler`. This confirms not every freeze in the cluster necessarily shares one root cause.
+
+**Artifacts preserved:** `/var/crash/202608081829/` (`dmesg.202608081829`, `dump-incomplete`, root-only) for further analysis if it recurs.
+
+**UPDATE (2026-08-08, same-day follow-up): AMD-Vi IOMMU fault + ucsi_acpi PPM failure at the exact panic second — link to the AC-adapter/USB-C investigation reopened.** A `just health-save` journal snapshot shows, at 18:29:55–18:29:56 IST (i.e. inside the same one-second window as the 18:29:24–18:29:55 crash/kdump sequence above), this exact burst:
+```
+Aug 08 18:29:55 skikk-thor kernel: nvidia 0000:01:00.0: AMD-Vi: Event logged [IO_PAGE_FAULT domain=0x002b address=0xfff01020 flags=0x0000]
+```
+(repeated 10x identically), immediately followed by:
+```
+Aug 08 18:29:55 skikk-thor kernel: ucsi_acpi USBC000:00: con2: failed to get status
+Aug 08 18:29:56 skikk-thor kernel: ucsi_acpi USBC000:00: error -ETIMEDOUT: PPM init failed
+```
+`ucsi_acpi` is the USB-C PD/UCSI ACPI driver — the same subsystem area as the §2.29/§2.34 suspected AC-adapter/USB-C power-sense fault. This directly weakens the "Ruled out... does not match the AC-adapter-flapping pattern" claim above: the original ruling-out only checked for `ac_adapter`/`ACPI0003` strings, which this burst doesn't use, so it was not actually excluded by that check.
+
+**Checked against the crash dump's own captured dmesg** (`.scratch/crash_dmesg_extract.txt`, raw tail of the last 150 lines of `/var/crash/202608081829/dmesg.202608081829`, plus the ACPI/AC-adapter and GPU sections of the same extract): **no AMD-Vi / IO_PAGE_FAULT / ucsi_acpi event lines appear anywhere in the crash dump's own dmesg.** `ucsi_acpi` appears only once, in the static "Modules linked in:" list (expected — it's always loaded, not evidence of an event firing). So this AMD-Vi/ucsi_acpi burst is known only from the systemd journal (which persisted past the crash and into the next boot), not from the panicking kernel's own captured log — the kdump capture window (`smp_text_poke_int3_handler` cascade, uptime ~156908.89s) evidently ended, or the journal simply didn't flush this burst into vmcore's dmesg ring before the dump was taken.
+
+**Two competing interpretations, neither confirmed:**
+1. **IOMMU/USB-C fault as trigger:** the AC-adapter/USB-C PD controller fault (already suspected in §2.29/§2.34) glitches, and something in that glitch path (GPU DMA remapping under `nvidia`, or a shared IOMMU/ACPI interrupt) cascades into corrupting kernel stack state, triggering the double fault. This would mean §2.29/§2.34/§2.35 and §2.37 are **not distinct root causes** as concluded above, but the same underlying hardware fault manifesting two ways.
+2. **IOMMU fault as downstream symptom:** the GPU driver (`nvidia`), already mid-crash from the stack-overflow/double-fault cascade, issues a bad/stale DMA transaction that AMD-Vi flags as an IO_PAGE_FAULT — a normal side effect of a dying driver, not a cause. The ucsi_acpi PPM failure could similarly be an artifact of interrupts/DMA going haywire system-wide during the crash, not evidence of a real PD-controller fault at that moment.
+
+Cannot currently distinguish these — both are plausible given available evidence. **Status downgraded from "NEW SIGNATURE, confirmed distinct" to NEW SIGNATURE, ROOT CAUSE UNCONFIRMED, POSSIBLE LINK TO AC-ADAPTER/USB-C FAULT NOT RULED OUT.** Next step if this recurs: capture `ucsi_acpi`/AMD-Vi state and `/sys/class/power_supply/ACAD/online` flapping at the moment of any future freeze/panic, not just `ac_adapter`/`ACPI0003` string matches.
+
+**Status: NEW SIGNATURE, ROOT CAUSE OF STACK OVERFLOW UNCONFIRMED — POSSIBLE OVERLAP WITH §2.29/§2.34 AC-ADAPTER FAULT, NOT RULED OUT.**
+
+---
+
+### §2.38 — Kernel upgrade 6.17.0-23-generic → 7.0.0-29-generic, motivated by §2.37 (2026-08-08)
+
+**Context:** The kernel was found `apt-mark hold`-pinned at 6.17.0-23-generic with no documented reason for the hold anywhere in this history or in `doc/machines/skikk-thor.md`. Given §2.37's OE-tainted-driver-vs-kernel-bug ambiguity, upgrading off the held kernel was the cheapest available diagnostic lever.
+
+**Action:** `apt-mark unhold` on the kernel packages → `apt install linux-generic` → DKMS rebuild for all out-of-tree modules → reboot.
+
+**Post-reboot verification, all passed:**
+- Running 7.0.0-29-generic
+- NVIDIA driver 595.84 loaded, RTX 5070 Ti detected, GPU active, idle P8/49°C
+- DKMS: `nvidia`, `tuxedo-drivers`, `tuxedo-yt6801`, `r8125`, `acpi-call` all built/installed cleanly against 7.0.0-29-generic
+- GPU PM: `runtime_status active`, `control auto` — healthy
+- Only pre-existing cosmetic boot errors present (usbhid interrupt endpoint, gnome-keyring) — nothing new introduced by the upgrade
+- Old kernel 6.17.0-23-generic retained as a GRUB fallback entry
+
+**Status: MONITORING, NOT CLOSED.** This upgrade does not by itself confirm or rule out §2.37's root cause — it was undertaken because §2.37's kernel taint (OE) made both an unidentified 6.17-specific kernel bug and the out-of-tree `nvidia`/`tuxedo-drivers` modules plausible candidates. **If the same stack-overflow/double-fault signature (`smp_text_poke_int3_handler` / stack guard page hits) recurs on 7.0.0-29-generic, that rules out a 6.17-specific kernel bug and points root cause squarely at the OE-tainted out-of-tree drivers** (same modules loaded on both kernels). Absence of recurrence over a reasonable monitoring window would be weak evidence for a 6.17-specific bug but not proof, given §2.37 was a single occurrence. No action needed unless it recurs.
+
+---
+
+### §2.39 — NVRM assert-burst frequency is not a valid proxy for AC-adapter-fault activity — corrects §2.35's evidentiary basis (2026-08-10)
+
+**Context:** Current boot (started 13:10:07, still up, no crash) — ran `sudo dmesg -T` via `.scratch/health_sudo.sh` and searched the current-boot kernel ring buffer for both the NVRM assertion and the AC-adapter/battery/EC event family.
+
+**Finding:** `NVRM: nvAssertFailedNoLog: Assertion failed: 0 @ osapi.c:2075` fires continuously — roughly every 15–40s, non-stop — across the entire observed window, 19:03:13 through at least 21:01:42 (nearly 2 hours straight, still ongoing at capture time). Over that same ~2-hour window, a grep for `ac_adapter|ACPI0003|battery|wmi|thermal|shutdown|reboot|panic|watchdog|EC ` across the full dmesg output returned **zero** matches — no AC-adapter events, no battery/wmi re-polls, nothing, despite the NVRM asserts firing continuously throughout.
+
+**Conclusion:** NVRM-assert-burst frequency is **not** a reliable marker for the AC-adapter fault being active — it fires constantly during ordinary operation regardless of AC state. This means §2.35's observation that assert bursts coincided with the `ac_adapter` flap timing on 2026-08-06 was very likely coincidental co-occurrence (the asserts are *always* present in the background) rather than a causal or even a meaningfully correlated signal. **This does not disprove the AC-adapter fault itself** — the `ac_adapter` device flap events §2.35 recorded directly (the ACPI0003:00 online/offline transitions, the accompanying battery/wmi re-polls) are unaffected by this finding and remain real and unexplained. It only removes the NVRM-assert timing as corroborating evidence for "the fault is currently active" in any future log review.
+
+**Root cause of the AC-adapter fault: still OPEN, unconfirmed.** The wiggle test (§2.35 recommendation 1 — physically flex the charger cable at the connector while watching `ac_adapter`/`acpi_listen` directly) remains the actual next diagnostic step and is still unperformed. This entry narrows the evidence chain, it does not close or advance resolution of the underlying issue.
+
+---
+
+### §2.40 — Another §2.34-pattern freeze, manually recovered via forced power-button reboot (2026-08-15)
+
+**Context:** User reported screen freeze + hard fan spin-up around 2026-08-15 11:27-11:36 IST, investigated live within minutes via journal/dmesg/sensors.
+
+**Finding: standard §2.34-pattern freeze — no error signature, journal just stops.** Journal goes silent 11:27:53 → 11:35:57 (~8 min gap), matching prior occurrences exactly. The 11:35:57 entries are a fresh boot sequence, confirmed by `who -b`/`/proc/uptime` (boot at 11:35:55) — **user confirmed this was a manual forced reboot (held the power button)**, i.e. their own recovery action, not a spontaneous hard reset. The AMD firmware line `x86/amd: Previous system reset reason [0x00200800]: ACPI power state transition occurred` is therefore the expected signature of a held-power-button forced reboot, not new evidence about the underlying fault's behavior — **retracts this entry's earlier "severity escalation" framing**, which incorrectly assumed the reboot was spontaneous. No thermal shutdown, OOM, kernel panic/Oops, coredumps, or GPU Xid/reset errors — only the known-benign `NVRM: nvAssertFailedNoLog` cosmetic assertion at boot. No live ACPI watcher was running, so the `ac_adapter` flap mechanism could not be directly checked for this event. Post-recovery thermal state was normal (CPU 64°C, GPU idle 55°C, NVMe 36-41°C, load ~0); one DIMM sensor briefly flagged ALARM at 53.2°C against its 55°C threshold (crit=85°C) — not concerning, matches the known DIMM-temp quirk.
+
+**Assessment:** this is simply another §2.34 occurrence (7th logged), adding no new evidence either way. Status remains MONITORING, root cause still open — the §2.35 wiggle-test remains the actual next diagnostic step. Raw evidence: `.scratch/freeze-investigation-2026-08-15.md`, `.scratch/freeze-raw-2026-08-15.txt`.
+
+---
+
+### §2.41 — gnome-shell crash (SIGABRT), PowerToggle disposed-object bug; user reports adapter-specific correlation, unconfirmed (2026-08-17)
+
+**Context:** gnome-shell crashed (SIGABRT, coredump PID 51722) at 11:19:09 IST. GDM auto-restarted a new shell session within the same second window — no reboot, user session survived.
+
+**Crash signature:** preceded at 11:18:16 by repeated GJS errors — `Object Gjs_status_system_PowerToggle ... has been already disposed` — with stack traces in `resource:///org/gnome/shell/ui/status/system.js:72/73/102`. This is the quick-settings power/battery toggle being accessed after being destroyed mid-teardown — a known upstream gnome-shell crash class, typically triggered by a power-source-change event racing UI teardown (fits the "power toggle" object specifically, not a generic shell bug).
+
+**Co-occurrence, same second (11:18:16):** NVIDIA driver logged a burst of `NVRM: nvAssertFailedNoLog: Assertion failed: 0 @ osapi.c:2075`. Per §2.39, this assertion fires continuously in the background regardless of AC state and is **not** a reliable corroborating signal — timing correlation only, not causal evidence.
+
+**Ruled out:** thermal fault — CPU ~86°C boost, GPU 56°C, no throttling; GPU PM runtime states normal (0x01 fix per §2.17/§2.20 holding). **Not captured:** no literal `ac_adapter`/`ACPI0003` event line in the journal at default verbosity around the crash — consistent with either a power-source-change event that didn't get logged at that verbosity, or no power-source-change at all.
+
+**NEW: user-reported adapter-specific correlation (2026-08-17, unconfirmed).** User reports this crash pattern happens noticeably more often with one of their two AC adapters than the other. **Adapter identity, wattage, and cable type not yet specified — do not guess or assume which adapter, this needs to be confirmed with the user as a follow-up.** If real, this is a meaningfully different shape of evidence than everything in §2.29/§2.34/§2.35/§2.39: a laptop-side charging-circuit or AC-power-sense fault (loose connector, failing charging IC) should misbehave with *any* adapter roughly equally, since the fault lives on the laptop side of the connection. An adapter-specific skew instead points at the adapter/cable side specifically — a marginal USB-C PD negotiation on that one brick, a worn plug, or a degraded cable — which is a different (and more actionable) repair target than the "laptop hardware fault" hypothesis carried since §2.29.
+
+**Assessment:** this crash's own signature (GJS PowerToggle disposed-object bug) is a known upstream gnome-shell bug class triggered by power-source-change races — it does not by itself prove an AC-adapter hardware fault, but it is consistent with one triggering the race. Combined with the new adapter-specific correlation, this narrows (not confirms) the existing flaky-AC-adapter hypothesis toward the adapter/cable, away from the laptop's own charging circuitry. **Status: OPEN.** Next steps: (1) get adapter identity/wattage/cable-type/serial from the user for both adapters, to distinguish which is "the bad one"; (2) once identified, track future gnome-shell crashes and §2.34-pattern freezes against which adapter was in use at the time; (3) the §2.35 wiggle-test (unperformed) remains relevant and should now be run specifically on the suspected adapter's cable/connector, not just the laptop-side port. Raw evidence: `.scratch/crash_diag_part1.txt`, `.scratch/crash_diag_journalerr.txt`, `.scratch/crash_diag_recent.txt`, `.scratch/crash_diag_dmesg.txt` (dmesg capture failed without sudo; journalctl/coredumpctl/sensors used instead).
+
+---
+
+### §2.42 — TCC charging profile set to `stationary` at config level; hardware enforcement unconfirmed, possible overlap with §2.26 driver bug (2026-08-17)
+
+**Context:** user wants a battery-longevity charge cap (analogous to Windows OEM ~85% caps) since the laptop stays plugged in most of the time. Standard kernel sysfs `charge_control_end_threshold` does not exist on this hardware.
+
+**Investigation:** TUXEDO Control Center v3.0.9 has a "Charging Profile" feature (`chargingProfile` key in `/etc/tcc/settings`, values `balanced`/`high_capacity`/`stationary`) but it does not appear anywhere in the installed TCC GUI (confirmed by user screenshot — no charging section under Dashboard, Profiles, Tools, or Global profile settings; only Temperature Display, CPU Frequency Control, Fan Control, Keyboard Backlight Control). Extracted `app.asar` source confirms the feature exists in code (`charging-settings.component.ts`) but isn't rendering in this install.
+
+**Action:** wrote and had the user run `.scratch/set_tcc_stationary_profile.sh` — stop `tccd` → back up existing settings → copy in a corrected settings file with only `chargingProfile` changed (`high_capacity` → `stationary`) → restart `tccd` → verify. Ran clean: `chargingProfile` confirmed `"stationary"` in `/etc/tcc/settings`, `tccd` active. Backup at `.scratch/tcc_settings_backup_20260817.json`.
+
+**Unresolved — hardware enforcement not confirmed.** On restart, `tccd`'s journal logged `FanControlWorker: onStart: Fan API not available` — the exact same failure signature as the already-open §2.26 bug (`tuxedo_keyboard`/`tuxedo_io` fail to load on this CPU family/chassis combo, driver v4.22.3, no fix released, upstream `tuxedo-drivers#376`). Immediately after, the journal showed `ODMProfileWorker: Using tuxedo-io` — meaning charging-profile control very likely routes through the same broken `tuxedo-io` interface as fan control. So: the config-file/daemon-level change succeeded and is accepted by `tccd`, but there is no confirmation it reaches the EC/hardware to actually cap charging — plausibly a second silent symptom of the same driver-compatibility gap that already breaks fan control. No sysfs feedback exists to verify charge-cap enforcement directly.
+
+**Status: OPEN, config applied, hardware effect unverified.** Only real test available is behavioral: watch battery capacity while plugged in over the coming days/weeks — does it plateau below 100% (cap working) or keep climbing to 100% (cap not reaching hardware, same as the fan-control gap). If it recurs/confirms as ineffective, this strengthens the case that `tuxedo-io` is broken across the board on this chassis, not just for fan control.
+
+---
+
+### §2.43 — tuxedo-drivers#376 closed WON'T-FIX, not fixed — permanent exclusion for this non-TUXEDO-branded chassis (2026-08-17)
+
+**Context:** §2.26 documented the open upstream issue tracking `tuxedo_keyboard`/`tuxedo_io` failing to load on this Tongfang GM6HG7Y (SKIKK) chassis due to `tuxedo_compatibility_check.c` rejecting CPU family 26 (Zen5) / non-TUXEDO DMI vendor string. User directly viewed the GitLab issue and confirmed its current status.
+
+**Finding: GitLab issue `tuxedo-drivers#376` was closed 2026-07-29 as WON'T-FIX, not fixed.** Maintainer Werner Sembach (`@tuxedo_wse`) commented: "we can't test non tuxedo devices so they are not supported by tuxedo-drivers". This is a policy exclusion, not a pending compatibility patch — TUXEDO has no intent to support non-TUXEDO-branded Tongfang/Uniwill chassis on this driver, ever.
+
+**Practical implication:** fan control via `tuxedo-io`/`tuxedo_keyboard` will **never** be fixed via tuxedo-drivers on this hardware — reclassify from "unresolved bug, awaiting fix" to "permanent, by-design exclusion." §2.42's charging-profile hardware-enforcement gap (same `tuxedo-io` failure signature) is almost certainly the same permanent exclusion, not a separate bug that might get fixed alongside it.
+
+**Path forward:** the maintainer pointed to a community alternative driver project, [uniwill-laptop](https://github.com/Wer-Wolf/uniwill-laptop), as the intended route for non-TUXEDO-branded Uniwill/Tongfang hardware. Viability of this driver for this chassis is **under separate evaluation this session — not yet confirmed**; do not treat it as a working fix until that evaluation lands.
+
+**Status: §2.26 driver gap reclassified CLOSED/WON'T-FIX UPSTREAM — permanent on tuxedo-drivers. Community `uniwill-laptop` driver is the only forward path, viability unconfirmed.**
+
+---
+
 _End of draft._
