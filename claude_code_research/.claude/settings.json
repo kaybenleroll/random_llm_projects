@@ -9,6 +9,18 @@
           }
         ]
       }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Monitor",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 /home/mcooney/workspace/random_llm_projects/claude_code_research/.claude/hooks/block-backgrounded-slow-commands.py",
+            "statusMessage": "Checking for backgrounded slow-corpus commands..."
+          }
+        ]
+      }
     ]
   }
 }
