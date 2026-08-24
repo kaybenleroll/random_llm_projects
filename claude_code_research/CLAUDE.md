@@ -10,8 +10,6 @@ Research and experiments focused on Claude Code (the CLI and agentic coding tool
 
 ## Working approach
 
-- All temp files, experiment outputs, and drafts go in `.scratch/` — never `/tmp/`
-- Subagents do implementation work; this session orchestrates
 - Notes and findings go in `notes/`; reusable artifacts go in `artifacts/`
 - Artifacts in `artifacts/` must be standalone runbooks portable to a fresh session on another machine — concrete commands, pass/fail thresholds, no references to this repo or session, not a report of session-specific findings
 
