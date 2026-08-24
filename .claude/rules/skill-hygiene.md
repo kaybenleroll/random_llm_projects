@@ -21,6 +21,7 @@ Skip these on WSL/headless machines.
 - Chrome (and other X11/XWayland apps) position windows by raw X11 screen coordinates, not GNOME's logical display arrangement — when physical monitors can't be rearranged but window placement must be controlled: add `--window-position=X,Y` to the app's `.desktop` launcher Exec line to force new windows onto the target screen, or bulk-move already-open windows with `wmctrl -r <id> -e 0,X,Y,-1,-1` (read current position first with `xdotool getwindowgeometry`).
 - Waydroid regenerates `waydroid.prop` from `waydroid.cfg` on each session start — persist configuration changes in `waydroid.cfg`, not `waydroid.prop`, otherwise changes are silently lost on restart.
 - umu Steam Runtime redownloads (e.g. `~/.local/share/umu/steamrt3`) don't preserve execute bits — 500+ files across multiple directories lose `+x`. Restore selectively by detecting actual executables/scripts, not a blanket `chmod +x`.
+- Hooks spawned by Claude Code may not inherit the D-Bus session address `notify-send` needs — a notify-based hook guard can fail silently; forward the session address explicitly or implement a fallback delivery mechanism.
 
 ### General
 
