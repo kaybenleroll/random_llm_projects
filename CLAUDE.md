@@ -17,6 +17,6 @@ This file is also injected into subproject sessions (`system_queries/`, `leisure
 - `hardware_research/` — hardware buying and reviewing research (tablets, LLM inference machines, etc.)
 - `claude_code_research/` — Claude Code capability research and experiments
 
-Exit this session, `cd` into the relevant subfolder, and relaunch Claude Code there. Machine-specific context (hardware, active fixes, quirks) loads only in `system_queries/` sessions — any machine, hardware, or system-fix question asked from this root must be answered only after relaunching there, not from memory or guesswork. The only legitimate reason to run from this root is to edit shared config (`.claude/rules/skill-hygiene.md`, `mise.toml`) or do cross-project housekeeping.
+Exit this session, `cd` into the relevant subfolder, and relaunch there. Machine/hardware/system-fix questions load their context only in `system_queries/` sessions — answer them only after relaunching there, never from memory. The only legitimate reasons to run from this root: editing shared config (`.claude/rules/skill-hygiene.md`, `mise.toml`) or cross-project housekeeping.
 
 **If cwd is actually a subproject:** this section doesn't apply — carry on there normally.
