@@ -46,3 +46,9 @@ Skip these on WSL/headless machines.
 - When deleting multiple git stashes, drop them in descending index order (highest first) — `git stash drop stash@{N}` shifts every stash above N down by one index, so deleting ascending silently drops the wrong stash with no error.
 - When wiring gitleaks into a pre-commit hook, always pass an explicit `-c <hardened-config-path>` — without it, gitleaks falls back to any in-repo `.gitleaks.toml`, and a permissive or malicious in-repo config can silently disable the security gate.
 - When searching Claude Code transcript JSONL files for `tool_use` content, search recursively — `tool_use` objects nest inside `message.content` arrays, not at each line's top level, so a top-level-only search produces false negatives (content wrongly reported absent when it's just nested).
+
+<!-- demoted from global — global copy pending removal in a follow-up PR -->
+- Chezmoi tracks `~/.claude/`: run `chezmoi update` (not `apply` — `apply` doesn't pull) before editing tracked files, then `chezmoi add`, branch, commit, push, and open a PR against `kaybenleroll/dotfiles` (same workflow as any other repo — no direct-to-main commits). If `update` fails (e.g. rebase conflict), resolve before editing/committing. Never create project-local copies of global `~/.claude/` files — edit the source.
+- `~/.claude.json` is NOT chezmoi-tracked (only files inside `~/.claude/` are) — handle its edits separately by hand.
+- zsh script traps: glob deletes via `find <dir> -maxdepth 1 -name 'pattern' -delete 2>/dev/null || true` (`nomatch` aborts the whole command on no-match, silently leaving files); quote every `$VAR` (zsh word-splitting differs from bash — unquoted guards silently mis-match); never name a variable `status` (read-only special parameter — assignment errors).
+- Verify machine ownership before recommending it for the user's personal infrastructure — access/technical control (e.g. `s3rbase`) doesn't imply availability for that.
