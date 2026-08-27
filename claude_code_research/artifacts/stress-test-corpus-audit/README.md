@@ -111,6 +111,29 @@ genuinely-incomplete entries.
   take-stock, override, evidence, spike, or any of the other exclusion
   keywords in passing.
 
+- **A take-stock RESOLUTION entry (as opposed to prose merely mentioning
+  take-stock) is a SKILL.md-prescribed terminal marker, not a pass, and is
+  handled by a dedicated `TAKE_STOCK_RESOLVED` block type.** SKILL.md's
+  literal template is `### <date HH:MM> — TAKE-STOCK RESOLVED — Option
+  <A|C|D> at Pass <N>`. **Option C is terminal** (ACCEPTED-equivalent —
+  "Accept the known gaps ... stop stress-testing"); **Options A, B, D all
+  continue** the loop. The check lives immediately after the
+  pass_num-and-verdict short-circuit and immediately before `EXCLUDE_RE`
+  (which would otherwise swallow it as a plain `MARKER`, discarding its
+  pass number), and only fires when the header carries **no** canonical
+  verdict token already — several real lineages depend on an existing,
+  more-informed `ACCEPTED_STANDALONE` path (e.g. `— Take-stock resolution
+  — ACCEPTED`) that must keep winning over the option-letter heuristic.
+  The entry's `pass_num` (parsed from "at Pass N") is kept for
+  chronological tie-breaking in `later()`/`pick_terminal()` but is
+  type-gated out of every pass-count and per-pass statistic — **anyone
+  aggregating `blocks.csv` by `pass_num` without also filtering on `type`
+  will double-count a resolved pass.** `later()` additionally ranks a
+  `TAKE_STOCK_RESOLVED` block above the same-numbered pass it resolves
+  when date, time, and pass_num all tie (relevant only for date-only logs
+  with no `HH:MM`) — without this, the position-independence this script
+  otherwise guarantees would silently break for that one case.
+
 - **A terminal `RERUN_NEEDED` verdict usually means the work shipped and
   the log was simply never updated with a closing entry — not that the
   lineage died inside the stress-test loop.** This is the single most

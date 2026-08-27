@@ -50,6 +50,11 @@ KNOWN CAVEATS (see README.md for the full explanation of each):
     literal marker line) must not misclassify a genuine findings-bearing
     pass block as a non-pass marker — see EXCLUDE_RE's ordering relative
     to the pass_num/verdict check in classify_and_parse_header().
+  - A SKILL.md-prescribed "TAKE-STOCK RESOLVED — Option <A|C|D> at Pass <N>"
+    entry is not a pass. Option C is terminal (ACCEPTED-equivalent); A/B/D
+    continue the loop. Its pass_num is retained for chronological ordering
+    but is excluded from every pass statistic by type-gating (it is never
+    a "PASS" block) — see TAKE_STOCK_RE / OPTION_RE and README.md.
 """
 import argparse
 import csv
@@ -94,6 +99,17 @@ EXCLUDE_RE = re.compile(
 
 ACCEPTED_STANDALONE_RE = re.compile(r"(?i)^\s*accepted\b")
 COUNTER_RESET_RE = re.compile(r"(?i)counter reset")
+
+# SKILL.md prescribes a literal template for recording a take-stock decision:
+#   "### <date HH:MM> — TAKE-STOCK RESOLVED — Option <A|C|D> at Pass <N>"
+# Option C ("Accept the known gaps — I log ACCEPTED and stop stress-testing")
+# is terminal; A, B, D all continue the loop. The leading separator class is
+# required, not optional — it distinguishes a header marker segment from
+# incidental prose like "the take-stock resolution recorded above". Option B
+# is included in OPTION_RE so it is tallied honestly as non-terminal rather
+# than falling into the unparseable bucket.
+TAKE_STOCK_RE = re.compile(r"(?i)[—–-]\s*take-?\s?stock\s+resol(?:ved|ution)\b")
+OPTION_RE = re.compile(r"(?i)\boption\s+([A-D])\b")
 
 FINDINGS_RE = re.compile(r"(?i)(\d+)\s+findings?\b(?:\s*\((\d+)\s+before cap\))?")
 
@@ -190,6 +206,19 @@ def classify_and_parse_header(header_line):
         return dict(type="PASS", date=date, time=time, model=model, pass_num=pass_num,
                     scheme=scheme, verdict=verdict, superseded=False, header=h)
 
+    # verdict is None here (else the short-circuit above would have fired).
+    # A header that already carries a canonical verdict token (e.g.
+    # "Take-stock resolution — ACCEPTED") is left to the existing
+    # EXCLUDE_RE/ACCEPTED_STANDALONE_RE path below, which is strictly
+    # better-informed than an option-letter heuristic — several real
+    # lineages depend on that path already correctly marking them terminal.
+    if verdict is None and TAKE_STOCK_RE.search(h):
+        om = OPTION_RE.search(h)
+        option = om.group(1).upper() if om else None
+        return dict(type="TAKE_STOCK_RESOLVED", date=date, time=time, model=model,
+                    pass_num=pass_num, option=option,
+                    verdict=("ACCEPTED" if option == "C" else None), header=h)
+
     if EXCLUDE_RE.search(h):
         if ACCEPTED_STANDALONE_RE.search(h) or re.search(r"(?i)\bACCEPTED\b", h):
             return dict(type="ACCEPTED_STANDALONE", date=date, time=time, model=model,
@@ -271,6 +300,17 @@ def later(a, b):
     apn, bpn = a.get("pass_num"), b.get("pass_num")
     if apn is not None and bpn is not None and apn != bpn:
         return a if apn > bpn else b
+    # A take-stock resolution is by definition chronologically after the pass
+    # it resolves. Without this, a date-only log (no HH:MM) whose resolution
+    # entry and resolved pass share the same date and pass_num falls through
+    # to file position — silently flipping the answer between newest-first
+    # and oldest-first files. Use .get("type"), never a key only populated in
+    # process_file()'s parsed.update(): check_placeholder_bullet.py hand-
+    # builds block dicts and would KeyError on a newly required field.
+    ar = 1 if a.get("type") == "TAKE_STOCK_RESOLVED" else 0
+    br = 1 if b.get("type") == "TAKE_STOCK_RESOLVED" else 0
+    if ar != br:
+        return a if ar > br else b
     return a if a["order_in_section"] < b["order_in_section"] else b
 
 
@@ -286,6 +326,8 @@ def pick_terminal(blist):
             candidates.append(("ACCEPTED_STANDALONE", b))
         elif b["type"] == "MARKER_VERDICT" and b.get("verdict"):
             candidates.append(("MARKER_VERDICT", b))
+        elif b["type"] == "TAKE_STOCK_RESOLVED" and b.get("verdict"):
+            candidates.append(("TAKE_STOCK_RESOLVED", b))
         # MARKER / RANGE / UNPARSED / verdict-less PASS blocks are not candidates
 
     if not candidates:
@@ -340,7 +382,7 @@ def main():
     # ---- write blocks.csv ----
     blocks_csv = os.path.join(out_dir, "blocks.csv")
     fieldnames = ["machine", "file", "order_in_section", "type", "date", "time", "model",
-                  "pass_num", "scheme", "verdict", "superseded", "range_end",
+                  "pass_num", "scheme", "verdict", "superseded", "range_end", "option",
                   "n_findings", "n_before_cap", "n_bullets", "n_restatement",
                   "n_new_flagged", "fold_fail_flag", "header"]
     with open(blocks_csv, "w", newline="", encoding="utf-8") as f:
@@ -512,6 +554,12 @@ def main():
         p()
         p("=== Fold-in failure ===")
         p(f"n_transitions={n_transitions} n_fold_fail_flagged={n_fold_fail} pct={pct_fold_fail}")
+        p()
+        p("=== Take-stock resolutions ===")
+        take_stock_options = Counter(
+            b.get("option") for b in all_blocks if b["type"] == "TAKE_STOCK_RESOLVED"
+        )
+        p(f"Take-stock resolutions: {dict(take_stock_options)}")
         p()
         p("=== Verdict distribution ===")
         p("All PASS-block verdicts:", dict(verdict_counts_all_pass_blocks))
