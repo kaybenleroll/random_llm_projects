@@ -23,6 +23,12 @@ Skip these on WSL/headless machines.
 - umu Steam Runtime redownloads (e.g. `~/.local/share/umu/steamrt3`) don't preserve execute bits — 500+ files across multiple directories lose `+x`. Restore selectively by detecting actual executables/scripts, not a blanket `chmod +x`.
 - Hooks spawned by Claude Code may not inherit the D-Bus session address `notify-send` needs — a notify-based hook guard can fail silently; forward the session address explicitly or implement a fallback delivery mechanism.
 
+### GitHub Issue Repo Policy — HARD RULE
+
+- **HARD RULE:** File a GitHub issue about Claude Code skill/agent/hook/config work in `kaybenleroll/dotfiles`, not `kaybenleroll/random_llm_projects`, whenever the work touches any file under dotfiles' chezmoi source (`dot_claude/skills/`, `dot_claude/agents/`, hooks, `settings.json`, etc.) — even when the same task also touches random_llm_projects files. Dotfiles wins any tie. Only file in `random_llm_projects` when the work touches zero dotfiles files (pure claude_code_research notes/experiments/artifacts with no dotfiles-implemented change).
+  - **Why:** same-repo `Closes #N` auto-close only works within one repo; cross-repo issue↔PR linking is unreliable (confirmed 2026-08-28 — dotfiles PR #38 merged, random_llm_projects#86 needed a manual `gh issue close`). Decided 2026-08-28 in a dedicated policy session after both repos turned out to already hold overlapping, undocumented issue histories on the same topic (31 issues in dotfiles, ~35-40 tagged `area: claude-code-research` in random_llm_projects).
+  - **Existing issues:** grandfathered in place — no bulk migration. Only issues from the old ad hoc split that are still *open* may be individually transferred (native GitHub issue transfer, same account — preserves comments/history but assigns a new number) to dotfiles; closed issues stay untouched as historical record.
+
 ### General
 
 - In Justfiles, backtick expressions (e.g. `` `cd .. && pwd` ``) spawn subshells that CC's security sandbox blocks — use `$(dirname $(realpath .))` or hardcoded paths instead.
