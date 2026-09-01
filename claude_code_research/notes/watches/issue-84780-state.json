@@ -1,0 +1,17 @@
+{
+  "_watch_meta": {
+    "issue": "anthropics/claude-code#84780",
+    "title": "[BUG] Thinking block summaries truncated mid-sentence (showThinkingSummaries: true)",
+    "fetched_at": "2026-09-01T00:00:00Z",
+    "source": "mcp__github__search_issues (gh CLI and direct GitHub API access were unavailable in this session's environment; issue_read/curl to api.github.com were denied because this session is scoped to kaybenleroll/random_llm_projects and cross-owner repo attachment is not supported)",
+    "note": "comments field is a COUNT, not the full comment list, since the comments endpoint could not be reached from this session. A jump in this count signals new activity; the watcher cannot itself determine comment authorship without a session that has API access to anthropics/claude-code."
+  },
+  "state": "open",
+  "labels": [
+    "area:tui"
+  ],
+  "assignees": [],
+  "milestone": null,
+  "comments": 8,
+  "updatedAt": "2026-08-20T02:39:39Z"
+}
