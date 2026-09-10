@@ -29,6 +29,14 @@ NOT be counted even if a duplicate of it falls inside the window. This can
 under-count totals near a window boundary. Widen the window if you need an
 exact boundary-accurate figure.
 
+CROSS-HOST DEDUP: on top of each host's own per-host message.id dedup, the
+combine step also dedupes message.id globally across all requested hosts --
+if the same project directory is replicated across two hosts (sync, backup),
+a message.id seen in more than one host's output is counted only once
+(alphabetically-first host, by name, keeps it). The stdout summary and JSON
+report's "cross_host_dedup" section state how many duplicates were found,
+their estimated $ value, and which host(s) they were dropped from.
+
 Host-failure policy: if any named host fails (SSH failure, non-zero exit,
 timeout, or unparseable/contaminated stdout), the tool prints which host(s)
 failed and exits non-zero WITHOUT writing a combined report, unless
@@ -200,6 +208,11 @@ def main():
         "input": 0.0, "cache_write_5m": 0.0, "cache_write_1h": 0.0,
         "cache_read": 0.0, "output": 0.0, "lines": 0,
     })
+    # msg.id -> per-line token contribution, for every line that actually
+    # landed in a bucket (in-window, survived per-host dedup). Consumed only
+    # by the parent's cross-host dedup pass at combine time -- never used
+    # for anything within this host's own extraction.
+    msgid_contributions = {}
 
     for fpath, proj in all_files:
         try:
@@ -303,6 +316,14 @@ def main():
                     b["cache_read"] += cache_read
                     b["output"] += output_tokens
                     b["lines"] += 1
+
+                    if mid:
+                        msgid_contributions[mid] = {
+                            "project": proj, "day": day, "model": model_id,
+                            "input": input_tokens, "cache_write_5m": cw_5m,
+                            "cache_write_1h": cw_1h, "cache_read": cache_read,
+                            "output": output_tokens,
+                        }
         except Exception as e:
             sys.stderr.write("ERROR reading %s: %s\n" % (fpath, e))
 
@@ -332,6 +353,7 @@ def main():
             "until": until_arg or None,
         },
         "buckets": bucket_list,
+        "msgid_contributions": msgid_contributions,
     }
     sys.stdout.write(json.dumps(out))
 
@@ -425,6 +447,88 @@ def iso_week_of(day_iso):
     return "%d-W%02d" % (y, w)
 
 
+_LEDGER_FIELDS = ("input", "cache_write_5m", "cache_write_1h", "cache_read", "output")
+
+
+def compute_cross_host_dedup(host_results):
+    """Cross-host duplicate detection, on top of (not replacing) each host's
+    own per-host message.id dedup. If the same project directory is
+    replicated across hosts (sync/backup), the *same* message.id shows up in
+    more than one host's msgid_contributions ledger; per-host dedup alone
+    cannot see this since each host only tracks its own seen_msg_ids.
+
+    Hosts are walked in sorted-name order for determinism: the
+    alphabetically-first host to report a given message.id "keeps" it, every
+    later host's copy is a cross-host duplicate and gets dropped from that
+    host's bucket totals before pricing.
+
+    Returns (subtract, line_counts, events):
+      subtract:    {(host, project, day, model): {field: tokens_to_subtract}}
+      line_counts: {(host, project, day, model): n_duplicate_lines}
+      events:      [{"message_id","kept_host","dropped_host","project","day",
+                      "model", <ledger token fields>}, ...] one per duplicate
+                     found, in walk order -- kept as full detail for audit,
+                     not just a count, since it's the only way to see *which*
+                     project/day was double-counted and by how much.
+    """
+    seen_by = {}  # message_id -> host that keeps it
+    subtract = defaultdict(lambda: defaultdict(float))
+    line_counts = defaultdict(int)
+    events = []
+
+    for host in sorted(host_results.keys()):
+        contributions = host_results[host].get("msgid_contributions", {}) or {}
+        for mid, c in contributions.items():
+            if mid not in seen_by:
+                seen_by[mid] = host
+                continue
+            # Duplicate: this host's copy is dropped, seen_by[mid]'s copy is kept.
+            key = (host, c["project"], c["day"], c["model"])
+            for field in _LEDGER_FIELDS:
+                subtract[key][field] += c.get(field, 0) or 0
+            line_counts[key] += 1
+            events.append({
+                "message_id": mid,
+                "kept_host": seen_by[mid],
+                "dropped_host": host,
+                "project": c["project"],
+                "day": c["day"],
+                "model": c["model"],
+                **{f: c.get(f, 0) or 0 for f in _LEDGER_FIELDS},
+            })
+
+    return subtract, line_counts, events
+
+
+def _cross_host_dedup_report(events):
+    """Prices the dropped duplicate lines (for a $ estimate of what was
+    excluded) and rolls events up into a (kept_host, dropped_host) -> count
+    breakdown, capping the raw event list for report size."""
+    dropped_usd = 0.0
+    for ev in events:
+        priced_rec = {f: ev[f] for f in _LEDGER_FIELDS}
+        priced_rec["model"] = ev["model"]
+        cost, _, _ = price_bucket(priced_rec)
+        dropped_usd += cost
+
+    pair_counts = defaultdict(int)
+    for ev in events:
+        pair_counts[(ev["kept_host"], ev["dropped_host"])] += 1
+    by_host_pair = [
+        {"kept_host": kept, "dropped_host": dropped, "count": n}
+        for (kept, dropped), n in sorted(pair_counts.items(), key=lambda kv: -kv[1])
+    ]
+
+    EVENT_CAP = 200
+    return {
+        "duplicate_message_count": len(events),
+        "dropped_usd": dropped_usd,
+        "by_host_pair": by_host_pair,
+        "events": events[:EVENT_CAP],
+        "events_truncated": len(events) > EVENT_CAP,
+    }
+
+
 def aggregate(host_results):
     """host_results: {host: parsed_extractor_json}. Returns the combined
     report structure (pricing applied, projects rolled up, self-report
@@ -441,6 +545,12 @@ def aggregate(host_results):
     model_id_table = defaultdict(lambda: {"lines": 0, "path": None, "normalized": None, "hosts": set()})
 
     self_report_per_host = {}
+
+    # Cross-host dedup: detected globally across all hosts' msgid_contributions
+    # ledgers, on top of (not replacing) each host's own per-host message.id
+    # dedup done inside the extractor. Computed once, up front, then applied
+    # per-bucket below before pricing.
+    dedup_subtract, dedup_line_counts, dedup_events = compute_cross_host_dedup(host_results)
 
     for host, parsed in host_results.items():
         meta = parsed.get("meta", {})
@@ -469,6 +579,17 @@ def aggregate(host_results):
         }
 
         for rec in buckets:
+            dedup_key = (host, rec["project"], rec["day"], rec["model"])
+            if dedup_key in dedup_subtract:
+                # Cross-host duplicate(s) landed in this bucket -- subtract
+                # their token contribution (and line count) before pricing,
+                # without mutating the host's raw parsed buckets.
+                rec = dict(rec)
+                sub = dedup_subtract[dedup_key]
+                for field in _LEDGER_FIELDS:
+                    rec[field] = max(0.0, rec.get(field, 0) - sub.get(field, 0.0))
+                rec["lines"] = max(0, rec.get("lines", 0) - dedup_line_counts.get(dedup_key, 0))
+
             cost, path, norm = price_bucket(rec)
             per_host_totals[host] += cost
             grand_total += cost
@@ -548,6 +669,7 @@ def aggregate(host_results):
         "projects": projects,
         "self_report_per_host": self_report_per_host,
         "model_id_table": model_id_table_out,
+        "cross_host_dedup": _cross_host_dedup_report(dedup_events),
     }
 
 
@@ -610,6 +732,25 @@ def print_summary(report, hosts_requested, failed_hosts, partial, since_arg, unt
         print("  %-20s $%.2f" % (host, usd))
     print()
     print("GRAND TOTAL: $%.2f" % report["grand_total_usd"])
+    print()
+
+    print("=== Cross-host duplicate detection ===")
+    chd = report["cross_host_dedup"]
+    if chd["duplicate_message_count"]:
+        print(
+            "  %d duplicate message(s) found across hosts (~$%.2f double-counted, "
+            "already excluded from totals above)"
+            % (chd["duplicate_message_count"], chd["dropped_usd"])
+        )
+        for pair in chd["by_host_pair"]:
+            print(
+                "    kept in %-15s dropped from %-15s: %d message(s)"
+                % (pair["kept_host"], pair["dropped_host"], pair["count"])
+            )
+        if chd["events_truncated"]:
+            print("    (event detail truncated in JSON report; counts above are exact)")
+    else:
+        print("  none found")
     print()
 
     print("=== Self-reporting guardrails (per host) ===")
@@ -700,6 +841,7 @@ def main():
         "self_report_per_host": report["self_report_per_host"],
         "model_id_table": report["model_id_table"],
         "projects": report["projects"],
+        "cross_host_dedup": report["cross_host_dedup"],
     }
 
     if partial:

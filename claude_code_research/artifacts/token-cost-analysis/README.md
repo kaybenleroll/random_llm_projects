@@ -47,6 +47,36 @@ it falls inside the window. This can under-count totals for narrow windows
 near a boundary. Widen the window if you need an exact boundary-accurate
 figure.
 
+## Cross-host duplicate detection
+
+Each host's own extraction already dedupes `message.id` within that host's
+corpus. On top of that, the combine step dedupes `message.id` **globally
+across every requested host**: if the same project directory is ever
+replicated onto two hosts (sync, backup), the same `message.id` shows up in
+more than one host's output, and per-host dedup alone cannot see that. The
+combine step catches it and counts each such message once.
+
+- Hosts are compared in sorted-name order: the alphabetically-first host to
+  report a given `message.id` keeps its tokens; every later host's copy of
+  that message is treated as a cross-host duplicate and subtracted from that
+  host's bucket totals before pricing. This mirrors the existing
+  dedup-before-window-filter pattern -- it's a second dedup pass, applied at
+  combine time, on the same set of already-in-window lines each host fed
+  into its own buckets.
+- The stdout summary gets a `=== Cross-host duplicate detection ===` section
+  stating how many duplicate messages were found, an estimated $ value for
+  the double-counted tokens excluded, and a breakdown of which host kept
+  each duplicate versus which host(s) it was dropped from. It prints "none
+  found" when there's nothing to report (including the single-host case).
+- The JSON report gets a top-level `cross_host_dedup` key: `duplicate_message_count`,
+  `dropped_usd`, `by_host_pair` (kept/dropped host counts), and a capped
+  `events` list (each with the message id, kept/dropped host, and which
+  project/day/model bucket it affected) for auditing exactly what was
+  dropped -- `events_truncated` is set if the list exceeds the cap.
+- This only catches duplicates with a `message.id`; the existing
+  `lines_missing_message_id` guardrail already flags lines without one, and
+  those remain undeduped (per-host and cross-host) as before.
+
 ## Design notes
 
 - **Identical extraction on every host**: the JSONL-walking / dedup /
@@ -94,13 +124,14 @@ To sanity-check a run:
   (non-growing) corpus; a `dedup_ratio` of exactly 0% on a host with a
   nonzero `window_usage_lines_with_msgid` count usually indicates
   `message.id` is missing or differently shaped in that host's JSONL.
+- If you deliberately replicate a project directory across two hosts to
+  test cross-host dedup, `cross_host_dedup.duplicate_message_count` should
+  equal the number of shared messages, and the affected host's per-project
+  `total_usd` should drop by exactly that duplicate's priced token value
+  relative to a run against that host alone.
 
 ## Known accuracy ceilings (not fixed by this tool)
 
-- **Cross-host duplicate transcript detection**: dedup is per-host only. If
-  the same project directory is ever replicated across two machines (sync,
-  backup), its tokens would be double-counted in the combined total with no
-  mechanism to catch it.
 - **Long-context (`[1m]`) premium pricing** is unrecoverable from
   `message.model` -- a `[1m]`-variant call records as the plain model ID in
   transcripts, so if long-context premium billing applies, this tool has no
