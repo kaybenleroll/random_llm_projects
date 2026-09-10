@@ -135,4 +135,46 @@ To sanity-check a run:
 - **Long-context (`[1m]`) premium pricing** is unrecoverable from
   `message.model` -- a `[1m]`-variant call records as the plain model ID in
   transcripts, so if long-context premium billing applies, this tool has no
-  way to detect or price it correctly.
+  way to detect or price it correctly. Investigated for issue #100; no fix
+  was implemented because no reliable signal exists. Findings:
+  - Every field on a transcript's `message` object was enumerated across
+    ~846K lines / ~289K usage-bearing lines from this machine's full
+    `~/.claude/projects` corpus: `role`, `content`, `model`, `id`, `type`,
+    `stop_reason`, `stop_sequence`, `stop_details`, `usage`, `diagnostics`,
+    `context_management`, `container`. Within `usage`: `input_tokens`,
+    `cache_creation_input_tokens`, `cache_read_input_tokens`,
+    `output_tokens`, `service_tier`, `cache_creation`, `inference_geo`,
+    `server_tool_use`, `iterations`, `speed`, `output_tokens_details`. None
+    of these carry a long-context/`[1m]` indicator.
+  - `usage.service_tier` was the closest candidate (a tier field genuinely
+    exists), but every usage line in the local corpus reports `"standard"`
+    (the remaining lines have it `null`/absent) -- including lines where
+    `input_tokens + cache_read_input_tokens + cache_creation_input_tokens`
+    exceeds 200,000 (40,114 such lines observed, up to ~640K combined
+    tokens on `claude-sonnet-5`). `service_tier` does not vary with context
+    size and carries no `"long_context"`/`"1m"` value.
+  - No other field (`stop_details`, `diagnostics`, `context_management`,
+    `container`, or any top-level transcript-line key) carries request
+    beta-header or billing-tier metadata either -- transcripts record only
+    the API *response*, and long-context pricing (historically: >200K input
+    tokens on a model requested with the `[1m]` beta) is a property of the
+    *request*, which Claude Code's transcript format does not persist.
+  - Per Anthropic's current pricing (checked because this table's premise
+    was worth re-confirming, not just trusting the issue text): the
+    200K-token premium tier only ever applied to older models (Sonnet 4,
+    Sonnet 4.5) under an opt-in long-context beta. Every model in
+    `MODEL_PRICING`/`TIER_FALLBACK` above (`sonnet-5`, `sonnet-4-6`,
+    `opus-5`, `opus-4-8`, `haiku-4-5`, `fable-5`, `fable-5-1`) is
+    current-generation and bills its full 1M-token context window at
+    standard rates with no surcharge -- and no such surcharge tier exists
+    for these models to mis-detect in the first place. The local corpus's
+    distinct model IDs (`claude-sonnet-5`, `claude-opus-5`,
+    `claude-haiku-4-5-20251001`, `claude-opus-4-8`, `claude-fable-5`,
+    `claude-fable-5-1`, `claude-sonnet-4-6`) confirm no legacy tiered model
+    is even present in this tool's usual data. If a legacy tiered model
+    (e.g. `claude-sonnet-4-5`) ever appears, it would already fall through
+    to `TIER_FALLBACK`'s flat `sonnet` rate -- which is a pre-existing,
+    separately-flagged mis-pricing of older generations (see the
+    `tier_fallback` `WARNING` in Design notes), not something a long-context
+    detector could fix without a request-side signal the transcript never
+    records.
