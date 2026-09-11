@@ -1,0 +1,2 @@
+{"type": "user", "isSidechain": false, "sessionId": "33333333-3333-3333-3333-333333333333", "timestamp": "2026-06-03T10:00:00.000Z", "cwd": "/home/user/proj-alpha", "gitBranch": "main", "version": "2.1.239", "entrypoint": "cli", "message": {"role": "user", "content": "/reflect"}}
+{"type": "assistant", "sessionId": "33333333-3333-3333-3333-333333333333", "timestamp": "2026-06-03T10:00:05.000Z", "message": {"role": "assistant", "id": "msg_C1", "model": "claude-sonnet-5", "usage": {"input_tokens": 5, "cache_read_input_tokens": 0, "output_tokens": 3}}}

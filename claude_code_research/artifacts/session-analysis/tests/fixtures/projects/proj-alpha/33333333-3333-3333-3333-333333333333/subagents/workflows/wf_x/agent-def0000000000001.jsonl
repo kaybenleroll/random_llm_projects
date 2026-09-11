@@ -1,0 +1,2 @@
+{"type": "user", "isSidechain": true, "sessionId": "33333333-3333-3333-3333-333333333333", "timestamp": "2026-06-03T11:00:00.000Z", "message": {"role": "user", "content": "nested workflow subagent turn"}}
+{"type": "assistant", "sessionId": "33333333-3333-3333-3333-333333333333", "timestamp": "2026-06-03T11:00:05.000Z", "message": {"role": "assistant", "id": "msg_I1", "model": "claude-sonnet-5", "usage": {"input_tokens": 5, "cache_read_input_tokens": 0, "output_tokens": 20}}}

@@ -130,6 +130,18 @@ To sanity-check a run:
   `total_usd` should drop by exactly that duplicate's priced token value
   relative to a run against that host alone.
 
+## Related tools
+
+`../session-analysis/session_analysis.py` covers a different, complementary
+axis: single-host **session**-granular analysis (turn counts, a
+real-work/automated/subagent classification, oversized-session flagging)
+rather than this tool's multi-host `(project, day, model)` `$`-cost
+aggregation. It carries no pricing table of its own by design — its
+`session_model_tokens.csv` output is a long-format `(session_id, model)`
+table meant to be joined against this tool's `MODEL_PRICING`/
+`resolve_pricing` for a `$`-costed session-level view; see that tool's
+README for the join recipe.
+
 ## Known accuracy ceilings (not fixed by this tool)
 
 - **Long-context (`[1m]`) premium pricing** is unrecoverable from
