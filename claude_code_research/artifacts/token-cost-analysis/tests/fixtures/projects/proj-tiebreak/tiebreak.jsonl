@@ -1,0 +1,2 @@
+{"timestamp": "2026-06-03T12:00:00Z", "type": "assistant", "message": {"id": "msg_T1", "model": "claude-sonnet-5", "usage": {"input_tokens": 100, "output_tokens": 700, "cache_read_input_tokens": 50}}}
+{"timestamp": "2026-06-20T12:00:00Z", "type": "assistant", "message": {"id": "msg_T1", "model": "claude-sonnet-5", "usage": {"input_tokens": 100, "output_tokens": 700, "cache_read_input_tokens": 50}}}
