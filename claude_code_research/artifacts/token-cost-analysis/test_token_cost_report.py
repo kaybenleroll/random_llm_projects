@@ -1,26 +1,46 @@
 #!/usr/bin/env python3
 """Unit tests for token_cost_report.py / extractor.py (issue #101).
 
-Step 2/3 of the plan at `.claude/plans/greedy-roaming-horizon.md`: a
-red-before-green safety net scoped to what's actually assertable against
-*current* (pre-Step-4, keep-first) behaviour. TestKeepMaxDedup,
-TestNoMessageId, TestUsageFieldPreservation and TestExtractorSelfContainment
-below all assert CURRENT extractor.scan() behaviour -- most of these
-assertions are durable (order-independence-of-totals, whole-record
-selection, cache-shape handling) and will keep passing after Step 4's
-keep-max restructure lands. Exactly one -- TestKeepMaxDedup's
-stub-then-settled test -- is deliberately flipped to the FUTURE expected
-value in a follow-up commit (Step 3), and is EXPECTED TO FAIL until Step 4
-ships the actual keep-max policy.
+Step 4 of the plan at `.claude/plans/greedy-roaming-horizon.md` implements
+the keep-max dedup restructure. Steps 2/3 wrote a red-before-green safety
+net scoped to what was assertable against *pre-Step-4* (keep-first)
+behaviour; most of those assertions were durable (order-independence-of-
+totals, cache-absent/nested-vs-flat-fallback shape on single-occurrence
+messages) and still pass unchanged. Four assertions pinned keep-first's
+specific *tie-break* or *winner-selection* choice and are flipped here to
+the keep-max equivalent, now that Step 4 has landed:
 
-TestWindowAttribution and TestCounterAccounting's distinct_msgids_total
-assertion are intentionally left as empty stub classes: they need counters
-(msgids_boundary_rescued/_dropped/_day_straddled, distinct_msgids_total)
-that do not exist before Step 4. Writing full assertions against them now
-would produce KeyError failures, not clean assertion failures, defeating
-the point of this red-before-green commit. TestRealCorpusInvariants (which
-needs tools/measure_dup_msgids.py as a library, per the plan's Tests
-section) is out of scope for Step 2/3 entirely and not present here.
+- `test_stub_then_settled_keeps_settled` -- flipped in Step 3 already
+  (the core #101 regression); unchanged in this commit.
+- `test_tie_on_output_last_seen_wins` (formerly
+  `test_tie_on_output_pins_current_first_seen`) -- keep-max breaks output
+  ties by keeping the LAST-seen occurrence (see plan Decision 1), the
+  opposite of keep-first's tie behaviour.
+- `test_whole_record_selected_not_per_field` -- proj-fieldmix's msg_F1 has
+  its winner flip from occ1 (input=9999, output=2) to occ2 (input=10,
+  output=800), since occ2 has the larger output. The point of the test is
+  unchanged (the winner's input travels with its own output, never mixed
+  across occurrences) but the winning occurrence itself is different now.
+- `test_cross_file_duplicate_collapsed` -- proj-crossfile's msg_X1 winner
+  flips from file_a's occurrence (output=10) to file_b's (output=999),
+  since keep-max dedup is still keyed globally across files but now
+  selects by output value, not file-sort order.
+- `TestUsageFieldPreservation.test_cache_shape_counters_from_kept_record` --
+  proj-cacheshapes' msg_C5 duplicate pair TIES on output (30 == 30): occ1
+  is nested-shape, occ2 is flat_fallback-shape. Under keep-first, occ1 (the
+  first-seen) won and counted as nested. Under keep-max's last-seen-wins
+  tie-break, occ2 now wins, so msg_C5 counts as flat_fallback instead of
+  nested -- this was not anticipated by this fixture's original design (it
+  was built to test cache-shape-from-kept-record generically, not as a
+  tie-break case), but the same last-seen-wins tie rule applies here as in
+  the tiebreak fixture above.
+
+TestWindowAttribution and TestCounterAccounting are filled in below for the
+first time -- Step 4 is what introduces the counters they assert on
+(msgids_boundary_rescued/_dropped/_day_straddled, distinct_msgids_total,
+window_msgids_kept). TestRealCorpusInvariants (which needs
+tools/measure_dup_msgids.py as a library, per the plan's Tests section) is
+a separate step and not present here.
 """
 import ast
 import json
@@ -138,46 +158,63 @@ class TestKeepMaxDedup(unittest.TestCase):
         rec = result["msgid_contributions"]["msg_K3"]
         self.assertEqual(rec["output"], 500)
 
-    def test_tie_on_output_pins_current_first_seen(self):
+    def test_tie_on_output_last_seen_wins(self):
         # proj-tiebreak: msg_T1 occurs twice with EQUAL output (700) but
-        # different days (2026-06-03, 2026-06-20). Today's keep-first
-        # policy keeps whichever occurrence is first in file order -- the
-        # 2026-06-03 occurrence -- regardless of the output tie. (Step 4's
-        # keep-max policy breaks ties the other way, "last seen wins" --
-        # that is a Step 4 concern, not asserted here.)
+        # different days (2026-06-03, 2026-06-20). Keep-max's tie-break is
+        # "last seen wins" (plan Decision 1) -- the OPPOSITE of keep-first,
+        # which kept whichever occurrence was first in file order.
         result = run_extract(FIXTURES_ROOT, project="proj-tiebreak")
         b = sole_bucket(result["buckets"])
-        self.assertEqual(b["day"], "2026-06-03")
+        self.assertEqual(b["day"], "2026-06-20")
         self.assertEqual(b["output"], 700)
         rec = result["msgid_contributions"]["msg_T1"]
-        self.assertEqual(rec["day"], "2026-06-03")
+        self.assertEqual(rec["day"], "2026-06-20")
 
     def test_whole_record_selected_not_per_field(self):
         # proj-fieldmix: msg_F1 occ1 has input=9999/output=2, occ2 has
-        # input=10/output=800. Today's keep-first keeps occ1's WHOLE
-        # record -- input=9999 AND output=2 together, never a per-field mix
-        # (e.g. input=10 paired with output=2 would mean the code picked
-        # fields from different occurrences, which it never does).
+        # input=10/output=800. occ2's output is larger, so keep-max selects
+        # occ2's WHOLE record -- input=10 AND output=800 together, never a
+        # per-field mix (e.g. input=9999 paired with output=800 would mean
+        # the code picked fields from different occurrences, which it never
+        # does). input=10 traveling with the winner, not occ1's larger
+        # 9999, is exactly what proves whole-record selection here.
         result = run_extract(FIXTURES_ROOT, project="proj-fieldmix")
         rec = result["msgid_contributions"]["msg_F1"]
-        self.assertEqual(rec["input"], 9999)
-        self.assertEqual(rec["output"], 2)
+        self.assertEqual(rec["input"], 10)
+        self.assertEqual(rec["output"], 800)
 
     def test_cross_file_duplicate_collapsed(self):
-        # proj-crossfile: msg_X1 appears once in file_a.jsonl and once in
-        # file_b.jsonl (same project, two different files) -- dedup is
-        # keyed globally by message.id, not per-file, so this must collapse
-        # to one contribution. all_files is path-sorted, so file_a.jsonl
-        # (alphabetically first) is scanned first and its occurrence
-        # (output=10) wins under keep-first; file_b's (output=999) is the
-        # duplicate.
+        # proj-crossfile: msg_X1 appears once in file_a.jsonl (output=10)
+        # and once in file_b.jsonl (output=999) -- same project, two
+        # different files. Dedup is keyed globally by message.id, not
+        # per-file, so this must collapse to one contribution regardless of
+        # which file it came from. Keep-max selects file_b's occurrence
+        # (999 > 10) even though file_a sorts first -- winner selection is
+        # by output value, not file-scan order.
         root = os.path.join(FIXTURES_ROOT, "proj-crossfile")
         result = run_extract(root)
         rec = result["msgid_contributions"]["msg_X1"]
-        self.assertEqual(rec["output"], 10)
+        self.assertEqual(rec["output"], 999)
         b = sole_bucket(result["buckets"])
         self.assertEqual(b["lines"], 1)
         self.assertEqual(result["meta"]["duplicate_lines_skipped_global"], 1)
+
+    def test_keep_max_upgrades_nonzero_and_zero(self):
+        # proj-keepmax: only msg_K1 (3 -> 1200) is a genuine upgrade;
+        # msg_K2's second occurrence (3) is smaller than its first (1200)
+        # so no upgrade, and msg_K3's tie (500 == 500) doesn't count as an
+        # upgrade either (only a strict increase does) -- so exactly 1.
+        upgraded = run_extract(self.KEEPMAX_ROOT)
+        self.assertEqual(upgraded["meta"]["keep_max_upgrades"], 1)
+        self.assertEqual(upgraded["meta"]["output_tokens_gained_by_keep_max"], 1197)
+
+        # proj-tiebreak: msg_T1's tie (700 == 700) never counts as an
+        # upgrade, even though the winner changes (last-seen-wins). Scanned
+        # as its own isolated root -- meta counters are global-to-root, not
+        # project-filtered (see run_extract's docstring).
+        tied = run_extract(os.path.join(FIXTURES_ROOT, "proj-tiebreak"))
+        self.assertEqual(tied["meta"]["keep_max_upgrades"], 0)
+        self.assertEqual(tied["meta"]["output_tokens_gained_by_keep_max"], 0)
 
 
 # --------------------------------------------------------------------------
@@ -207,6 +244,15 @@ class TestNoMessageId(unittest.TestCase):
         # history) window used here -- so this count is isolated by
         # fixture design, not by narrowing `root`.
         self.assertEqual(self.result["meta"]["lines_missing_message_id"], 3)
+
+    def test_corpus_wide_lines_missing_message_id_count(self):
+        # New Step-4 counter: corpus-wide (not window-gated) count of
+        # no-message.id lines. No fixture project provides a no-msgid line
+        # OUTSIDE the full-history window used here, so this equals the
+        # in-window count (3) on this fixture set -- the point of this test
+        # is confirming the counter is wired up and reporting correctly,
+        # not exercising a windowed divergence.
+        self.assertEqual(self.result["meta"]["lines_missing_message_id_corpus_wide"], 3)
 
     def test_synthetic_keys_absent_from_msgid_contributions(self):
         # Current code has no synthetic-key mechanism at all (that is a
@@ -269,17 +315,22 @@ class TestUsageFieldPreservation(unittest.TestCase):
         self.assertEqual(rec["cache_write_1h"], 0)
 
     def test_cache_shape_counters_from_kept_record(self):
-        # C1 (nested), C2 (nested), C5 (nested -- occ1 is first-seen under
-        # today's keep-first policy, so the kept record is nested, not the
-        # occ2 flat "loser") = 3 nested lines; C3 (flat fallback) = 1;
-        # C4 (absent) = 1.
+        # C1 (nested), C2 (nested) = 2 nested lines; C3 (flat fallback) = 1.
+        # C5 occurs twice and TIES on output (30 == 30): occ1 is
+        # nested-shape (cw_5m=5, cw_1h=15), occ2 is flat_fallback-shape
+        # (cache_creation_input_tokens=999). Keep-max's tie-break is
+        # last-seen-wins (same rule as the tiebreak fixture), so occ2 wins
+        # here -- C5 now counts as flat_fallback, not nested. This flips
+        # cache_nested_lines from 3->2 and cache_flat_fallback_lines from
+        # 1->2 relative to keep-first; cache_absent_lines (C4) is unaffected
+        # since C4 has no duplicate.
         meta = self.cache_result["meta"]
-        self.assertEqual(meta["cache_nested_lines"], 3)
-        self.assertEqual(meta["cache_flat_fallback_lines"], 1)
+        self.assertEqual(meta["cache_nested_lines"], 2)
+        self.assertEqual(meta["cache_flat_fallback_lines"], 2)
         self.assertEqual(meta["cache_absent_lines"], 1)
         rec = self._rec(self.cache_result, "msg_C5")
-        self.assertEqual(rec["cache_write_5m"], 5)
-        self.assertEqual(rec["cache_write_1h"], 15)
+        self.assertEqual(rec["cache_write_5m"], 0)
+        self.assertEqual(rec["cache_write_1h"], 999)
 
     def test_input_and_cache_read_from_kept_record(self):
         rec = self._rec(self.cache_result, "msg_C1")
@@ -303,26 +354,119 @@ class TestUsageFieldPreservation(unittest.TestCase):
 
 
 # --------------------------------------------------------------------------
-# TestWindowAttribution -- stub. Needs msgids_boundary_rescued/_dropped/
-# _day_straddled, which do not exist before Step 4. Left empty deliberately
-# per the plan's Step 2 scope (writing assertions here now would KeyError,
-# not fail cleanly).
+# TestWindowAttribution -- proj-boundary. Exercises the deferred-bucketing
+# design: window membership and day-bucket assignment follow the WINNER's
+# timestamp, not the first occurrence's.
 # --------------------------------------------------------------------------
 
 
 class TestWindowAttribution(unittest.TestCase):
-    pass
+    BOUNDARY_ROOT = os.path.join(FIXTURES_ROOT, "proj-boundary")
+
+    def test_window_membership_follows_winner_timestamp(self):
+        # msg_B2: first occurrence 2026-06-03 (output=5, OUTSIDE this
+        # window), winner (settled) 2026-06-09 (output=650, INSIDE it). The
+        # old dedup-before-window-filter caveat -- a message whose first
+        # occurrence fell outside the window was silently lost even if a
+        # later occurrence fell inside -- is fixed by this: window
+        # membership is now decided by the winner's own timestamp.
+        result = run_extract(self.BOUNDARY_ROOT, since="2026-06-05", until="2026-06-30")
+        self.assertIn("msg_B2", result["msgid_contributions"])
+        rec = result["msgid_contributions"]["msg_B2"]
+        self.assertEqual(rec["output"], 650)
+        self.assertEqual(rec["day"], "2026-06-09")
+
+    def test_boundary_rescued_increments(self):
+        # Same window as above: msg_B2 is rescued (first occurrence outside,
+        # winner inside); msg_B1's first AND winner occurrences (2026-06-01,
+        # 2026-06-02) both fall before this window's --since, so neither is
+        # a boundary event -- it's just fully excluded.
+        result = run_extract(self.BOUNDARY_ROOT, since="2026-06-05", until="2026-06-30")
+        self.assertEqual(result["meta"]["msgids_boundary_rescued"], 1)
+        self.assertEqual(result["meta"]["msgids_boundary_dropped"], 0)
+
+    def test_winner_past_until_dropped_and_counted(self):
+        # Opposite edge case, new in Step 4: msg_B2's first occurrence
+        # (2026-06-03) is INSIDE this narrower window, but its winner
+        # (2026-06-09) falls OUTSIDE --until. Under keep-max this message
+        # is dropped from buckets/msgid_contributions entirely -- whereas
+        # keep-first would have at least partially counted it, at the stub
+        # value. msg_B1 stays fully in-window on both ends here, so it is
+        # not a boundary event.
+        result = run_extract(self.BOUNDARY_ROOT, since="2026-06-01", until="2026-06-05")
+        self.assertNotIn("msg_B2", result["msgid_contributions"])
+        self.assertEqual(result["meta"]["msgids_boundary_dropped"], 1)
+        self.assertEqual(result["meta"]["msgids_boundary_rescued"], 0)
+
+    def test_day_bucket_follows_winner_across_midnight(self):
+        # msg_B1: first occurrence 2026-06-01T23:59:30Z (day 06-01,
+        # output=2), winner 2026-06-02T00:00:24Z (day 06-02, output=900),
+        # 54 seconds apart. Day bucket follows the WINNER, not the first
+        # occurrence.
+        result = run_extract(self.BOUNDARY_ROOT)
+        rec = result["msgid_contributions"]["msg_B1"]
+        self.assertEqual(rec["day"], "2026-06-02")
+        self.assertEqual(rec["output"], 900)
+
+    def test_full_history_leaves_boundary_counters_zero(self):
+        # A full-history run has no --since/--until, so every occurrence of
+        # every message (both B1's and B2's) is always "in window" -- no
+        # boundary rescue/drop is possible. msgids_day_straddled, by
+        # contrast, is NOT window-gated: msg_B1 (day 06-01 -> 06-02) and
+        # msg_B2 (day 06-03 -> 06-09) both change days between their first
+        # occurrence and their winner, so it is 2 here, independent of any
+        # window.
+        result = run_extract(self.BOUNDARY_ROOT)
+        self.assertEqual(result["meta"]["msgids_boundary_rescued"], 0)
+        self.assertEqual(result["meta"]["msgids_boundary_dropped"], 0)
+        self.assertEqual(result["meta"]["msgids_day_straddled"], 2)
 
 
 # --------------------------------------------------------------------------
-# TestCounterAccounting -- stub. Its distinct_msgids_total assertion needs
-# a counter that does not exist before Step 4; left empty for the same
-# reason as TestWindowAttribution above.
+# TestCounterAccounting -- generic accounting invariants that hold
+# regardless of which fixture(s) they're computed over. These deliberately
+# scan the WHOLE FIXTURES_ROOT tree (including proj-keepmax /
+# proj-keepmax-reversed, which share message ids and would cross-collapse
+# if scanned together, per TestKeepMaxDedup's isolation comment above) --
+# that cross-collapse doesn't invalidate a pure arithmetic identity like
+# "every eligible line is either a first occurrence or a later duplicate of
+# some key," which holds no matter how the keys happen to be shared.
 # --------------------------------------------------------------------------
 
 
 class TestCounterAccounting(unittest.TestCase):
-    pass
+    def test_usage_lines_total_is_predup_denominator(self):
+        # usage_lines_total counts every eligible line before dedup; each
+        # such line is either the first occurrence of its dedup key
+        # (contributing to distinct_msgids_total) or a later duplicate of
+        # an already-seen key (contributing to
+        # duplicate_lines_skipped_global) -- so the two must sum to it
+        # exactly, corpus-wide, regardless of window.
+        result = run_extract(FIXTURES_ROOT)
+        meta = result["meta"]
+        self.assertEqual(
+            meta["duplicate_lines_skipped_global"] + meta["distinct_msgids_total"],
+            meta["usage_lines_total"],
+        )
+
+    def test_cache_shape_counters_sum_to_kept_records(self):
+        result = run_extract(os.path.join(FIXTURES_ROOT, "proj-cacheshapes"))
+        meta = result["meta"]
+        self.assertEqual(
+            meta["cache_nested_lines"] + meta["cache_flat_fallback_lines"] + meta["cache_absent_lines"],
+            meta["window_msgids_kept"],
+        )
+
+    def test_dedup_ratio_nonzero_on_duplicate_fixture(self):
+        result = run_extract(os.path.join(FIXTURES_ROOT, "proj-keepmax"))
+        meta = result["meta"]
+        ratio = meta["window_duplicate_lines"] / meta["window_usage_lines_with_msgid"]
+        self.assertGreater(ratio, 0.0)
+
+    def test_bucket_lines_sum_equals_kept_records(self):
+        result = run_extract(FIXTURES_ROOT)
+        total_lines = sum(b["lines"] for b in result["buckets"])
+        self.assertEqual(total_lines, result["meta"]["window_msgids_kept"])
 
 
 # --------------------------------------------------------------------------
