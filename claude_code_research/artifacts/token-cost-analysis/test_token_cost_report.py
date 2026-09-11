@@ -99,13 +99,14 @@ class TestKeepMaxDedup(unittest.TestCase):
 
     def test_stub_then_settled_keeps_settled(self):
         # msg_K1: stub (output=3) occurs first, settled (output=1200) second.
-        # Today's keep-first policy keeps the FIRST occurrence -- the stub,
-        # 3 -- which is the #101 bug itself. This is the one test Step 3
-        # flips to the future keep-max value (1200); until Step 4 ships,
-        # that flipped assertion is EXPECTED TO FAIL.
+        # This is the core #101 regression: the FUTURE keep-max policy must
+        # keep the settled value, 1200. Today's code still implements
+        # keep-first (keeps the stub, 3) -- Step 4 has not landed yet, so
+        # this assertion is EXPECTED TO FAIL until it does. Flipped in Step 3
+        # of the plan; do not "fix" this failure here.
         result = run_extract(self.KEEPMAX_ROOT)
         rec = result["msgid_contributions"]["msg_K1"]
-        self.assertEqual(rec["output"], 3)
+        self.assertEqual(rec["output"], 1200)
 
     def test_settled_then_stub_keeps_settled(self):
         # msg_K2: settled (1200) occurs first, stub (3) second. Under
