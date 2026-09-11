@@ -145,7 +145,14 @@ except OSError as e:
 # --------------------------------------------------------------------------
 
 LOCAL_TIMEOUT = 600
-REMOTE_TIMEOUT = 120
+# Raised 120s -> 300s (#101 Step 5): the keep-max restructure runs
+# _contribution() for every usage line (not just in-window survivors as
+# before) and holds ~150-250K in-memory records for the deferred bucketing
+# pass on a full-history remote run -- both add real per-line and peak-memory
+# cost that the old 120s ceiling didn't anticipate. See the plan's Step 5 /
+# Risks sections for the full reasoning; empirically verify against a real
+# remote host before treating this ceiling as final.
+REMOTE_TIMEOUT = 300
 
 
 def _extract_json(stdout_text, host_label):
@@ -344,11 +351,19 @@ def aggregate(host_results):
             "malformed_lines": meta.get("malformed_lines"),
             "lines_skipped_unknown_model": meta.get("lines_skipped_unknown_model"),
             "lines_missing_message_id": meta.get("lines_missing_message_id"),
+            "lines_missing_message_id_corpus_wide": meta.get("lines_missing_message_id_corpus_wide"),
             "duplicate_lines_skipped_global": meta.get("duplicate_lines_skipped_global"),
+            "distinct_msgids_total": meta.get("distinct_msgids_total"),
             "window_usage_lines_with_msgid": window_with_msgid,
             "window_duplicate_lines": window_dup,
+            "window_msgids_kept": meta.get("window_msgids_kept"),
             "dedup_ratio": dedup_ratio,
             "dedup_ratio_zero_warning": window_with_msgid > 0 and dedup_ratio == 0.0,
+            "keep_max_upgrades": meta.get("keep_max_upgrades"),
+            "output_tokens_gained_by_keep_max": meta.get("output_tokens_gained_by_keep_max"),
+            "msgids_boundary_rescued": meta.get("msgids_boundary_rescued"),
+            "msgids_boundary_dropped": meta.get("msgids_boundary_dropped"),
+            "msgids_day_straddled": meta.get("msgids_day_straddled"),
             "cache_nested_lines": meta.get("cache_nested_lines"),
             "cache_flat_fallback_lines": meta.get("cache_flat_fallback_lines"),
             "cache_absent_lines": meta.get("cache_absent_lines"),
@@ -540,6 +555,13 @@ def print_summary(report, hosts_requested, failed_hosts, partial, since_arg, unt
         )
         if sr["dedup_ratio_zero_warning"]:
             print("    WARNING: dedup ratio is 0%% -- check message.id field is present in this host's JSONL")
+        print(
+            "    keep-max: %d upgrade(s), +%d output_tokens recovered; boundary rescued=%d dropped=%d day-straddled=%d"
+            % (
+                sr["keep_max_upgrades"], sr["output_tokens_gained_by_keep_max"],
+                sr["msgids_boundary_rescued"], sr["msgids_boundary_dropped"], sr["msgids_day_straddled"],
+            )
+        )
         print(
             "    cache: nested=%s flat_fallback=%s absent=%s unrecognized_key_lines=%s%s"
             % (
