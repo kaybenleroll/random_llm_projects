@@ -1,10 +1,13 @@
 # token-cost-analysis
 
-Unified multi-host Claude Code token-cost report. `token_cost_report.py` is a
-single, standalone script: it walks each named host's Claude Code transcript
-files, dedupes usage lines by `message.id`, prices tokens by exact model ID
-(falling back to tier pricing for models not yet in the pricing table), and
-prints a combined per-project cost report across every host in one pass.
+Unified multi-host Claude Code token-cost report. `token_cost_report.py`
+walks each named host's Claude Code transcript files, dedupes usage lines by
+`message.id`, prices tokens by exact model ID (falling back to tier pricing
+for models not yet in the pricing table), and prints a combined per-project
+cost report across every host in one pass. It requires `extractor.py` as a
+sibling file (it reads that file's source at import time and ships it
+verbatim to each host) -- copy both files together; `token_cost_report.py`
+raises `SystemExit` at import if `extractor.py` is missing.
 
 ## Usage
 
@@ -36,16 +39,58 @@ python3 token_cost_report.py --hosts local,s3rbase --since 2026-08-12 --until 20
   `"partial": true` with the failed hosts listed, and the stdout summary's
   first line states the omission before any dollar figures.
 
-## Known limitation: dedup-before-window-filter
+## Dedup policy
 
-`message.id` deduplication happens globally across each host's entire
-transcript corpus, **before** the `--since`/`--until` window is applied.
-This is deliberate -- it matches the corpus-wide ground truth this tool was
-validated against -- but it means a message whose first occurrence falls
-outside the requested window will **not** be counted even if a duplicate of
-it falls inside the window. This can under-count totals for narrow windows
-near a boundary. Widen the window if you need an exact boundary-accurate
-figure.
+`message.id` deduplication keeps the occurrence with the **max
+`output_tokens`** per id ("keep-max"), replacing the tool's original
+first-occurrence ("keep-first") policy (issue #101). Streamed generation
+(chiefly in subagent transcripts) writes an early line carrying a stub
+`output_tokens` count and a later line carrying the settled count;
+keep-first was picking the stub. Measured on this machine's full corpus
+(291,064 usage-bearing lines, 140,837 distinct `message.id`s):
+
+| Policy | Total `output_tokens` | Ratio |
+|---|---|---|
+| keep-first (old) | 64,442,942 | 1.000 |
+| keep-max (current) | 101,474,466 | **1.575** |
+
+By transcript type: subagent transcripts **3.462x**; main-session
+transcripts **1.000x** (zero divergence there).
+
+**The dollar effect is much smaller than the token ratio.** `output_tokens`
+is only one of five priced fields, and cache-read dominates this corpus's
+cost -- output tokens measured at ~7.1% of priced cost. The 1.575x
+correction to `output_tokens` alone moves the grand total by **roughly
++4%**, not +57.5%. Do not scale a report generated before this fix by the
+1.575x token ratio to estimate its true dollar total -- that overstates the
+dollar impact by roughly an order of magnitude. If you need an accurate
+total for a historical window, regenerate the report; there is no linear
+rescaling of an old JSON report that recovers the correct dollar figure.
+
+**ccusage reconciliation:** the tool's keep-max total was compared against
+`npx ccusage@latest daily --json` for a real-activity window and tracked it
+closely (within the same few-percent range this tool's UTC-vs-local-date
+bucketing already produces) -- `ccusage` does not appear to share the old
+keep-first bug, so the "5-7% agreement" this README documents below is
+independent validation of keep-max, not of keep-first.
+
+Because the winner of a duplicate group is not always the first
+occurrence, window membership and day-bucket assignment now follow the
+**winning** occurrence's timestamp, not the first occurrence's:
+
+- A message whose first occurrence fell outside `--since`/`--until` but
+  whose winner falls inside it is now counted (`msgids_boundary_rescued`)
+  -- fixing the old caveat, where such messages were silently lost.
+- A message whose first occurrence fell inside the window but whose winner
+  falls outside it is now dropped entirely (`msgids_boundary_dropped`) --
+  a new, narrower edge case replacing the old one, not a strict
+  improvement in every case. A narrow `--until` near active streaming
+  activity can lose messages it previously at least partially counted.
+
+Both counters are reported per host in `self_report_per_host` and in the
+`print_summary` output; both are `0` on a full-history run and only
+nonzero near a window boundary. Widen the window if you need an exact
+boundary-accurate figure.
 
 ## Cross-host duplicate detection
 
@@ -80,11 +125,14 @@ combine step catches it and counts each such message once.
 ## Design notes
 
 - **Identical extraction on every host**: the JSONL-walking / dedup /
-  cache-field logic lives in one embedded Python source string
-  (`_EXTRACTOR_SRC`), executed via `subprocess.run([sys.executable, "-"], ...)`
-  locally and `subprocess.run(["ssh", ..., host, "python3", "-"], ...)`
-  remotely -- same code path, every host, every run. `--since`/`--until`
-  reach it as argv, never string-interpolated into the source.
+  cache-field logic lives in `extractor.py`, whose source is read at
+  runtime (`Path(__file__).with_name("extractor.py").read_text()`) and
+  piped verbatim to `subprocess.run([sys.executable, "-"], ...)` locally
+  and `subprocess.run(["ssh", ..., host, "python3", "-"], ...)` remotely --
+  same code path, every host, every run. `--since`/`--until` reach it as
+  argv, never string-interpolated into the source. `extractor.py` is
+  stdlib-only and must never import a sibling module -- see its own
+  docstring.
 - **Pricing is by exact model ID** (`MODEL_PRICING`), normalized by stripping
   a trailing `-YYYYMMDD` date suffix, falling back to tier-substring pricing
   (`TIER_FALLBACK`) only for model IDs with no exact-table entry -- printed
@@ -104,17 +152,33 @@ combine step catches it and counts each such message once.
   -- a tool whose purpose is a trustworthy cross-machine total must not be
   able to produce a partial total that looks complete.
 
+## Tests
+
+Run `python3 -m unittest -v` from this directory (33 tests as of issue #101:
+keep-max dedup selection, no-`message.id` handling, cache-shape/usage-field
+preservation, window/boundary attribution, counter accounting, and an
+extractor self-containment check). Fixtures live on disk under
+`tests/fixtures/projects/<name>/*.jsonl`, one project directory per test
+scenario so `run_extract(..., project=<name>)` can isolate a fixture from
+every other fixture sharing the same tree. `tests/fixtures/dup_msgid_measurement.json`
+is a committed, re-runnable snapshot from `tools/measure_dup_msgids.py`
+(the Step 0 corpus scan behind the token/dollar figures in "Dedup policy"
+above) -- not currently wired into the unit test run as a real-corpus
+invariant class, but kept as the reproducible source of those numbers.
+
 ## Verification
 
 To sanity-check a run:
 
 - Compare the reported grand total against a fresh
   `npx ccusage@latest daily --json` for the same window. Some gap is
-  expected: a few percent from this tool's dedup-before-window-filter
-  behavior (see above), plus a further gap from `ccusage`'s local-date
-  daily bucketing versus this tool's UTC-date bucketing. A combined gap in
-  roughly the 5-7% range against `ccusage` has been observed and is not on
-  its own evidence of a bug.
+  expected: a small amount from the boundary edge cases in "Dedup policy"
+  above (near-zero on a full-history run), plus a further gap from
+  `ccusage`'s local-date daily bucketing versus this tool's UTC-date
+  bucketing. A combined gap in roughly the 5-7% range against `ccusage` has
+  been observed and is not on its own evidence of a bug -- see "Dedup
+  policy" above for confirmation that this agreement reflects the current
+  keep-max policy, not the old keep-first one.
 - For a project present on more than one host, its combined row's
   `total_usd` must equal the sum of its `per_host_usd` entries, and each of
   those must match that host's standalone total for the project exactly --

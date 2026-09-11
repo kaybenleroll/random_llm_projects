@@ -20,14 +20,27 @@ available history. ccusage's default daily bucketing is LOCAL-date, not
 UTC -- a few-percent gap against `ccusage daily` for the same nominal
 window is expected from that alone, on top of the dedup tradeoff below.
 
-KNOWN LIMITATION -- dedup-before-window-filter: message.id deduplication
-happens globally across each host's entire transcript corpus, BEFORE the
---since/--until window is applied. This is deliberate (it matches the
-corpus-wide ground truth this tool was validated against), but it means a
-message whose first occurrence falls outside the requested window will
-NOT be counted even if a duplicate of it falls inside the window. This can
-under-count totals near a window boundary. Widen the window if you need an
-exact boundary-accurate figure.
+DEDUP POLICY (issue #101): message.id deduplication keeps the occurrence
+with the MAX output_tokens per id ("keep-max"), not the first-seen
+occurrence ("keep-first") this tool used before. Streamed generation
+(chiefly in subagent transcripts) writes an early line carrying a stub
+output_tokens count and a later line carrying the settled count;
+keep-first was picking the stub, undercounting output_tokens corpus-wide
+by ~36.5% (a much smaller ~4% dollar effect, since output_tokens is a
+minority of priced cost). See extractor.py's module docstring for the
+full policy and its self-containment contract.
+
+Because the winner of a duplicate group is not always the first
+occurrence, window membership and day-bucket assignment are decided by
+the WINNING occurrence's timestamp, not the first occurrence's -- a
+message whose winning occurrence falls outside the requested
+--since/--until window is NOT counted even if its first occurrence (at
+the stub value) fell inside it (msgids_boundary_dropped tracks this);
+conversely a message whose first occurrence fell outside the window but
+whose winner falls inside it IS now counted (msgids_boundary_rescued
+tracks this -- it was silently lost under the old keep-first policy).
+Both are edge cases near a window boundary, not baseline behaviour;
+widen the window if you need an exact boundary-accurate figure.
 
 CROSS-HOST DEDUP: on top of each host's own per-host message.id dedup, the
 combine step also dedupes message.id globally across all requested hosts --
