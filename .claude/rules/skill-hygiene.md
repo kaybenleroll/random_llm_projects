@@ -29,6 +29,12 @@ Skip these on WSL/headless machines.
   - **Why:** same-repo `Closes #N` auto-close only works within one repo; cross-repo issue↔PR linking is unreliable (confirmed 2026-08-28 — dotfiles PR #38 merged, random_llm_projects#86 needed a manual `gh issue close`). Decided 2026-08-28 in a dedicated policy session after both repos turned out to already hold overlapping, undocumented issue histories on the same topic (31 issues in dotfiles, ~35-40 tagged `area: claude-code-research` in random_llm_projects).
   - **Existing issues:** grandfathered in place — no bulk migration. Only issues from the old ad hoc split that are still *open* may be individually transferred (native GitHub issue transfer, same account — preserves comments/history but assigns a new number) to dotfiles; closed issues stay untouched as historical record.
 
+### Issue Work Branch Policy — HARD RULE
+
+- **HARD RULE:** All work on a GitHub issue (this repo or `kaybenleroll/dotfiles`) goes on a dedicated feature branch and merges via PR — never commit directly to `main`, even mid-task from a subagent. Any subagent prompt that delegates issue implementation must explicitly instruct it to create/checkout the branch before its first commit, not just tell it to commit.
+  - **Why:** 2026-09-11 — random_llm_projects#101's Steps 4-6 were committed straight to `main` by three sequential subagents with no external review gate, continuing a pattern already present in Steps 0-3 that went unquestioned until flagged after the fact. A branch+PR gives `/check-acs` (or a manual AC check) an actual diff to verify against before merge, instead of subagents self-certifying onto `main`.
+  - **How to apply:** when delegating issue implementation, name the branch (derive from issue number + short slug, e.g. `issue-101-keep-max-dedup`) in the subagent prompt and require it to branch before committing; open a PR referencing the issue (`Closes #N` same-repo, full `owner/repo#N` cross-repo per the general rule above) once the final step's tests are green; verify ACs against the diff (`/check-acs` or manually) before merging.
+
 ### General
 
 - In Justfiles, backtick expressions (e.g. `` `cd .. && pwd` ``) spawn subshells that CC's security sandbox blocks — use `$(dirname $(realpath .))` or hardcoded paths instead.
