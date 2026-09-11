@@ -63,6 +63,8 @@ def normalize_model_id(model_id: str) -> str:
 
 
 MODEL_PRICING = {
+    # Rates below (and in TIER_FALLBACK) priced as of 2026-09-10, source:
+    # https://platform.claude.com/docs/en/pricing
     # model_id (post-normalization): (input, output, cache_write_1h, cache_write_5m, cache_read) -- $/MTok
     "claude-sonnet-5":   (2.0, 10.0, 4.0, 2.5, 0.20),
     "claude-sonnet-4-6": (3.0, 15.0, 6.0, 3.75, 0.30),
