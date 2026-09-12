@@ -946,4 +946,42 @@ Cannot currently distinguish these — both are plausible given available eviden
 
 ---
 
+### §2.44 — Guake rendering freeze: Mutter "frame drawn time" bug correlated with `guake-reposition@skikk-thor.local`'s `move_frame()` call, isolation test inconclusive (open, 2026-09-01/2026-09-02)
+
+**Symptom:** Guake terminal display freezes intermittently — underlying activity (pasted text, commands) proceeds normally, but the on-screen render doesn't update until the user hides/reveals the Guake window to force a repaint.
+
+**Root cause identified:** journalctl showed GNOME Shell logging `Frame has assigned frame counter but no frame drawn time` for the Guake window — a Mutter compositor bug where a frame is scheduled but never receives its "drawn" callback.
+
+**Correlation found (2026-09-01 boot):** 9 out of 119 Guake show events this boot triggered this warning (~7.6%), and in every case the warning immediately followed a `move_frame()` call from the `guake-reposition@skikk-thor.local` GNOME extension (see §2.33/§2.36 for that extension's origin — it works around Wayland's `xdg-shell` protocol forbidding client-side `window.move()`, by having Mutter reposition Guake via the compositor API on window-map).
+
+**Checked and ruled out:** GPU runtime-PM/D3cold and AC-adapter flapping (§2.29/§2.35/§2.39) — no correlated nvidia/PM/AC events found in ±90s windows around freeze occurrences. This freeze is **not** the same root cause as the AC-adapter/GPU-PM saga.
+
+**Matches an open upstream bug:** [Guake/guake#2299](https://github.com/Guake/guake/issues/2299) "Quake window freezes" — same exact log line, same symptom (freeze, input still works, hide/reveal fixes it), though that reporter's trigger was a different competing compositor redraw source (browser reload), not a reposition extension. Same failure class (geometry/redraw event racing Mutter's frame clock), different specific trigger.
+
+**Isolation test attempted (2026-09-01 evening → 2026-09-02 morning):** disabled `guake-reposition@skikk-thor.local` to isolate whether its `move_frame()` call was the trigger. No freeze observed over ~40+ minutes single-monitor use the evening of 2026-09-01, and no freeze observed the morning of 2026-09-02 with dual monitors reconnected (extension still disabled) — but this second test window was short and got interrupted (see §2.45) before a clean verdict could be reached. **Result: encouraging but not conclusive** — freeze-free periods are consistent with the extension being the trigger, but the observation windows were short relative to the ~7.6% baseline occurrence rate, and no rigorous long dual-monitor run with the extension off was completed. Extension was re-enabled 2026-09-02 (§2.45) before the test concluded, so the isolation test was abandoned mid-way, not deliberately concluded.
+
+**Proposed fix (not yet implemented):** retime the extension's `move_frame()` call in its window-map signal handler to fire via an idle/frame-callback deferral (e.g. `Meta.later_add(Meta.LaterType.BEFORE_REDRAW, ...)`) instead of synchronously inline, so it doesn't collide with Mutter's own frame scheduling for the same window map event. This is the recommended next step if/when the freeze is confirmed to correlate with the extension again.
+
+**Status: OPEN.** Extension is currently re-enabled and active (§2.45). Freeze recurrence with the extension active has not yet been re-observed or ruled out post-recovery.
+
+---
+
+### §2.45 — GNOME move-to-monitor shortcut (Super+Shift+Left/Right) broke Guake's show/hide state tracking; recovered by kill+relaunch (2026-09-02)
+
+**Context:** while `guake-reposition@skikk-thor.local` was disabled (per the §2.44 freeze test), the user manually repositioned the wrongly-placed Guake window to the correct monitor using GNOME's built-in move-to-monitor keybinding (Super+Shift+Left/Right — a compositor-driven action, works on Wayland unlike client-side `window.move()`).
+
+**Symptom:** shortly after, Guake stopped responding to its show/hide toggle entirely and stopped auto-popping-up on its hotkey.
+
+**Suspected mechanism (not deeply verified, but plausible and matches Guake's known internal design):** the move-to-monitor action alters window state (maximize/workspace assignment) in a way that confuses Guake's own show/hide tracking logic, which watches window state to decide animation/visibility.
+
+**Recovery:** killed the Guake process (`pgrep -a guake` then `kill <pid>`) and relaunched it. Session autostart did **not** automatically respawn Guake within ~5s as expected — had to manually run `guake` to relaunch. New process came up healthy, toggle/auto-popup behavior confirmed working normally again by the user afterward.
+
+**Follow-up note:** Guake's autostart-on-kill not firing automatically is a possible separate minor issue (D-Bus/systemd timing) — not investigated further, flagged for awareness only, not an active fix.
+
+**Practical implication:** do not use Super+Shift+Left/Right to reposition Guake manually — if a monitor placement fix is needed short-term, prefer toggling/using it as-is or accept wrong-monitor placement rather than using this shortcut, until/unless this interaction is better understood. If it happens again, the fix is: kill the guake process and relaunch (`guake` command) rather than logout/login.
+
+**Status:** Recovered, working normally as of 2026-09-02. `guake-reposition@skikk-thor.local` extension is ACTIVE again.
+
+---
+
 _End of draft._
