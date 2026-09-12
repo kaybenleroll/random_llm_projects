@@ -147,3 +147,23 @@ genuinely-incomplete entries.
   against your issue/PR history the same way. A gate built on the
   unverified assumption will target a failure mode that mostly doesn't
   exist.
+
+- **One `### Pass N` entry can be a ROUND of 3 reviewers, not a single pass
+  (kaybenleroll/random_llm_projects#96).** Since the /stress-test round
+  redesign (2026-08-28), SKILL.md's canonical entry shape embeds one
+  `- Reviewer <k>: <STATUS> — ...` bullet per reviewer in the body.
+  `detect_round()` classifies a block as round-based structurally — by
+  counting those bullets — never by date, since a lineage can straddle the
+  redesign. `n_pass_blocks` and `total_pass_estimate` in `lineages.csv` are
+  reviewer-weighted (a round of 3 counts as 3) so they keep measuring actual
+  review-pass volume across the format change; `max_pass_num` is
+  deliberately left unweighted (still the highest round/iteration index
+  reached), since that measures how many rounds a lineage needed to
+  converge — a question the reviewer-per-round count doesn't bear on.
+  `blocks.csv` carries `is_round`/`round_size` per block, and
+  `q_per_pass.csv` carries `n_round_blocks` per pass-number bucket, so a
+  bucket mixing formats can be told apart from a homogeneous one — a
+  round's `n_findings` is a post-dedup total across 3 reviewers, not one
+  reviewer's count, and its bullets never carry restatement/new-finding
+  tags (excluded in `classify_findings_and_restatement()`, since they are
+  the `- Reviewer`/`- Gate` summary lines, not a per-finding list).
