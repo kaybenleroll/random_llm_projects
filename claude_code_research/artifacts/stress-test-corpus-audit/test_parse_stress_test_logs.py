@@ -82,6 +82,40 @@ class TestClassifyTakeStock(unittest.TestCase):
         self.assertEqual(r["verdict"], "ACCEPTED")
 
 
+class TestArrowSynonymVerdicts(unittest.TestCase):
+    """Free-text arrow-suffix resolution synonyms resolve to CLEAN
+    (kaybenleroll/random_llm_projects#79)."""
+
+    def test_landed_resolves_to_clean(self):
+        self.assertEqual(P.extract_verdict("RERUN_NEEDED -> LANDED"), "CLEAN")
+
+    def test_addressed_resolves_to_clean(self):
+        self.assertEqual(P.extract_verdict("RERUN_NEEDED -> addressed"), "CLEAN")
+
+    def test_resolved_resolves_to_clean(self):
+        self.assertEqual(P.extract_verdict("RERUN_NEEDED -> resolved"), "CLEAN")
+
+    def test_folded_resolves_to_clean(self):
+        self.assertEqual(
+            P.extract_verdict("RERUN_NEEDED -> all findings folded here"), "CLEAN"
+        )
+
+    def test_unrelated_free_text_falls_back_to_pre_arrow_token(self):
+        # Out of scope per issue #79: an unrelated free-text word after the
+        # arrow must NOT be guessed as a synonym — falls back to the
+        # pre-arrow canonical token instead.
+        self.assertEqual(
+            P.extract_verdict("RERUN_NEEDED -> revised, this version"), "RERUN_NEEDED"
+        )
+
+    def test_canonical_token_after_arrow_still_wins_over_synonym_wording(self):
+        # A canonical token after the arrow takes priority even if synonym
+        # wording is also present.
+        self.assertEqual(
+            P.extract_verdict("RERUN_NEEDED -> addressed, now CLEAN"), "CLEAN"
+        )
+
+
 class TestOrderingTrapRegressions(unittest.TestCase):
     """Headers that must classify identically before and after this fix."""
 
