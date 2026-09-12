@@ -65,7 +65,7 @@ def find_terminal_block(path):
     for the block selected as terminal, or (None, None) if none."""
     with open(path, encoding="utf-8", errors="replace") as f:
         text = f.read()
-    section = P.extract_section(text)
+    section, _n_sections = P.extract_section(text)
     if section is None:
         return None, None
 

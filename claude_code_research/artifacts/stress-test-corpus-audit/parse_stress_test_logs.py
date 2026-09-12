@@ -66,6 +66,7 @@ import glob
 import os
 import re
 import json
+import sys
 import statistics as stats
 from collections import defaultdict, Counter
 
@@ -146,14 +147,28 @@ RERUN_SYNONYM_RE = re.compile(r"\b(landed|addressed|resolved|folded)\b", re.IGNO
 
 
 def extract_section(text):
-    m = SECTION_START_RE.search(text)
-    if not m:
-        return None
-    start = m.end()
-    rest = text[start:]
-    m2 = NEXT_H2_RE.search(rest)
-    section = rest[: m2.start()] if m2 else rest
-    return section
+    """Return (combined_section_text, n_matches) for every '## Stress-Test Log'
+    H2 heading found in text (None, 0 if there is none).
+
+    A single heading is the normal case. SKILL.md does not forbid a second
+    '## Stress-Test Log' heading in one plan file, and taking only the first
+    match (the prior behaviour) silently dropped the second section's content
+    — see kaybenleroll/random_llm_projects#80. When more than one heading is
+    found, every matching section's content is combined (never just the
+    first) so a duplicate heading degrades to noisier parsing rather than
+    silent data loss; the caller is responsible for warning about
+    n_matches > 1 (it has the file path, extract_section() doesn't).
+    """
+    matches = list(SECTION_START_RE.finditer(text))
+    if not matches:
+        return None, 0
+    sections = []
+    for m in matches:
+        start = m.end()
+        rest = text[start:]
+        m2 = NEXT_H2_RE.search(rest)
+        sections.append(rest[: m2.start()] if m2 else rest)
+    return "\n\n".join(sections), len(matches)
 
 
 def extract_verdict(h):
@@ -275,9 +290,13 @@ def classify_findings_and_restatement(body):
 def process_file(machine, path):
     with open(path, encoding="utf-8", errors="replace") as f:
         text = f.read()
-    section = extract_section(text)
+    section, n_sections = extract_section(text)
     if section is None:
         return None, []
+    if n_sections > 1:
+        print(f"WARNING: {path} has {n_sections} '## Stress-Test Log' headings "
+              f"— combining all sections' content rather than dropping any "
+              f"(see issue #80).", file=sys.stderr)
 
     headers = list(H3_SPLIT_RE.finditer(section))
     blocks = []

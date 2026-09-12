@@ -12,10 +12,19 @@ The corpus-level end-to-end assertions in TestCorpusRegression are skipped
 automatically if ~/.claude/plans doesn't exist, so the suite stays hermetic
 elsewhere.
 """
+import io
+import contextlib
 import os
 import unittest
 
 import parse_stress_test_logs as P
+
+# Per this repo's convention, all temp/output files for tests go under the
+# subproject's .scratch/, never /tmp.
+SCRATCH_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    ".scratch",
+)
 
 
 class TestClassifyTakeStock(unittest.TestCase):
@@ -259,6 +268,76 @@ class TestStatisticsUnchanged(unittest.TestCase):
         self.assertEqual(max_pass, 5, "TAKE_STOCK_RESOLVED's pass_num=6 must not inflate max_pass")
 
 
+class TestExtractSectionDuplicateHeading(unittest.TestCase):
+    """kaybenleroll/random_llm_projects#80: a second '## Stress-Test Log'
+    heading must not silently drop the second section's content."""
+
+    def test_single_heading_unchanged(self):
+        text = "intro\n\n## Stress-Test Log\n\n### 2026-01-01 10:00 — Pass 1 — CLEAN\nfirst body\n"
+        section, n = P.extract_section(text)
+        self.assertEqual(n, 1)
+        self.assertIn("first body", section)
+
+    def test_no_heading(self):
+        section, n = P.extract_section("no log section here at all")
+        self.assertIsNone(section)
+        self.assertEqual(n, 0)
+
+    def test_duplicate_heading_combines_both_sections(self):
+        text = (
+            "## Stress-Test Log\n\n"
+            "### 2026-01-01 10:00 — Pass 1 — CLEAN\nfirst section body\n\n"
+            "## Unrelated Section\nirrelevant content\n\n"
+            "## Stress-Test Log\n\n"
+            "### 2026-02-01 10:00 — Pass 2 — RESTRUCTURE\nsecond section body\n"
+        )
+        section, n = P.extract_section(text)
+        self.assertEqual(n, 2)
+        self.assertIn("first section body", section, "first section's content must not be dropped")
+        self.assertIn("second section body", section, "second section's content must not be dropped")
+
+    def test_process_file_warns_and_parses_both_sections(self):
+        text = (
+            "## Stress-Test Log\n\n"
+            "### 2026-01-01 10:00 — Pass 1 — CLEAN\nfirst body\n\n"
+            "## Stress-Test Log\n\n"
+            "### 2026-02-01 10:00 — Pass 2 — RESTRUCTURE\nsecond body\n"
+        )
+        os.makedirs(SCRATCH_DIR, exist_ok=True)
+        path = os.path.join(SCRATCH_DIR, "test_issue80_duplicate_heading.md")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(text)
+        try:
+            stderr = io.StringIO()
+            with contextlib.redirect_stderr(stderr):
+                section, blocks = P.process_file("local", path)
+            self.assertIsNotNone(section)
+            self.assertIn("2 '## Stress-Test Log' headings", stderr.getvalue(),
+                          "duplicate heading must produce a warning, not silence")
+            self.assertIn(path, stderr.getvalue(), "warning must identify the offending file")
+
+            pass_nums_verdicts = {(b["pass_num"], b["verdict"]) for b in blocks if b["type"] == "PASS"}
+            self.assertIn((1, "CLEAN"), pass_nums_verdicts, "first section's pass must survive")
+            self.assertIn((2, "RESTRUCTURE"), pass_nums_verdicts, "second section's pass must not be dropped")
+        finally:
+            os.remove(path)
+
+    def test_single_heading_process_file_no_warning(self):
+        text = "## Stress-Test Log\n\n### 2026-01-01 10:00 — Pass 1 — CLEAN\nbody\n"
+        os.makedirs(SCRATCH_DIR, exist_ok=True)
+        path = os.path.join(SCRATCH_DIR, "test_issue80_single_heading.md")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(text)
+        try:
+            stderr = io.StringIO()
+            with contextlib.redirect_stderr(stderr):
+                section, blocks = P.process_file("local", path)
+            self.assertEqual(stderr.getvalue(), "", "a single heading must never warn")
+            self.assertEqual(len(blocks), 1)
+        finally:
+            os.remove(path)
+
+
 class TestCorpusRegression(unittest.TestCase):
     """End-to-end guard against the real corpus. Skipped if it's absent."""
 
@@ -285,6 +364,20 @@ class TestCorpusRegression(unittest.TestCase):
             ttype, b = P.pick_terminal(blocks)
             self.assertEqual(b["verdict"], "ACCEPTED",
                               msg="precious-conjuring-forest.md was already correct — must stay ACCEPTED")
+
+    @unittest.skipUnless(os.path.isdir(PLANS_DIR), "~/.claude/plans not present")
+    def test_known_duplicate_heading_file_warns_without_crashing(self):
+        """kaybenleroll/random_llm_projects#80: memoized-sniffing-wave.md has
+        two '## Stress-Test Log' headings on this machine."""
+        path = os.path.join(self.PLANS_DIR, "memoized-sniffing-wave.md")
+        if not os.path.isfile(path):
+            self.skipTest("memoized-sniffing-wave.md not present in current corpus")
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            section, blocks = P.process_file("local", path)
+        self.assertIsNotNone(section)
+        self.assertIn("2 '## Stress-Test Log' headings", stderr.getvalue())
+        self.assertIn(path, stderr.getvalue())
 
 
 if __name__ == "__main__":
