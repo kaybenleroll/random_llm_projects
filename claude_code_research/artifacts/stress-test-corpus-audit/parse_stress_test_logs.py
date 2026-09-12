@@ -45,7 +45,11 @@ KNOWN CAVEATS (see README.md for the full explanation of each):
     pass_num) comparison, never by raw file/list position, except as a
     last-resort tiebreak.
   - Arrow-suffix verdicts ("RERUN_NEEDED -> CLEAN") are resolved to the
-    token AFTER the arrow — that is the outcome after fold-in.
+    token AFTER the arrow — that is the outcome after fold-in. A fixed,
+    small set of free-text synonyms after the arrow ("landed", "addressed",
+    "resolved", "folded" — see RERUN_SYNONYM_RE) also resolves to CLEAN when
+    no canonical token follows the arrow; any other free text falls back to
+    the pre-arrow token (see extract_verdict()).
   - A "take-stock" keyword appearing in a header's prose (not as the
     literal marker line) must not misclassify a genuine findings-bearing
     pass block as a non-pass marker — see EXCLUDE_RE's ordering relative
@@ -134,6 +138,12 @@ NEXT_H2_RE = re.compile(r"^## ", re.MULTILINE)
 H3_SPLIT_RE = re.compile(r"^### (.+)$", re.MULTILINE)
 ARROW_RE = re.compile(r"→|->")
 
+# Fixed, small synonym set for arrow-suffix free text that means "resolved"
+# without using a canonical VERDICT_RE token (e.g. "RERUN_NEEDED -> LANDED").
+# Sourced from actual corpus phrasings — do not add words beyond these four
+# without new corpus evidence (see issue #79).
+RERUN_SYNONYM_RE = re.compile(r"\b(landed|addressed|resolved|folded)\b", re.IGNORECASE)
+
 
 def extract_section(text):
     m = SECTION_START_RE.search(text)
@@ -151,13 +161,18 @@ def extract_verdict(h):
 
     When the header contains a relabeling arrow, the verdict after the arrow
     wins (it's the outcome after fold-in), falling back to the pre-arrow
-    token only when nothing valid follows the arrow.
+    token only when nothing valid follows the arrow. If no canonical token
+    follows the arrow but the free text matches a known resolved-synonym
+    (RERUN_SYNONYM_RE — "landed"/"addressed"/"resolved"/"folded"), that is
+    treated as CLEAN-equivalent before falling back to the pre-arrow token.
     """
     am = ARROW_RE.search(h)
     if am:
         after = VERDICT_RE.search(h[am.end():])
         if after:
             return after.group(1)
+        if RERUN_SYNONYM_RE.search(h[am.end():]):
+            return "CLEAN"
         before = VERDICT_RE.search(h[:am.start()])
         if before:
             return before.group(1)
