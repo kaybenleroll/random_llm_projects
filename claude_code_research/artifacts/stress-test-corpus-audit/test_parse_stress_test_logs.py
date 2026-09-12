@@ -354,6 +354,188 @@ class TestExtractSectionDuplicateHeading(unittest.TestCase):
             os.remove(path)
 
 
+class TestRoundDetection(unittest.TestCase):
+    """kaybenleroll/random_llm_projects#96: a round of 3 parallel reviewers
+    is logged as one '### Pass N' entry whose body embeds one
+    '- Reviewer <k>: ...' bullet per reviewer (SKILL.md canonical shape).
+    Detection is structural (reviewer-line count), never date-based."""
+
+    ROUND_BODY = """
+Action: proceed to implementation — both P1 findings were patched in place
+and verified this round.
+
+Round of 3 — ~19 findings after dedup: 0 Showstoppers, 2 P1, ~9 Gaps.
+
+- Reviewer 1: ACCEPTED — 11 findings; lead finding: no test discriminates
+  the two allocation bases
+- Reviewer 2: ACCEPTED — 9 findings; independently found the same P1
+- Reviewer 3: ACCEPTED — 10 findings; same P1 a third time
+- Gate: 2 distinct P1s after cross-reviewer dedup, neither non-patchable,
+  both patched and reverified
+
+Self-review: n/a — no fixes applied this round
+Resolution: n/a
+"""
+
+    OLD_BODY = """
+10 findings: 1 showstopper, 6 gaps, 1 inconsistency, 2 underspecified, 0
+suggestions.
+
+- **[S]** oracle's instrument cannot observe 2+ of M13's 8 claims. Not folded.
+- **[G]** corpus driver is deterministic-only; stochastic path never invoked.
+"""
+
+    def test_round_body_detected_with_size_3(self):
+        is_round, round_size = P.detect_round(self.ROUND_BODY)
+        self.assertTrue(is_round)
+        self.assertEqual(round_size, 3)
+
+    def test_old_format_body_not_round(self):
+        is_round, round_size = P.detect_round(self.OLD_BODY)
+        self.assertFalse(is_round)
+        self.assertEqual(round_size, 1)
+
+    def test_two_reviewer_round_counted_honestly_not_truncated_to_three(self):
+        # Real corpus is always 0 or 3, but detection counts the lines
+        # actually present rather than assuming 3 — a differently sized
+        # round must not be silently truncated.
+        body = ("- Reviewer 1: ACCEPTED — no findings\n"
+                "- Reviewer 2: ACCEPTED — no findings\n")
+        is_round, round_size = P.detect_round(body)
+        self.assertTrue(is_round)
+        self.assertEqual(round_size, 2)
+
+    def test_round_body_bullets_exclude_reviewer_and_gate_lines(self):
+        # Reviewer/Gate summary bullets are not a per-finding list — they
+        # must not feed n_bullets/restatement/new-flagged counts.
+        n_findings, n_before_cap, n_bullets, n_restatement, n_new_flagged, \
+            is_round, round_size = P.classify_findings_and_restatement(self.ROUND_BODY)
+        self.assertTrue(is_round)
+        self.assertEqual(round_size, 3)
+        self.assertEqual(n_bullets, 0)
+        self.assertEqual(n_restatement, 0)
+        self.assertEqual(n_new_flagged, 0)
+        self.assertEqual(n_findings, 19)
+
+    def test_old_format_bullets_unaffected(self):
+        n_findings, n_before_cap, n_bullets, n_restatement, n_new_flagged, \
+            is_round, round_size = P.classify_findings_and_restatement(self.OLD_BODY)
+        self.assertFalse(is_round)
+        self.assertEqual(round_size, 1)
+        self.assertEqual(n_bullets, 2)
+
+    def test_findings_re_not_fooled_by_severity_token_before_real_count(self):
+        # Folded into #96: a round-format Action field routinely says "both
+        # P1 findings were patched" before the real "~19 findings after
+        # dedup" line; FINDINGS_RE's leftmost match must not read "1" off
+        # of "P1". Confirmed against real corpus data (29/63 round blocks
+        # affected pre-fix).
+        m = P.FINDINGS_RE.search(self.ROUND_BODY)
+        self.assertIsNotNone(m)
+        self.assertEqual(int(m.group(1)), 19)
+
+    def test_process_file_marks_round_block(self):
+        text = (
+            "# Plan — Fixture\n\n"
+            "## Stress-Test Log\n\n"
+            "### 2026-09-01 10:00 — Pass 1 · Iteration 1 (opus) — ACCEPTED\n"
+            + self.ROUND_BODY
+        )
+        os.makedirs(SCRATCH_DIR, exist_ok=True)
+        path = os.path.join(SCRATCH_DIR, "test_issue96_round_fixture.md")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(text)
+        try:
+            _, blocks = P.process_file("local", path)
+            self.assertEqual(len(blocks), 1)
+            b = blocks[0]
+            self.assertEqual(b["type"], "PASS")
+            self.assertEqual(b["pass_num"], 1)
+            self.assertTrue(b["is_round"])
+            self.assertEqual(b["round_size"], 3)
+        finally:
+            os.remove(path)
+
+
+class TestLineageStatsRoundWeighting(unittest.TestCase):
+    """kaybenleroll/random_llm_projects#96: a round of 3 counts as 3 passes
+    toward n_pass_blocks/total_pass_estimate; max_pass_num stays unweighted
+    (it measures rounds-to-converge, not reviewer-per-round volume)."""
+
+    def _round_block(self, pass_num, order):
+        b = _block("PASS", "2026-09-01", "10:00", pass_num, "ACCEPTED", order=order)
+        b["is_round"] = True
+        b["round_size"] = 3
+        return b
+
+    def _old_block(self, pass_num, order):
+        b = _block("PASS", "2026-08-01", "10:00", pass_num, "ACCEPTED", order=order)
+        b["is_round"] = False
+        b["round_size"] = 1
+        return b
+
+    def test_single_round_entry_counts_as_three_passes(self):
+        blocks = [self._round_block(1, 0)]
+        stats = P.compute_lineage_stats(blocks)
+        self.assertEqual(stats["max_pass_num"], 1)
+        self.assertEqual(stats["n_pass_blocks"], 3)
+        self.assertEqual(stats["total_pass_estimate"], 3)
+        self.assertEqual(stats["n_round_entries"], 1)
+
+    def test_two_round_entries_count_as_six_passes(self):
+        blocks = [self._round_block(1, 0), self._round_block(2, 1)]
+        stats = P.compute_lineage_stats(blocks)
+        self.assertEqual(stats["max_pass_num"], 2, "iteration index stays unweighted")
+        self.assertEqual(stats["n_pass_blocks"], 6)
+        self.assertEqual(stats["total_pass_estimate"], 6)
+        self.assertEqual(stats["n_round_entries"], 2)
+
+    def test_old_format_lineage_unchanged_by_the_fix(self):
+        blocks = [self._old_block(1, 0), self._old_block(2, 1), self._old_block(3, 2)]
+        stats = P.compute_lineage_stats(blocks)
+        self.assertEqual(stats["max_pass_num"], 3)
+        self.assertEqual(stats["n_pass_blocks"], 3)
+        self.assertEqual(stats["total_pass_estimate"], 3)
+        self.assertEqual(stats["n_round_entries"], 0)
+
+    def test_mixed_lineage_old_then_round(self):
+        # A lineage that started before the redesign and continued after it.
+        blocks = [self._old_block(1, 0), self._old_block(2, 1), self._round_block(3, 2)]
+        stats = P.compute_lineage_stats(blocks)
+        self.assertEqual(stats["max_pass_num"], 3)
+        self.assertEqual(stats["n_pass_blocks"], 5)  # 1 + 1 + 3
+        self.assertEqual(stats["total_pass_estimate"], 5)
+        self.assertEqual(stats["n_round_entries"], 1)
+
+    def test_legacy_range_compression_not_regressed_by_round_weighting(self):
+        # async-drifting-lollipop.md's real shape: a legacy 'Passes 1-3 —
+        # summary only' RANGE marker (pre-redesign compressed history, no
+        # individual blocks for 1-3) plus individually-logged Pass 4 and
+        # Pass 5 old-format blocks. True total is 5 — a pure weighted-sum-
+        # of-present-blocks approach would wrongly report 2 (only blocks 4
+        # and 5 exist as blocks at all).
+        blocks = [
+            self._old_block(5, 0),
+            self._old_block(4, 1),
+            dict(type="RANGE", date="2026-08-05", time=None, pass_num=None,
+                 range_end=3, verdict=None, order_in_section=2,
+                 machine="local", file="x.md", header=""),
+        ]
+        stats = P.compute_lineage_stats(blocks)
+        self.assertEqual(stats["max_pass_num"], 5)
+        self.assertEqual(stats["n_pass_blocks"], 5, "RANGE floor must win over the weighted-sum-of-present-blocks (2)")
+        self.assertEqual(stats["total_pass_estimate"], 5)
+
+    def test_missing_is_round_round_size_keys_default_safely(self):
+        # Hand-built dicts (e.g. check_placeholder_bullet.py) don't carry
+        # is_round/round_size — must default to old (unweighted) behaviour.
+        blocks = [_block("PASS", "2026-08-01", "10:00", 1, "ACCEPTED", order=0)]
+        stats = P.compute_lineage_stats(blocks)
+        self.assertEqual(stats["n_pass_blocks"], 1)
+        self.assertEqual(stats["total_pass_estimate"], 1)
+        self.assertEqual(stats["n_round_entries"], 0)
+
+
 class TestCorpusRegression(unittest.TestCase):
     """End-to-end guard against the real corpus. Skipped if it's absent."""
 

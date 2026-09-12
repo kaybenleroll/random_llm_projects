@@ -59,6 +59,31 @@ KNOWN CAVEATS (see README.md for the full explanation of each):
     continue the loop. Its pass_num is retained for chronological ordering
     but is excluded from every pass statistic by type-gating (it is never
     a "PASS" block) — see TAKE_STOCK_RE / OPTION_RE and README.md.
+  - Since the /stress-test round redesign (dotfiles#41 / rlp#38, shipped
+    2026-08-28), one "### Pass N" entry can represent a ROUND of 3 parallel
+    reviewers rather than a single reviewer pass. Detection is STRUCTURAL,
+    never a date cutoff (a cutoff breaks on lineages straddling the
+    redesign and hardcodes a ship-date into a corpus parser): SKILL.md's
+    canonical round entry shape puts one "- Reviewer <k>: <STATUS> — ..."
+    bullet per reviewer directly in the body, so a block's body is
+    classified round-based iff it contains one or more such lines (see
+    REVIEWER_LINE_RE / detect_round()). A real-corpus check (~/.claude/plans,
+    2026-09-13) found this count is always exactly 0 (old format) or 3
+    (round format) — never 1, 2, or 4+ — but the actual count is used
+    rather than a hardcoded 3, so a lineage that ever ran a differently
+    sized round is still counted correctly instead of being silently
+    truncated. `n_pass_blocks` and `total_pass_estimate` are reviewer-
+    weighted (a round of 3 counts as 3 toward both) so they keep measuring
+    actual review-pass volume across the format change; `max_pass_num`
+    is deliberately left unweighted (still the highest round/iteration
+    index reached) since that is the correct measure of how many rounds a
+    lineage needed to converge, a question the reviewer-per-round count
+    doesn't bear on. Round-format bodies' only bullets are the
+    "- Reviewer N: ..." / "- Gate: ..." summary lines, not a flat list of
+    individual findings like old-format bodies — those bullets are
+    excluded from the restatement/new-finding bullet scan in
+    classify_findings_and_restatement() (old-format bodies never contain
+    such lines, so they are unaffected). See kaybenleroll/random_llm_projects#96.
 """
 import argparse
 import csv
@@ -116,7 +141,14 @@ COUNTER_RESET_RE = re.compile(r"(?i)counter reset")
 TAKE_STOCK_RE = re.compile(r"(?i)[—–-]\s*take-?\s?stock\s+resol(?:ved|ution)\b")
 OPTION_RE = re.compile(r"(?i)\boption\s+([A-D])\b")
 
-FINDINGS_RE = re.compile(r"(?i)(\d+)\s+findings?\b(?:\s*\((\d+)\s+before cap\))?")
+# (?<![A-Za-z]) guards against a severity token like "P1"/"S2" being read as
+# a findings count — a round-format Action field routinely reads "both P1
+# findings were patched..." *before* the real "~19 findings after dedup"
+# line (found affecting 29/63 real round blocks, kaybenleroll/random_llm_projects#96)
+# — without the guard, FINDINGS_RE's first (leftmost) match wins and returns
+# the P-number instead of the real count. A bare digit ("~19 findings",
+# "10 findings:") is unaffected since it's never directly preceded by a letter.
+FINDINGS_RE = re.compile(r"(?i)(?<![A-Za-z])(\d+)\s+findings?\b(?:\s*\((\d+)\s+before cap\))?")
 
 RESTATEMENT_MARKERS = re.compile(
     r"(?i)\bnot folded\b|\bstill (has|open|describes|omits|false|contradicts|"
@@ -144,6 +176,16 @@ ARROW_RE = re.compile(r"→|->")
 # Sourced from actual corpus phrasings — do not add words beyond these four
 # without new corpus evidence (see issue #79).
 RERUN_SYNONYM_RE = re.compile(r"\b(landed|addressed|resolved|folded)\b", re.IGNORECASE)
+
+# Structural round-of-N marker (kaybenleroll/random_llm_projects#96) — see
+# the "one '### Pass N' entry can represent a ROUND" caveat in the module
+# docstring for why this is structural rather than date-based. Matches
+# SKILL.md's canonical "- Reviewer <k>: <STATUS> — ..." bullet exactly.
+REVIEWER_LINE_RE = re.compile(r"(?im)^\s*-\s*reviewer\s+\d+\s*:")
+# The round entry's own "- Gate: ..." summary bullet — also not a per-finding
+# bullet, excluded from the restatement/new-finding bullet scan alongside
+# the reviewer lines.
+GATE_LINE_RE = re.compile(r"(?im)^\s*-\s*gate\s*:")
 
 
 def extract_section(text):
@@ -275,16 +317,41 @@ def classify_and_parse_header(header_line):
                 scheme=scheme, verdict=None, superseded=superseded, header=h)
 
 
+def detect_round(body):
+    """Structural round-of-N detection (kaybenleroll/random_llm_projects#96).
+
+    Returns (is_round, round_size). round_size is the number of
+    '- Reviewer <k>: ...' lines actually found in the body (real corpus:
+    always 0 or 3 — see module docstring) — never hardcoded to 3, so a
+    lineage that ever ran a differently sized round is still counted
+    correctly rather than silently truncated. round_size is 1 whenever
+    is_round is False, so callers can always multiply by it unconditionally.
+    """
+    n = len(REVIEWER_LINE_RE.findall(body))
+    return (n >= 1), (n if n >= 1 else 1)
+
+
 def classify_findings_and_restatement(body):
     fm = FINDINGS_RE.search(body)
     n_findings = int(fm.group(1)) if fm else None
     n_before_cap = int(fm.group(2)) if (fm and fm.group(2)) else None
 
+    is_round, round_size = detect_round(body)
+
     bullets = [ln for ln in body.splitlines() if re.match(r"^\s*[-*]\s+", ln)]
+    if is_round:
+        # Round-format bodies' only bullets are the '- Reviewer N: ...' /
+        # '- Gate: ...' summary lines (SKILL.md canonical shape) — these are
+        # not a flat per-finding bullet list like old-format bodies, so
+        # scanning them for restatement/new-finding keywords would score
+        # summary prose as if it were individual-finding tracking. Old-
+        # format bodies never contain these lines, so they are unaffected.
+        bullets = [b for b in bullets
+                   if not REVIEWER_LINE_RE.match(b) and not GATE_LINE_RE.match(b)]
     n_bullets = len(bullets)
     n_restatement = sum(1 for b in bullets if RESTATEMENT_MARKERS.search(b))
     n_new_flagged = sum(1 for b in bullets if NEW_MARKERS.search(b))
-    return n_findings, n_before_cap, n_bullets, n_restatement, n_new_flagged
+    return n_findings, n_before_cap, n_bullets, n_restatement, n_new_flagged, is_round, round_size
 
 
 def process_file(machine, path):
@@ -306,13 +373,14 @@ def process_file(machine, path):
         body_end = headers[i + 1].start() if i + 1 < len(headers) else len(section)
         body = section[body_start:body_end]
         parsed = classify_and_parse_header(header_line)
-        n_findings, n_before_cap, n_bullets, n_restatement, n_new_flagged = \
-            classify_findings_and_restatement(body)
+        n_findings, n_before_cap, n_bullets, n_restatement, n_new_flagged, \
+            is_round, round_size = classify_findings_and_restatement(body)
         parsed.update(dict(
             machine=machine, file=os.path.basename(path), order_in_section=i,
             n_findings=n_findings, n_before_cap=n_before_cap, n_bullets=n_bullets,
             n_restatement=n_restatement, n_new_flagged=n_new_flagged,
             fold_fail_flag=bool(FOLD_FAIL_MARKERS.search(body)),
+            is_round=is_round, round_size=round_size,
         ))
         blocks.append(parsed)
     return section, blocks
@@ -352,6 +420,69 @@ def later(a, b):
     if ar != br:
         return a if ar > br else b
     return a if a["order_in_section"] < b["order_in_section"] else b
+
+
+def compute_lineage_stats(blist):
+    """Per-lineage pass/round counts (kaybenleroll/random_llm_projects#96).
+
+    Returns a dict with:
+      max_pass_num       — highest round/iteration index reached (unweighted:
+                            a round-format entry still increments this by 1
+                            per round, same as SKILL.md's numbering rule —
+                            this measures how many rounds a lineage needed
+                            to converge, which the reviewer-per-round count
+                            doesn't bear on, so it is deliberately left
+                            unweighted).
+      n_pass_blocks,
+      total_pass_estimate — identical to each other (kept as two columns for
+                            output-schema continuity): max(legacy_estimate,
+                            weighted_pass_count), i.e. whichever is higher of
+                            (a) the pre-#96 formula — highest known pass/round
+                            index, legacy 'Passes <N>-<M>' RANGE endpoints
+                            included, which stays correct for pre-redesign
+                            compressed-history lineages where not every pass
+                            is an individual block; and (b) the #96 fix — the
+                            reviewer-weighted sum of round_size (real corpus:
+                            3) over the PASS blocks actually present, which is
+                            higher exactly when round-format blocks are
+                            involved (round-format lineages never compress
+                            history the way legacy RANGE markers do, so every
+                            round's block is present to sum). Equal to the old
+                            unweighted count whenever the lineage is entirely
+                            old-format, so pre-redesign lineages are scored
+                            identically to before this fix.
+      n_round_entries     — count of PASS blocks classified round-based, for
+                            transparency in the output (0 for lineages that
+                            never used the new format).
+    """
+    pass_blocks = [b for b in blist if b["type"] == "PASS"]
+    pass_nums = [b["pass_num"] for b in pass_blocks if b["pass_num"]]
+    range_ends = [b["range_end"] for b in blist if b["type"] == "RANGE" and b.get("range_end")]
+    max_pass = max(pass_nums + range_ends) if (pass_nums or range_ends) else None
+
+    n_round_entries = sum(1 for b in pass_blocks if b.get("is_round"))
+    weighted_pass_count = sum(b.get("round_size", 1) for b in pass_blocks)
+
+    # legacy_estimate is the pre-#96 formula (highest known pass/round
+    # index, RANGE endpoints included) — it must stay the floor: a legacy
+    # 'Passes 1-3 — summary only' RANGE marker (pre-redesign compressed
+    # history) stands in for passes never individually logged as blocks,
+    # so weighted_pass_count alone would under-count them (it only sees
+    # blocks actually present). weighted_pass_count is the #96 fix: a
+    # round-format lineage's blocks are all present (rounds aren't
+    # compressed like this), so their reviewer-weighted sum is the higher,
+    # correct figure there. Taking the max of both never regresses below
+    # what the parser already knew, and applies the round weighting
+    # wherever it actually raises the count.
+    legacy_estimate = max_pass if max_pass else 0
+    if not pass_nums and range_ends:
+        legacy_estimate = max(range_ends)
+
+    total_pass_estimate = max(legacy_estimate, weighted_pass_count)
+    n_pass_blocks = total_pass_estimate
+
+    return dict(max_pass_num=max_pass, n_pass_blocks=n_pass_blocks,
+                n_round_entries=n_round_entries, total_pass_estimate=total_pass_estimate)
 
 
 def pick_terminal(blist):
@@ -424,7 +555,7 @@ def main():
     fieldnames = ["machine", "file", "order_in_section", "type", "date", "time", "model",
                   "pass_num", "scheme", "verdict", "superseded", "range_end", "option",
                   "n_findings", "n_before_cap", "n_bullets", "n_restatement",
-                  "n_new_flagged", "fold_fail_flag", "header"]
+                  "n_new_flagged", "fold_fail_flag", "is_round", "round_size", "header"]
     with open(blocks_csv, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
         w.writeheader()
@@ -441,13 +572,11 @@ def main():
         dated = [b for b in blist if b.get("date")]
         first_date = min(b["date"] for b in dated) if dated else None
 
-        pass_nums = [b["pass_num"] for b in blist if b["type"] == "PASS" and b["pass_num"]]
-        range_ends = [b["range_end"] for b in blist if b["type"] == "RANGE" and b.get("range_end")]
-        max_pass = max(pass_nums + range_ends) if (pass_nums or range_ends) else None
-        n_pass_blocks = len([b for b in blist if b["type"] == "PASS"])
-        total_pass_estimate = (max_pass if max_pass else 0)
-        if not pass_nums and range_ends:
-            total_pass_estimate = max(range_ends)
+        lstats = compute_lineage_stats(blist)
+        max_pass = lstats["max_pass_num"]
+        n_pass_blocks = lstats["n_pass_blocks"]
+        n_round_entries = lstats["n_round_entries"]
+        total_pass_estimate = lstats["total_pass_estimate"]
 
         terminal_type, terminal_block = pick_terminal(blist)
         if terminal_block is None:
@@ -460,7 +589,7 @@ def main():
         lineages.append(dict(
             machine=machine, file=fname, first_date=first_date,
             n_pass_blocks=n_pass_blocks, max_pass_num=max_pass,
-            total_pass_estimate=total_pass_estimate,
+            total_pass_estimate=total_pass_estimate, n_round_entries=n_round_entries,
             terminal_verdict=terminal_verdict, terminal_type=terminal_type,
             n_blocks_total=len(blist),
             n_unparsed=len([b for b in blist if b["type"] == "UNPARSED"]),
@@ -526,7 +655,15 @@ def main():
         total_restatement = sum(b["n_restatement"] for b in blist)
         total_new_flagged = sum(b["n_new_flagged"] for b in blist)
         pct_restatement = round(100 * total_restatement / total_bullets, 1) if total_bullets else None
+        # n_round_blocks (#96): how many of this bucket's blocks are round-
+        # format — their n_findings is a post-dedup total across 3 reviewers,
+        # not a single reviewer's count, and their bullets never carry
+        # restatement/new-finding tags (see classify_findings_and_restatement),
+        # so a bucket mixing formats should be read with that in mind rather
+        # than treated as a homogeneous per-reviewer sample.
+        n_round_blocks = sum(1 for b in blist if b.get("is_round"))
         q3_rows.append(dict(pass_num=("7+" if n == 7 else n), n_blocks=len(blist),
+                             n_round_blocks=n_round_blocks,
                              mean_findings=mean_findings, total_bullets_classified=total_bullets,
                              n_bullets_restatement_flagged=total_restatement,
                              n_bullets_new_flagged=total_new_flagged,
