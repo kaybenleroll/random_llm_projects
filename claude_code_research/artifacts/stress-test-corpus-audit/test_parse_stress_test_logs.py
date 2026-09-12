@@ -254,6 +254,22 @@ class TestTerminalSelection(unittest.TestCase):
         self.assertEqual(ttype, "PASS")
         self.assertEqual(b["verdict"], "CLEAN")
 
+    def test_unparseable_time_falls_through_to_order_tiebreak(self):
+        # kaybenleroll/random_llm_projects#105: twinkly-hugging-storm.md has a
+        # placeholder timestamp ("21:5x", unparseable -> time=None) on the
+        # chronologically-first (order 0, newest-first) ACCEPTED block, same
+        # date as a later-ordered RERUN_NEEDED pass with a real HH:MM. An
+        # unparseable time must not be treated as the lexicographic minimum
+        # (which would make the real-timed block win outright) — it must
+        # fall through date-tie handling to the pass_num/order tiebreak.
+        blocks = [
+            _block("ACCEPTED_STANDALONE", "2026-08-26", None, None, "ACCEPTED", order=0),
+            _block("PASS", "2026-08-26", "21:22", 7, "RERUN_NEEDED", order=1),
+        ]
+        ttype, b = P.pick_terminal(blocks)
+        self.assertEqual(ttype, "ACCEPTED_STANDALONE")
+        self.assertEqual(b["verdict"], "ACCEPTED")
+
 
 class TestStatisticsUnchanged(unittest.TestCase):
     def test_take_stock_excluded_from_pass_statistics(self):
