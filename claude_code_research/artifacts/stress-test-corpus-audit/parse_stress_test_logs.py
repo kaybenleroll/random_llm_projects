@@ -329,7 +329,13 @@ def later(a, b):
     if ad != bd:
         return a if ad > bd else b
     at, bt = a.get("time") or "", b.get("time") or ""
-    if at != bt:
+    # An unparseable/missing time (e.g. a placeholder like "21:5x") is
+    # "unknown", not "earliest possible" — comparing it as an empty string
+    # would make it lose lexicographically against any real HH:MM value,
+    # even when it should win via the pass_num/order-in-section tiebreaks
+    # below (see kaybenleroll/random_llm_projects#105). Only compare times
+    # when both sides actually have one.
+    if at and bt and at != bt:
         return a if at > bt else b
     apn, bpn = a.get("pass_num"), b.get("pass_num")
     if apn is not None and bpn is not None and apn != bpn:
