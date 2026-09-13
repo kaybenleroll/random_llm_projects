@@ -10,8 +10,8 @@ Hardware/firmware/chassis-specific findings belong in
 ---
 
 ### Desktop-Linux only
-Ordered before General, not after — new `/reflect` learnings append at
-end-of-file, and that must land in General, not here. Do not reorder.
+Keep this section first, before General — `/reflect` appends new learnings
+to the end of General, never here.
 Skip these on WSL/headless machines.
 
 - Applications that write config on clean exit (e.g. PySol) will overwrite any edits made while running — ensure the app is fully closed before modifying its config files.
@@ -40,7 +40,7 @@ Skip these on WSL/headless machines.
 - In Justfiles, backtick expressions (e.g. `` `cd .. && pwd` ``) spawn subshells that CC's security sandbox blocks — use `$(dirname $(realpath .))` or hardcoded paths instead.
 - When `rm -rf` is blocked by deny rules, remove directory contents file-by-file then `rmdir` empty directories.
 - In `settings.json` bash allowlists, use `**` to match paths containing `/` — single `*` only matches within one directory level and silently fails on multi-segment paths.
-- Never pipe to `sudo tee <file>` for writes — `tee` truncates the file on open, creating a race if anything reads it concurrently. Stage content in `.scratch/` first, then `sudo cp` to the destination.
+- Stage privileged writes in `.scratch/` first, then `sudo cp` to the destination — piping to `sudo tee <file>` truncates the file on open, creating a race if anything reads it concurrently.
 - When a daemon owns a config file, stop it before writing — daemons that restart overwrite the file, discarding edits. Sequence: stop → write → start. Applies to any service-managed config.
 - On Ubuntu 22.04+, SSH runs via systemd socket activation — `ssh.service` is inactive by design and `systemctl restart ssh.service` will fail. Apply `sshd_config` changes with `sudo systemctl restart ssh.socket`; scripts using `set -euo pipefail` will abort otherwise.
 - mise shims for npm tools are not created automatically — run `npm install -g <package> && mise reshim` before referencing the shim path in any config (e.g. `~/.claude/mcp.json`); the shim does not exist until mise detects the globally installed binary, producing ENOENT otherwise.
@@ -50,7 +50,7 @@ Skip these on WSL/headless machines.
 - `chezmoi status` flags pure file-permission-mode drift (umask differences, e.g. 664/775 vs 644/755) the same as real content drift — diff actual file contents before treating a modified status as unsafe.
 - Verify a dotfile is chezmoi-managed (`chezmoi managed | grep ...` or `chezmoi source-path`) before recommending a direct edit — if managed, edit the chezmoi source repo and apply/push so the change propagates instead of drifting on next sync.
 - On Ubuntu 26.04, `/etc/default/grub` may not exist — the system may use `/etc/default/grub.d/` drop-ins exclusively; running `update-grub` on such systems silently drops any cmdline params baked into an old `grub.cfg` but not yet captured in a drop-in; always verify `/proc/cmdline` after any `update-grub` run and before declaring the boot config correct.
-- Never run `systemctl restart systemd-logind` to apply `logind.conf` changes — restarting logind terminates the graphical session and causes a hard freeze requiring physical recovery; apply via reboot only.
+- Apply `logind.conf` changes via reboot only — restarting `systemd-logind` directly terminates the graphical session and causes a hard freeze requiring physical recovery.
 - In Justfiles, recipe lines run under `sh -cu` (dash on Ubuntu) regardless of invocation context — dash's `echo` doesn't support `-e` (it prints a literal `-e ` prefix instead of interpreting escapes); use `printf` instead.
 - Use an unquoted heredoc terminator (`<<EOF`, not `<<'EOF'`) when the heredoc body needs `$(...)` command substitution to actually execute — quoted terminators suppress all expansions, which silently breaks constructs like `gh pr create --body "$(cat <<EOF ... EOF)"`.
 - GitHub auto-closes a dependent/stacked PR when its base branch is deleted, even though the underlying commit is safe — open a fresh PR from the same branch/commit against the updated base (e.g. `main`) rather than trying to reopen the closed one.
