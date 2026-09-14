@@ -984,4 +984,18 @@ Cannot currently distinguish these — both are plausible given available eviden
 
 ---
 
+### §2.46 — Guake freeze recurred; §2.44 hypothesis confirmed 5/5, deferred-`move_frame` fix implemented (2026-09-14)
+
+**Recurrence:** the freeze reported in §2.44 (Guake display stops updating; input/commands still work; hide/reveal forces a repaint) re-occurred, unprompted by any test — the user simply hit it in normal use.
+
+**Confirmation.** Checked this boot's journal (`journalctl -b 0`): 99 `guake-reposition: moved to ...` events, 5 `Frame has assigned frame counter but no frame drawn time` warnings — **all 5 warnings fall in the same second as a `moved to` line**, i.e. 5/5 (100%) correlation with the extension's `move_frame()` call this boot, consistent with (and stronger than) the ~7.6% baseline sampled in §2.44. The §2.44 isolation test never reached a clean verdict (abandoned mid-way per §2.45); this recurrence functionally confirms the hypothesis without needing to reopen that test.
+
+**Fix implemented.** Edited `~/.local/share/gnome-shell/extensions/guake-reposition@skikk-thor.local/extension.js` (not chezmoi-tracked) per §2.44's proposed fix: the `win.move_frame()` call is no longer made synchronously inside the existing 50ms `GLib.timeout_add` callback. It's now wrapped in `Meta.later_add(Meta.LaterType.BEFORE_REDRAW, ...)`, deferring the actual move to just before Mutter's next redraw instead of racing Mutter's own frame-drawn bookkeeping for the window's just-completed map. The override-redirect/compositor-private validity checks (added in an earlier fix to prevent a fatal mutter assertion — see the code's own comments) are now factored into a shared `_isRepositionable()` helper and run twice: once before scheduling the deferred move, and again inside the `Meta.later_add` callback right before `move_frame()` actually fires, since window state could still change during the (short) wait for the next redraw.
+
+**Verification status.** Syntax-checked (`node --check`) only — not yet live-tested. Per the known Wayland extension-reload quirk (§2.30/§2.36), code changes to a GNOME Shell extension do not take effect via `gnome-extensions disable`/`enable` or the `ReloadExtension` D-Bus call; only a full logout/login picks up new code. The user is about to do a natural logout/login (heading home, different location = new login), so this session did not force one.
+
+**Status: OPEN, fix pending verification.** Watch for the freeze warning (`journalctl | grep "Frame has assigned frame counter but no frame drawn time"`) over the next several boots after the next login. If it recurs post-fix, the deferred-callback approach didn't fully solve it and the extension may need to stop repositioning via `move_frame()` on the map signal entirely (e.g. reposition on a later signal such as `first-frame` or `shown`, if Mutter exposes one) — not yet investigated.
+
+---
+
 _End of draft._
