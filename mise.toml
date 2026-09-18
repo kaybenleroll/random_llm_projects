@@ -1,6 +1,9 @@
 [tools]
+codex = "latest"
 gh = "latest"
 just = "latest"
+"npm:ccusage" = "latest"
+pi = "latest"
 python = "latest"
 ripgrep = "latest"
 uv = "latest"
