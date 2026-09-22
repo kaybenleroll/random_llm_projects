@@ -1084,4 +1084,18 @@ Cannot currently distinguish these — both are plausible given available eviden
 
 ---
 
+### §2.52 — Official/shipped charger also under spec, and possibly the wrong model entirely (2026-09-22)
+
+**Supersedes §2.50's "photograph the OEM charger" open item — result changes the picture materially.** User photographed the charger that shipped in the box with the laptop. Label read directly (not from a summarizer): **model A621-2001400W-B31 (Dongguan Aohai Technology), output 20.0V × 14.0A = 280W**, barrel/DC jack — same connector family as the 230W Delippo unit.
+
+**Re-verified the 420W spec twice independently (WebFetch of SKIKK's Thor 16 Ryzen 9/RTX 5070 Ti product page, separate calls) — consistent both times: "Power Supply: 420W", "DC-in 20V 20A Jack".** Then checked SKIKK's own "280W adapter" accessory listing (`skikk.eu/en/accessories/280-watt-adapter-gk`): SKIKK markets this 280W unit as compatible with **Thor 15, Loki, Niflheim, Bifrost, and Lynx — not Thor 16.** SKIKK's own site treats 280W as the wrong tier for this machine.
+
+**Conclusion: both chargers the user has are under the 420W spec, and the one that shipped in the box looks like it may be the wrong model's adapter, not merely a lower-power option.** This changes §2.41/§2.50's framing from "230W backup vs. a correct 420W OEM adapter" to "neither adapter on hand matches spec — the machine may never have had its correct-spec power source." Reads like a fulfillment/packing error rather than a design choice.
+
+**Action: user has emailed SKIKK support** referencing the order and the label details above against SKIKK's own listed 420W/20V/20A spec for this configuration, to pursue under warranty/fulfillment-error grounds. Awaiting response.
+
+**Status: OPEN, escalated to vendor.** No local fix possible — this is a hardware-sourcing issue, not a software/config one. Update this entry when SKIKK responds.
+
+---
+
 _End of draft._
