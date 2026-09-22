@@ -1098,4 +1098,22 @@ Cannot currently distinguish these — both are plausible given available eviden
 
 ---
 
+### §2.53 — `just health-save` follow-up: driver-version drift, new NVKMS GEM allocation error, `llama-server`/`gnucp` coredumps (2026-09-22)
+
+**Trigger.** User ran `just health-save` (log: `logs/health-20260922-203626.txt`); reviewed against `doc/machines/skikk-thor.md`'s known-quirks/fixes list to filter out already-tracked noise (AC-adapter saga, Guake freeze, NVRM assertions generally, ACPI EC spam, ASPM/RTL8125, ExpressVPN, glycin-loaders bwrap crashes, apport-autoreport — all unchanged, not re-flagged here).
+
+**Driver silently upgraded 595.84 → 595.91.07.** `nvidia-smi` confirms; the recurring benign `nvAssertFailedNoLog` boot assertion line moved again, now `@ osapi.c:2116` (was `:2075` on 595.84, `:1939` on 580.126.09) — consistent with the already-documented driver-internal debug-assertion class, line number always shifts on upgrade, not a regression. `doc/machines/skikk-thor.md` updated to record the new version/line number; `~/.claude/MACHINE.md` (chezmoi-managed, out of scope here) still says 595.84 — flagged there as a to-do, not fixed in this commit.
+
+**New, not-previously-tracked NVKMS GEM allocation error.** `[drm:nv_drm_gem_alloc_nvkms_memory_ioctl [nvidia_drm]] *ERROR* [GPU ID 0x00000100] Failed to allocate NVKMS memory for GEM object` — 16 consecutive hits in a single burst at 2026-09-22 17:09:45. No accompanying freeze/hang signature in this log, and `nvidia-smi` stayed functional. Timing is close to this session's earlier `just start`/llama-container work (~17:24), plausibly GPU-memory contention from model load — not confirmed, just a plausible candidate. Not root-caused; watch for recurrence.
+
+**`llama-server` SIGABRT coredumps x2, Sep 19 (12:06, 15:32 IST)**, 248M/245M. Not previously documented, distinct from the known-benign bwrap/glycin SIGSYS crashes. Single day, nothing since — not urgent on its own, worth revisiting if it recurs.
+
+**`gnucp` SIGXFSZ coredumps x2, Sep 20 (22:17:45, 22:17:57 IST)** — file-size-limit-exceeded during a `cp`. Likely a large file (4GB+, e.g. Chrome model weights or a git pack already noted in home-dir cruft) copied onto a FAT32-family target (4GB per-file cap). Not confirmed — source/destination unknown, user doesn't recall the specific copy.
+
+**Other health-save data points, not flagged as issues:** Unsafe Shutdowns counter now 85 (was 67 on 2026-07-31) — consistent with the ongoing freeze/crash saga already tracked, not a new signal, noted here as one more data point. 0 failed systemd units, both NVMe drives PASSED SMART (6%/1% wear), firewall/SSH clean, package/container hygiene routine.
+
+**Status: informational/monitoring.** No fix applied or needed — driver-version doc drift corrected, the three coredump/error items noted for recurrence-watching, nothing urgent.
+
+---
+
 _End of draft._
