@@ -1070,4 +1070,18 @@ Cannot currently distinguish these — both are plausible given available eviden
 
 ---
 
+### §2.51 — §2.46/§2.47 fix confirmed loaded and still insufficient: freeze recurred 5x on a boot that started clean (2026-09-22)
+
+**Correction to this session's own earlier reasoning.** User restarts this laptop daily; today's boot was at 09:51:39 IST (per `uptime -s`), well after the §2.47 fix's `extension.js` mtime (2026-09-17 08:39/09:24). A subagent pass in this session had wrongly concluded "no logout/login since the fix was written," conflating "no logout since the 10:01 check today" with "no logout since Sep 17" — corrected by the user. The daily restart itself is the clean-load test that §2.48 said was still needed, and it had already happened this morning before any of today's freezes.
+
+**Result: the fix is loaded and running, and the freeze still recurred 5 times today.** Signature (`0x80000f (Guake!): Frame has assigned frame counter but no frame drawn time`) timestamps: 10:19:07, 14:15:26, 14:24:13, 14:54:42, 16:19:30 — a meaningfully higher rate than previously logged (prior checks found it only within isolated ~35min windows). `extension.js` unchanged throughout (still Sep 17 mtime, no edits). `guake-reposition` itself logged ~20 successful placements in the same window with zero errors — the reposition logic is not failing or erroring. Two of the five freezes (14:54:42, 16:19:30) coincide with a successful reposition log line at the same timestamp.
+
+**Conclusion: §2.46/§2.47's deferred `move_frame()` approach (via `global.compositor.get_laters().add()`) does not resolve the freeze.** The correlation between successful repositions and freezes supports §2.44's original theory — a Mutter compositor frame-timing race triggered by the `move_frame()` call itself — and deferring the call changed timing but did not eliminate the race. This is a genuine negative result for the fix approach, not an untested pending state.
+
+**User declined disabling the reposition extension as a workaround** — reports that a simple minimise/restore cycle recovers from the freeze when it happens, so the cost of leaving it as-is (a recoverable, if annoying, freeze) is preferred over losing automatic monitor placement.
+
+**Status: OPEN.** §2.46/§2.47 ruled out as a fix (confirmed insufficient, not just unverified). No further fix attempted this session. Next investigation avenue, if picked up: this looks like an upstream Mutter/GNOME Shell bug in frame-timing accounting rather than something a small JS extension can reliably work around from outside — worth checking for an upstream bug report matching the exact `0x80000f` / "frame counter but no frame drawn time" signature before attempting a fourth extension-side patch.
+
+---
+
 _End of draft._
