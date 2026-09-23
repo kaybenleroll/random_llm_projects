@@ -1128,4 +1128,18 @@ Cannot currently distinguish these — both are plausible given available eviden
 
 ---
 
+### §2.55 — SKIKK's TDP-math reply doesn't resolve the 420W-vs-280W question; RTX 5090 variant page also lists 420W, reopening it (2026-09-23)
+
+**SKIKK support replied to §2.52's email, disputing the 420W figure via TDP math, not addressing the spec-sheet discrepancy.** Their math: GPU 115W TGP + CPU 75W cTDP + ~90W headroom ≈ 280W — i.e. they're defending the shipped 280W unit as adequate for this config's actual power budget, implicitly treating 420W as overkill/wrong.
+
+**Cross-check: SKIKK's own Thor 16 RTX 5090 configuration page also lists 420W as the power supply** (WebFetch, `skikk.eu/en/laptops/thor-16-ryzen9-rtx-5090`, today: "Power Supply: 420W", plus an optional "420W extra adapter" add-on). The 5090 draws substantially more power than the 5070 Ti — if SKIKK genuinely scaled adapter wattage to GPU tier, the 5090 page should list something higher than 420W, not the same figure. It doesn't. This is consistent with Thor 16 standardizing on **one 420W PSU across the whole model line** (chassis-level parts consolidation) rather than a per-GPU-tier spec.
+
+**This reopens the question rather than closing it.** SKIKK's TDP math answers "does a 5070 Ti config need 420W to run" (no, fair point) but not "does your own spec/parts list say a 420W unit ships with this chassis regardless of GPU config, and if so why did this unit ship with 280W instead." Their reply didn't engage with the 5090-page cross-check at all (not yet sent to them at time of reply).
+
+**Action: reply drafted** (not sent — user to review/send), acknowledging the TDP math is fair for what the config needs, presenting the 5090-page cross-check, and asking SKIKK to confirm (a) whether Thor 16 standardizes on one 420W PSU regardless of GPU tier, and (b) if so, why this unit shipped with 280W instead. Draft kept outside this doc (handed to user directly).
+
+**Status: OPEN, escalated to vendor — reopened, not resolved.** Awaiting user to send the drafted reply and SKIKK's response. Full detail this section; supersedes nothing in §2.52 (still an open vendor escalation), adds the TDP-math reply and 5090 cross-check as new evidence.
+
+---
+
 _End of draft._
