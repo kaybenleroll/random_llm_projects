@@ -16,6 +16,8 @@ This file is also injected into subproject sessions (`system_queries/`, `leisure
 - `update_cv/` — CV and resume work
 - `hardware_research/` — hardware buying and reviewing research (tablets, LLM inference machines, etc.)
 - `claude_code_research/` — Claude Code capability research and experiments
+- `codex_research/` — Codex harness policy and model comparison
+- `pi_research/` — pi harness research and experiments
 
 Exit this session, `cd` into the relevant subfolder, and relaunch there. Machine/hardware/system-fix questions load their context only in `system_queries/` sessions — answer them only after relaunching there, never from memory. The only legitimate reasons to run from this root: editing shared config (`.claude/rules/skill-hygiene.md`, `mise.toml`) or cross-project housekeeping.
 
