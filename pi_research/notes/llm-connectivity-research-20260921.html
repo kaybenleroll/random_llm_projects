@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pi LLM connectivity research</title>
+  <style>
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+--nav-h: 56px;
+--sidebar-w: 320px;
+--sidebar-min: 240px;
+--sidebar-max: 520px;
+--accent: #2563eb;
+--accent-dark: #1d4ed8;
+--bg: #f9fafb;
+--surface: #ffffff;
+--border: #e5e7eb;
+--text: #111827;
+--muted: #6b7280;
+--code-bg: #1e1e2e;
+--radius: 6px;
+--font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+--font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", ui-monospace, monospace;
+}
+html { font-size: 16px; scroll-behavior: smooth; }
+body {
+font-family: var(--font-sans);
+color: var(--text);
+background: var(--bg);
+line-height: 1.7;
+}
+
+.navbar {
+position: fixed;
+top: 0; left: 0; right: 0;
+height: var(--nav-h);
+background: var(--accent);
+color: #fff;
+display: flex;
+align-items: center;
+padding: 0 1.5rem;
+z-index: 100;
+box-shadow: 0 2px 8px rgba(0,0,0,.18);
+gap: 1rem;
+}
+.navbar-brand {
+font-size: 1.05rem;
+font-weight: 700;
+letter-spacing: -.01em;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+flex: 1;
+}
+.navbar-meta {
+font-size: .8rem;
+opacity: .75;
+white-space: nowrap;
+}
+
+.layout {
+display: flex;
+margin-top: var(--nav-h);
+min-height: calc(100vh - var(--nav-h));
+}
+
+.sidebar {
+width: clamp(var(--sidebar-min), var(--sidebar-w), var(--sidebar-max));
+min-width: var(--sidebar-min);
+max-width: var(--sidebar-max);
+flex-shrink: 0;
+position: sticky;
+top: var(--nav-h);
+height: calc(100vh - var(--nav-h));
+overflow-y: auto;
+overflow-x: hidden;
+background: var(--surface);
+border-right: 1px solid var(--border);
+padding: 1.25rem 0;
+}
+.sidebar-resizer {
+width: 10px;
+flex: 0 0 10px;
+cursor: col-resize;
+background: linear-gradient(to right, transparent 0, transparent 40%, var(--border) 40%, var(--border) 60%, transparent 60%, transparent 100%);
+user-select: none;
+touch-action: none;
+}
+.layout.is-resizing,
+.layout.is-resizing * {
+cursor: col-resize;
+user-select: none;
+}
+.sidebar-heading {
+font-size: .7rem;
+font-weight: 700;
+text-transform: uppercase;
+letter-spacing: .08em;
+color: var(--muted);
+padding: 0 1.25rem .5rem;
+}
+.sidebar-tools {
+padding: 0 1.25rem .75rem;
+}
+.math-mode-btn {
+width: 100%;
+border: 1px solid var(--border);
+background: #f8fafc;
+color: #334155;
+border-radius: 6px;
+padding: .4rem .55rem;
+font-size: .75rem;
+line-height: 1.2;
+cursor: pointer;
+transition: background .15s, color .15s, border-color .15s;
+}
+.math-mode-btn:hover,
+.math-mode-btn:focus {
+background: #eff6ff;
+color: var(--accent);
+border-color: #bfdbfe;
+}
+
+#TOC {
+font-size: .83rem;
+}
+#TOC ul {
+list-style: none;
+padding: 0;
+}
+#TOC > ul { padding: 0; }
+#TOC li { line-height: 1.4; }
+#TOC a {
+display: block;
+padding: .3rem 1.25rem;
+color: var(--muted);
+text-decoration: none;
+border-left: 2px solid transparent;
+transition: color .15s, border-color .15s, background .15s;
+}
+#TOC a:hover {
+color: var(--accent);
+background: #eff6ff;
+border-left-color: var(--accent);
+}
+
+#TOC ul ul a { padding-left: 2rem; font-size: .78rem; }
+#TOC ul ul ul a { padding-left: 2.75rem; font-size: .75rem; }
+#TOC li.has-toggle {
+display: flex;
+flex-wrap: wrap;
+align-items: baseline;
+}
+#TOC li.has-toggle > .toc-toggle {
+flex: 0 0 auto;
+margin-right: .2rem;
+vertical-align: middle;
+}
+#TOC li.has-toggle > a.toc-link-inline {
+display: inline-block;
+flex: 1 1 0%;
+min-width: 0;
+padding-left: 0;
+border-left: none;
+vertical-align: middle;
+}
+#TOC li.has-toggle.toc-depth-2 > .toc-toggle { margin-left: 2rem; }
+#TOC li.has-toggle.toc-depth-3 > .toc-toggle { margin-left: 2.75rem; }
+#TOC li.has-toggle > ul {
+flex: 1 0 100%;
+width: 100%;
+}
+
+.toc-toggle {
+background: none;
+border: none;
+padding: 0 .3em 0 0;
+margin: 0;
+cursor: pointer;
+color: #9399b2;
+font-size: 1em;
+line-height: 1;
+vertical-align: middle;
+outline: none;
+transition: color .15s;
+}
+.toc-toggle:focus,
+.toc-toggle:hover {
+color: var(--accent);
+}
+.toc-arrow {
+display: inline-block;
+transition: transform .15s;
+}
+.toc-toggle.expanded .toc-arrow {
+transform: rotate(90deg);
+}
+.toc-toggle.collapsed .toc-arrow {
+transform: rotate(0deg);
+}
+
+.content {
+flex: 1;
+min-width: 0;
+
+padding: 2.5rem clamp(1.25rem, 3vw, 3rem);
+max-width: 1400px;
+}
+.content-inner {
+width: 100%;
+display: flex;
+flex-direction: column;
+align-items: stretch;
+}
+.content-inner > :where(h1, h2, h3, h4, h5, h6, p, ul, ol, blockquote) {
+max-width: 100ch;
+}
+.content-inner > :where(pre, .code-tabs, .code-details, div.sourceCode) {
+width: 100%;
+max-width: none;
+}
+.content-inner > :where(table, .broad-table, .compact-table) {
+align-self: flex-start;
+}
+
+h1, h2, h3, h4, h5, h6 {
+font-weight: 700;
+line-height: 1.25;
+margin-top: 2em;
+margin-bottom: .6em;
+color: var(--text);
+scroll-margin-top: calc(var(--nav-h) + 1rem);
+}
+h1 { font-size: 2rem; margin-top: 0; }
+h2 { font-size: 1.45rem; border-bottom: 1px solid var(--border); padding-bottom: .35em; }
+h3 { font-size: 1.15rem; }
+h4 { font-size: 1rem; }
+p { margin-bottom: 1rem; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+strong { font-weight: 650; }
+em { font-style: italic; }
+hr {
+border: none;
+border-top: 1px solid var(--border);
+margin: 2.5rem 0;
+}
+
+table {
+width: fit-content;
+max-width: 100%;
+border-collapse: collapse;
+font-size: .88rem;
+margin: 1.5rem 0;
+background: var(--surface);
+border-radius: var(--radius);
+overflow: hidden;
+box-shadow: 0 1px 3px rgba(0,0,0,.08);
+}
+
+.content-inner > :where(table:has(tr > :nth-child(4)), .broad-table) {
+width: 100%;
+max-width: none;
+}
+.broad-table > table {
+width: 100%;
+max-width: none;
+}
+/* Pandoc derives <col> percentages from Markdown separator widths. */
+    .compact-table {
+      width: fit-content;
+      max-width: 100%;
+      overflow-x: auto;
+    }
+
+    .compact-table > table {
+      width: max-content;
+      max-width: none;
+      table-layout: auto;
+    }
+
+    .compact-table > table colgroup > col {
+      width: auto !important;
+    }
+
+    th {
+      background: #f3f4f6;
+      font-weight: 650;
+      text-align: left;
+      padding: .6rem .9rem;
+      border-bottom: 2px solid var(--border);
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    td {
+      padding: .55rem .9rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+      overflow-wrap: anywhere;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f9fafb; }
+
+    /* ── Code ──────────────────────────────────────────────────────── */
+    code {
+      font-family: var(--font-mono);
+      font-size: .85em;
+      background: #f3f4f6;
+      color: #be185d;
+      padding: .15em .4em;
+      border-radius: 3px;
+    }
+
+    pre {
+      background: var(--code-bg);
+      color: #cdd6f4;
+      border-radius: var(--radius);
+      padding: 1.1rem 1.25rem;
+      overflow-x: auto;
+      margin: 1.25rem 0;
+      font-size: .83rem;
+      line-height: 1.6;
+      box-shadow: inset 0 1px 4px rgba(0,0,0,.3);
+    }
+
+    pre code {
+      background: transparent;
+      color: inherit;
+      padding: 0;
+      font-size: inherit;
+    }
+
+    /* ── Blockquotes ───────────────────────────────────────────────── */
+    blockquote {
+      border-left: 4px solid var(--accent);
+      margin: 1.5rem 0;
+      padding: .75rem 1.25rem;
+      background: #eff6ff;
+      border-radius: 0 var(--radius) var(--radius) 0;
+      color: #1e3a5f;
+      font-style: italic;
+    }
+
+    /* ── Lists ─────────────────────────────────────────────────────── */
+    ul, ol {
+      padding-left: 1.75rem;
+      margin-bottom: 1rem;
+    }
+
+    li { margin-bottom: .3rem; }
+
+    /* ── Syntax highlight overrides (tango theme base) ─────────────── */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    background-color: #232629;
+    color: #7a7c7d;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #7a7c7d;  padding-left: 4px; }
+div.sourceCode
+  { color: #cfcfc2; background-color: #232629; }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span { color: #cfcfc2; } /* Normal */
+code span.al { color: #95da4c; background-color: #4d1f24; font-weight: bold; } /* Alert */
+code span.an { color: #3f8058; } /* Annotation */
+code span.at { color: #2980b9; } /* Attribute */
+code span.bn { color: #f67400; } /* BaseN */
+code span.bu { color: #7f8c8d; } /* BuiltIn */
+code span.cf { color: #fdbc4b; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #3daee9; } /* Char */
+code span.cn { color: #27aeae; font-weight: bold; } /* Constant */
+code span.co { color: #7a7c7d; } /* Comment */
+code span.cv { color: #7f8c8d; } /* CommentVar */
+code span.do { color: #a43340; } /* Documentation */
+code span.dt { color: #2980b9; } /* DataType */
+code span.dv { color: #f67400; } /* DecVal */
+code span.er { color: #da4453; text-decoration: underline; } /* Error */
+code span.ex { color: #0099ff; font-weight: bold; } /* Extension */
+code span.fl { color: #f67400; } /* Float */
+code span.fu { color: #8e44ad; } /* Function */
+code span.im { color: #27ae60; } /* Import */
+code span.in { color: #c45b00; } /* Information */
+code span.kw { color: #cfcfc2; font-weight: bold; } /* Keyword */
+code span.op { color: #cfcfc2; } /* Operator */
+code span.ot { color: #27ae60; } /* Other */
+code span.pp { color: #27ae60; } /* Preprocessor */
+code span.re { color: #2980b9; background-color: #153042; } /* RegionMarker */
+code span.sc { color: #3daee9; } /* SpecialChar */
+code span.ss { color: #da4453; } /* SpecialString */
+code span.st { color: #f44f4f; } /* String */
+code span.va { color: #27aeae; } /* Variable */
+code span.vs { color: #da4453; } /* VerbatimString */
+code span.wa { color: #da4453; } /* Warning */
+
+    /* ── Code tabs ─────────────────────────────────────────────────── */
+    .code-tabs {
+      margin: 1.25rem 0;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.08);
+    }
+
+    .code-tab-bar {
+      display: flex;
+      background: #16161f;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      padding: 0 .5rem;
+      gap: .15rem;
+    }
+
+    .code-tab-btn {
+      padding: .45rem 1rem;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: #9399b2;
+      font-family: var(--font-mono);
+      font-size: .78rem;
+      cursor: pointer;
+      transition: color .15s, border-color .15s;
+      white-space: nowrap;
+    }
+
+    .code-tab-btn:hover { color: #cdd6f4; }
+    .code-tab-btn.active { color: #89b4fa; border-bottom-color: #89b4fa; }
+
+    .code-tab-btn:focus-visible, .code-tab-panel:focus-visible {
+      outline: 2px solid #89b4fa;
+      outline-offset: -2px;
+    }
+
+    .code-tab-panel[hidden] { display: none; }
+    .code-tabs .code-tab-label { display: none; }
+
+    .code-tab-panel > div.sourceCode > pre {
+      margin: 0;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    /* ── Collapsible single code blocks ─────────────────────────────── */
+    .code-details {
+      margin: 1.25rem 0;
+    }
+
+    .code-details > div.sourceCode {
+      margin: 0;
+    }
+
+    .code-details > div.sourceCode > pre {
+      margin: 0;
+      border-radius: 0 0 var(--radius) var(--radius);
+      box-shadow: inset 0 1px 4px rgba(0,0,0,.3);
+    }
+
+    .code-summary {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .4rem .85rem;
+      background: #16161f;
+      color: #9399b2;
+      font-family: var(--font-mono);
+      font-size: .78rem;
+      cursor: pointer;
+      border-radius: var(--radius) var(--radius) 0 0;
+      list-style: none;
+      user-select: none;
+    }
+
+    .code-summary::-webkit-details-marker { display: none; }
+
+    .code-summary::before {
+      content: '▶';
+      font-size: .6rem;
+      transition: transform .15s;
+      flex-shrink: 0;
+    }
+
+    details[open] .code-summary::before { transform: rotate(90deg); }
+
+    details:not([open]) .code-details > div.sourceCode > pre {
+      border-radius: 0;
+    }
+
+    /* ── Responsive: convert sidebar to top TOC on small screens ────── */
+    @media (max-width: 768px) {
+      .layout {
+        display: block;
+      }
+
+      .sidebar {
+        display: block;
+        position: static;
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: .75rem 0;
+      }
+
+      .sidebar-heading {
+        padding-bottom: .25rem;
+      }
+
+      #TOC a {
+        padding-top: .4rem;
+        padding-bottom: .4rem;
+      }
+
+      .sidebar-resizer { display: none; }
+      .navbar-meta { display: none; }
+
+      .content {
+        max-width: 100%;
+        padding-top: 1.25rem;
+      }
+      .content-inner > :where(table, .broad-table, .compact-table) {
+        display: block;
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .content-inner > .broad-table > table {
+        min-width: 48rem;
+      }
+      .content-inner > .compact-table > table {
+        width: max-content;
+      }
+      .code-tab-bar {
+        overflow-x: auto;
+      }
+    }
+
+    @media (min-width: 769px) and (max-width: 1100px) {
+      .sidebar {
+        width: 260px;
+        min-width: 220px;
+      }
+    }
+
+    /* ── Print ─────────────────────────────────────────────────────── */
+    @media print {
+      .navbar, .sidebar, .sidebar-resizer { display: none; }
+      .content { padding: 0; max-width: 100%; }
+      .code-tab-bar { display: none; }
+      .code-tabs { overflow: visible; border: 0; }
+      .code-tabs .code-tab-panel { display: block !important; }
+      .code-tabs .code-tab-label {
+        display: block;
+        color: #000;
+        margin: 1rem 0 .5rem;
+        break-after: avoid;
+      }
+    }
+
+    /* ── Custom code color overrides for readability ── */
+    code span.fu { color: #c792ea !important; } /* function names: lighter purple */
+  </style>
+
+</head>
+<body>
+
+  <nav class="navbar">
+    <span class="navbar-brand">Pi LLM connectivity research</span>
+    <span class="navbar-meta">2026-09-21</span>
+    <span class="navbar-meta">September 21, 2026</span>
+
+  </nav>
+
+  <div class="layout">
+
+    <aside class="sidebar">
+      <p class="sidebar-heading">Contents</p>
+      <div class="sidebar-tools">
+        <button id="math-mode-toggle" class="math-mode-btn" type="button">Switch math renderer</button>
+      </div>
+      <div id="TOC" aria-label="Table of contents"><ul>
+<li><a href="#pi-llm-connectivity-research" id="toc-pi-llm-connectivity-research">Pi LLM connectivity research</a>
+<ul>
+<li><a href="#executive-conclusion" id="toc-executive-conclusion">Executive conclusion</a></li>
+<li><a href="#what-pi-can-connect-to" id="toc-what-pi-can-connect-to">What Pi can connect to</a></li>
+<li><a href="#local-llama.cpp-path" id="toc-local-llama.cpp-path">Local
+llama.cpp path</a></li>
+<li><a href="#hosted-options-worth-testing" id="toc-hosted-options-worth-testing">Hosted options worth
+testing</a></li>
+<li><a href="#openrouter-specific-design" id="toc-openrouter-specific-design">OpenRouter-specific design</a></li>
+<li><a href="#first-wave-shortlist" id="toc-first-wave-shortlist">First-wave shortlist</a></li>
+<li><a href="#minimal-connection-test-plan" id="toc-minimal-connection-test-plan">Minimal connection test
+plan</a></li>
+<li><a href="#sources-and-evidence" id="toc-sources-and-evidence">Sources and evidence</a></li>
+<li><a href="#deferred" id="toc-deferred">Deferred</a></li>
+</ul></li>
+</ul></div>
+
+    </aside>
+
+    <div class="sidebar-resizer" aria-hidden="true" title="Drag to resize sidebar"></div>
+
+    <main class="content">
+      <div class="content-inner">
+<h1 id="pi-llm-connectivity-research">Pi LLM connectivity research</h1>
+<p>Research checkpoint: 2026-09-21. Scope is model access and transport
+only. This is not yet a machine-specific configuration or a
+recommendation to put API keys in this repository.</p>
+<h2 id="executive-conclusion">Executive conclusion</h2>
+<p>Pi is a useful connection layer for this project because it can
+select among subscription providers, direct API providers, OpenRouter,
+and local servers from one CLI. The clean first design is three
+lanes:</p>
+<ol type="1">
+<li><strong>Local default:</strong> the existing <code>llama.cpp</code>
+Docker server, preferably in router mode so Pi can load and unload GGUF
+models without changing the Pi session configuration.</li>
+<li><strong>Hosted low-cost fallback:</strong> OpenRouter pay-as-you-go
+with explicit model IDs and restricted provider routing, plus one direct
+provider for a stable baseline. OpenRouter is convenient but adds
+routing/data-policy complexity.</li>
+<li><strong>Higher-capability escape hatch:</strong> a subscription or
+direct API provider already available to the user, selected explicitly
+for tasks where local or budget models fail.</li>
+</ol>
+<p>This separates harness experiments from provider lock-in. It also
+makes local privacy the default and keeps external usage measurable.</p>
+<p>Related durable documents: <a href="pi-llm-provider-and-model-landscape-20260921.md">provider and
+model landscape</a>, <a href="pi-connectivity-run-20260921.md">connectivity run</a>, and the <a href="../artifacts/pi-hosted-provider-runbook.md">hosted-provider
+runbook</a>.</p>
+<h2 id="what-pi-can-connect-to">What Pi can connect to</h2>
+<p>Pi 0.86.1 is installed locally as
+<code>@earendil-works/pi-coding-agent</code>. Its installed
+documentation and current pi.dev documentation describe:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Lane</th>
+<th>Connection mechanism</th>
+<th>Main implication</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Local <code>llama.cpp</code></td>
+<td>Built-in <code>llama.cpp</code> router integration;
+<code>/login llama.cpp</code>, <code>/llama</code>,
+<code>/model</code></td>
+<td>Best fit for the current Docker work; models are discovered/loaded
+by the router</td>
+</tr>
+<tr>
+<td>Local OpenAI-compatible server</td>
+<td><code>~/.pi/agent/models.json</code></td>
+<td>Works with llama.cpp single-server mode, Ollama, LM Studio, vLLM,
+SGLang, and proxies</td>
+</tr>
+<tr>
+<td>Direct APIs</td>
+<td>Built-in provider catalogs plus env vars or
+<code>auth.json</code></td>
+<td>Less indirection and clearer billing/data terms</td>
+</tr>
+<tr>
+<td>Aggregator</td>
+<td>Built-in OpenRouter provider or custom OpenAI-compatible entry</td>
+<td>Broad model choice and fallbacks; provider routing must be
+controlled deliberately</td>
+</tr>
+<tr>
+<td>Subscription OAuth</td>
+<td><code>/login</code> for supported services</td>
+<td>May avoid separate API keys, but entitlement and acceptable-use
+limits remain provider-specific</td>
+</tr>
+</tbody>
+</table>
+<p>Pi’s supported custom API shapes are <code>openai-completions</code>,
+<code>openai-responses</code>, <code>anthropic-messages</code>, and
+<code>google-generative-ai</code>. A provider can therefore be added
+without an extension when it faithfully implements one of those
+protocols; custom OAuth or a non-compatible protocol requires an
+extension.</p>
+<p>The installed 0.86.1 docs are not a timeless provider catalogue.
+Current pi.dev documentation lists additional providers and subscription
+paths that may not be present in an older binary. Before using a
+provider in a durable runbook, check both <code>pi --version</code> and
+<code>pi --list-models</code> (with network refresh enabled).</p>
+<h2 id="local-llama.cpp-path">Local llama.cpp path</h2>
+<p>Pi has a dedicated router integration. The documented server shape
+is:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">llama-server</span> <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--models-dir</span> ~/models <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--no-models-autoload</span> <span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--jinja</span> <span class="dt">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">--host</span> 127.0.0.1 <span class="dt">\</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">--port</span> 8080 <span class="dt">\</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">-ngl</span> 999 <span class="dt">\</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c</span> 32768</span></code></pre></div>
+<p>Then use <code>/login llama.cpp</code>, or:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">LLAMA_BASE_URL</span><span class="op">=</span>http://127.0.0.1:8080</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">LLAMA_API_KEY</span><span class="op">=</span>optional-secret</span></code></pre></div>
+<p>Important constraints:</p>
+<ul>
+<li>Start <code>llama-server</code> without <code>--model</code>,
+<code>-m</code>, or <code>-hf</code>; those select single-model mode
+instead of router mode.</li>
+<li><code>--jinja</code> matters for modern chat templates and tool
+calling.</li>
+<li>Only loaded models appear in Pi’s <code>/model</code>;
+<code>/llama</code> performs load/unload and can download GGUFs from
+Hugging Face.</li>
+<li>Keep the server bound to <code>127.0.0.1</code> unless remote access
+is intentional.</li>
+<li>If using a generic OpenAI-compatible entry in
+<code>models.json</code>, expect to set
+<code>supportsDeveloperRole: false</code> and
+<code>supportsReasoningEffort: false</code> for servers that do not
+implement those request features.</li>
+</ul>
+<p>The current Docker server should first be tested against Pi’s router
+protocol, not assumed compatible merely because
+<code>/v1/chat/completions</code> works. Verify <code>/health</code>,
+<code>/models</code>, model load/unload, streaming, tool calls, and
+context limits.</p>
+<h2 id="hosted-options-worth-testing">Hosted options worth testing</h2>
+<p>These are connection candidates, not claims that every current model
+is equally good for coding-agent work. Model IDs, pricing, rate limits,
+and availability must be refreshed before each benchmark.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Provider/path</th>
+<th>Why it belongs in the test set</th>
+<th>Watch-outs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OpenRouter</td>
+<td>One API for a large, changing catalogue; Pi supports API keys and
+OAuth-minted keys</td>
+<td>Standard pay-as-you-go currently carries a platform fee; free access
+has a small model/provider set and a 50-request/day limit; fallback
+routing can change the upstream provider</td>
+</tr>
+<tr>
+<td>Google Gemini API</td>
+<td>A free tier exists for selected models; paid tier has higher limits
+and Google states paid content is not used to improve products</td>
+<td>Free-tier content-use terms differ; tool-calling and coding quality
+vary by model; verify current model IDs and regional availability</td>
+</tr>
+<tr>
+<td>DeepSeek direct</td>
+<td>Usually a strong low-cost reasoning/coding baseline and
+OpenAI-format endpoint</td>
+<td>Provider-specific retention/training terms need reading; current
+model/pricing page is volatile; do not infer privacy from OpenAI
+compatibility</td>
+</tr>
+<tr>
+<td>Groq / Cerebras</td>
+<td>Very fast hosted inference for open models; useful for short edits,
+classification, and rapid feedback</td>
+<td>Throughput/rate limits and model availability are the product;
+latency is not the same as agent quality</td>
+</tr>
+<tr>
+<td>Mistral direct</td>
+<td>European provider and direct API path; sensible open-model and
+coding candidates</td>
+<td>Current model catalogue, tool support, and retention guarantees vary
+by plan/API</td>
+</tr>
+<tr>
+<td>Together / Fireworks</td>
+<td>Broad open-model hosting with more control than an aggregator;
+useful for comparing Qwen, DeepSeek, Llama, and similar families</td>
+<td>Per-token prices, throughput tiers, and data policies vary by
+endpoint; verify tool-calling support per model</td>
+</tr>
+<tr>
+<td>Cloudflare Workers AI / AI Gateway</td>
+<td>Useful if Cloudflare is already part of the deployment boundary;
+gateway can unify upstreams, BYOK, and observability</td>
+<td>Adds another control plane; distinguish Workers AI models, unified
+billing, stored BYOK, and inline BYOK</td>
+</tr>
+<tr>
+<td>OpenCode Zen/Go, Z.ai, Kimi, Qwen token plans, MiniMax</td>
+<td>Pi has provider entries for several coding-focused services and
+plans</td>
+<td>Treat plan quotas and acceptable-use limits as subscription
+products, not unlimited API capacity</td>
+</tr>
+</tbody>
+</table>
+<p>For the first inexpensive hosted benchmark, use one direct path
+(Gemini or DeepSeek), one fast open-model path (Groq or Cerebras), and
+OpenRouter with provider pinning. This gives useful comparison without
+wiring every provider at once.</p>
+<h2 id="openrouter-specific-design">OpenRouter-specific design</h2>
+<p>OpenRouter is best treated as a catalogue/router, not as a privacy
+boundary. Its API exposes model/provider metadata and pricing, and its
+routing can choose among upstream providers. For reproducible
+experiments:</p>
+<ul>
+<li>pin an exact model ID rather than a broad alias;</li>
+<li>restrict or explicitly order upstream providers when data location
+or policy matters;</li>
+<li>record the returned model/provider, latency, input/output tokens,
+and errors;</li>
+<li>use provider data-policy filters where the account tier supports
+them;</li>
+<li>do not send secrets or proprietary source to free/fallback routes
+until the selected upstream policy is confirmed.</li>
+</ul>
+<p>OpenRouter’s current pricing page says the free tier has 25+ free
+models, four free providers, and 50 requests/day; Standard pay-as-you-go
+lists a 5.5% platform fee and provider-passthrough rate limits. These
+values are dated observations, not durable configuration constants.</p>
+<h2 id="first-wave-shortlist">First-wave shortlist</h2>
+<p>The research agents’ practical recommendation is:</p>
+<ul>
+<li><strong>Local:</strong> current <code>llama.cpp</code> router as the
+privacy-preserving baseline.</li>
+<li><strong>Primary hosted budget lane:</strong> direct paid Gemini
+Flash, with a billing cap. Google distinguishes free-tier data use from
+paid API data-use terms, so do not treat the free tier as the
+privacy-equivalent option.</li>
+<li><strong>Open-model bulk lane:</strong> Together first; benchmark its
+current cheap function-calling models on non-sensitive tasks. Fireworks
+is a comparable alternative when serverless throughput or future
+dedicated deployment matters.</li>
+<li><strong>EU/privacy-sensitive hosted lane:</strong> direct Mistral,
+but only after the applicable endpoint and ZDR eligibility are
+confirmed. EU processing alone is not a retention guarantee.</li>
+<li><strong>Fast short-loop lane:</strong> Groq or Cerebras for triage
+and small edits. Their speed is useful, but it does not make them the
+default for difficult repository-level reasoning.</li>
+<li><strong>Evaluation/fallback lane:</strong> OpenRouter with an exact
+model and explicit provider allowlist. Broad automatic fallback is
+inappropriate for sensitive code because the upstream processor can
+change.</li>
+<li><strong>Non-sensitive experiment only:</strong> DeepSeek direct
+until its current retention and training terms are acceptable for the
+material being sent.</li>
+</ul>
+<p>These are routing roles, not permanent model rankings. Token prices,
+model IDs, free quotas, context windows, and rate limits are volatile
+and should be captured by the benchmark at run time.</p>
+<h2 id="minimal-connection-test-plan">Minimal connection test plan</h2>
+<p>Run the same small repository task through each lane:</p>
+<ol type="1">
+<li><code>pi --provider llama.cpp --model &lt;loaded-model&gt;</code>:
+read-only repository map.</li>
+<li>A tool-calling task that edits one disposable file, then checks the
+diff.</li>
+<li>A longer-context task with an intentionally bounded context
+window.</li>
+<li>The same prompts through one direct hosted API and OpenRouter.</li>
+<li>Record success, tool-call validity, time-to-first-token, total
+latency, input/output tokens, estimated cost, and whether the model
+needed human correction.</li>
+</ol>
+<p>Do not rank models by chat quality alone. For this use case, valid
+tool calls, stable multi-turn state, context handling, and predictable
+failure behavior are more important than a single benchmark score.</p>
+<h2 id="sources-and-evidence">Sources and evidence</h2>
+<ul>
+<li>Pi providers: https://pi.dev/docs/latest/providers</li>
+<li>Pi custom models and compatibility:
+https://pi.dev/docs/latest/models</li>
+<li>Pi llama.cpp integration: installed
+<code>pi/docs/llama-cpp.md</code> and
+https://pi.dev/docs/latest/providers#llamacpp</li>
+<li>llama.cpp OpenAI-compatible server:
+https://github.com/ggml-org/llama.cpp</li>
+<li>OpenRouter pricing and limits: https://openrouter.ai/pricing</li>
+<li>OpenRouter provider metadata/routing API:
+https://openrouter.ai/docs/api/api-reference/providers/list-all-providers</li>
+<li>Gemini API pricing and data-use tiers:
+https://ai.google.dev/gemini-api/docs/pricing</li>
+<li>DeepSeek models/pricing:
+https://api-docs.deepseek.com/quick_start/pricing/</li>
+<li>Fireworks pricing: https://fireworks.ai/pricing</li>
+</ul>
+<h2 id="deferred">Deferred</h2>
+<p>Configuration files, secret-management integration, benchmark harness
+code, Pi extensions/skills, and a final model shortlist should follow a
+successful connectivity smoke test. They should not be mixed into this
+research checkpoint.</p>
+      </div>
+    </main>
+
+  </div>
+
+  <script>
+    // Robust collapsible TOC logic: wait for #TOC, add logging
+    function firstChildByTag(parent, tagName) {
+      var children = parent.children;
+      for (var i = 0; i < children.length; i++) {
+        if (children[i].tagName === tagName) {
+          return children[i];
+        }
+      }
+      return null;
+    }
+
+    function tocDepth(li, tocRoot) {
+      var depth = 0;
+      var node = li;
+      while (node && node !== tocRoot) {
+        if (node.tagName === 'UL') {
+          depth += 1;
+        }
+        node = node.parentElement;
+      }
+      return depth;
+    }
+
+    function makeTOCCollapsible() {
+      var toc = document.getElementById('TOC');
+      if (!toc) { return false; }
+      // Only run once
+      if (toc.classList.contains('collapsible-ready')) { return true; }
+      toc.classList.add('collapsible-ready');
+
+      Array.prototype.forEach.call(toc.querySelectorAll('li'), function (li) {
+        var depth = tocDepth(li, toc);
+        li.classList.add('toc-depth-' + String(depth));
+
+        var sublist = firstChildByTag(li, 'UL');
+        if (sublist && depth >= 1) {
+          var btn = document.createElement('button');
+          btn.setAttribute('type', 'button');
+          btn.className = 'toc-toggle';
+          btn.innerHTML = '<span class="toc-arrow">▶</span>';
+          btn.setAttribute('aria-label', 'Expand/collapse section');
+          var firstLink = firstChildByTag(li, 'A');
+          li.classList.add('has-toggle');
+          if (firstLink) {
+            firstLink.classList.add('toc-link-inline');
+            li.insertBefore(btn, firstLink);
+          } else {
+            li.insertBefore(btn, li.firstChild);
+          }
+          sublist.style.display = 'none';
+          btn.classList.add('collapsed');
+          btn.setAttribute('aria-expanded', 'false');
+          btn.addEventListener('click', function () {
+            var open = sublist.style.display !== 'none';
+            sublist.style.display = open ? 'none' : '';
+            btn.classList.toggle('collapsed', open);
+            btn.classList.toggle('expanded', !open);
+            btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+          });
+        }
+      });
+      console.log('[TOC] Collapsible TOC initialized');
+      return true;
+    }
+
+    // Try on DOMContentLoaded, then poll for late-injected TOC
+    function initTOCWithRetries() {
+      var tries = 0;
+      var maxTries = 20;
+      var interval = setInterval(function () {
+        var done = makeTOCCollapsible();
+        if (done || ++tries > maxTries) clearInterval(interval);
+      }, 200);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initTOCWithRetries);
+    } else {
+      initTOCWithRetries();
+    }
+
+    // Math renderer toggle: switch between generated mathjax/mathml files.
+    (function initMathModeToggle() {
+      var btn = document.getElementById('math-mode-toggle');
+      if (!btn) {
+        return;
+      }
+
+      var path = window.location.pathname || '';
+      var targetPath = '';
+      var label = '';
+      var defaultMathRenderer = 'mathjax';
+
+      if (path.endsWith('.mathml.html')) {
+        targetPath = path.slice(0, -('.mathml.html'.length)) + '.mathjax.html';
+        label = 'Switch to MathJax';
+      } else if (path.endsWith('.mathjax.html')) {
+        targetPath = path.slice(0, -('.mathjax.html'.length)) + '.mathml.html';
+        label = 'Switch to MathML';
+      } else if (path.endsWith('.html')) {
+        if (defaultMathRenderer === 'mathml') {
+          targetPath = path.slice(0, -('.html'.length)) + '.mathjax.html';
+          label = 'Switch to MathJax';
+        } else {
+          targetPath = path.slice(0, -('.html'.length)) + '.mathml.html';
+          label = 'Switch to MathML';
+        }
+      }
+
+      if (!targetPath) {
+        btn.style.display = 'none';
+        return;
+      }
+
+      btn.textContent = label;
+      btn.addEventListener('click', function () {
+        window.location.href = targetPath + (window.location.search || '') + (window.location.hash || '');
+      });
+    })();
+
+      // Sidebar resizer logic (existing)
+      var root = document.documentElement;
+      var layout = document.querySelector('.layout');
+      var sidebar = document.querySelector('.sidebar');
+      var resizer = document.querySelector('.sidebar-resizer');
+      var STORAGE_KEY = 'llm_primer_sidebar_width';
+
+      // if (!layout || !sidebar || !resizer) {
+      //   return;
+      // }
+
+
+      function cssPxVar(name, fallback) {
+        var raw = getComputedStyle(root).getPropertyValue(name).trim();
+        var n = parseFloat(raw);
+        return Number.isFinite(n) ? n : fallback;
+      }
+
+      function clamp(value, min, max) {
+        return Math.min(max, Math.max(min, value));
+      }
+
+      function applyWidth(px) {
+        root.style.setProperty('--sidebar-w', px + 'px');
+      }
+
+      var min = cssPxVar('--sidebar-min', 240);
+      var max = cssPxVar('--sidebar-max', 520);
+
+      var saved = parseFloat(localStorage.getItem(STORAGE_KEY) || '');
+      if (Number.isFinite(saved)) {
+        applyWidth(clamp(saved, min, max));
+      }
+
+      var dragging = false;
+
+      function onMove(ev) {
+        if (!dragging) {
+          return;
+        }
+        var next = clamp(ev.clientX, min, max);
+        applyWidth(next);
+      }
+
+      function onUp() {
+        if (!dragging) {
+          return;
+        }
+        dragging = false;
+        layout.classList.remove('is-resizing');
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+        localStorage.setItem(STORAGE_KEY, parseFloat(getComputedStyle(root).getPropertyValue('--sidebar-w')) || min);
+      }
+
+      resizer.addEventListener('pointerdown', function (ev) {
+        dragging = true;
+        layout.classList.add('is-resizing');
+        resizer.setPointerCapture(ev.pointerId);
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onUp);
+      });
+  </script>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var LANG_NAMES = {
+        python: 'Python', r: 'R', julia: 'Julia',
+        bash: 'Shell', sh: 'Shell', text: 'Output', markdown: 'Markdown'
+      };
+
+      function getLang(sourceDiv) {
+        var pre = sourceDiv.querySelector('pre');
+        if (!pre) return 'Code';
+        var classes = Array.prototype.slice.call(pre.classList);
+        for (var i = 0; i < classes.length; i++) {
+          var cls = classes[i];
+          if (cls === 'sourceCode') continue;
+          return LANG_NAMES[cls] || (cls.charAt(0).toUpperCase() + cls.slice(1));
+        }
+        return 'Code';
+      }
+
+      // A <p><strong>…</strong></p> language label inserted by the markdown author
+      function isLangLabel(node) {
+        if (!node || node.nodeType !== Node.ELEMENT_NODE || node.tagName !== 'P') return false;
+        var nonEmpty = Array.prototype.filter.call(node.childNodes, function (n) {
+          return !(n.nodeType === Node.TEXT_NODE && n.textContent.trim() === '');
+        });
+        return nonEmpty.length === 1 && nonEmpty[0].tagName === 'STRONG';
+      }
+
+      function isWhitespace(node) {
+        return node.nodeType === Node.TEXT_NODE && node.textContent.trim() === '';
+      }
+
+      // Sibling blocks may have whitespace or labels between them. Fenced .code-group
+      // wrappers bound explicit groups; unwrapped automatic groups still work as before.
+      function areConsecutive(a, b) {
+        var node = a.nextSibling;
+        while (node) {
+          if (node === b) return true;
+          if (isWhitespace(node) || isLangLabel(node)) { node = node.nextSibling; continue; }
+          return false;
+        }
+        return false;
+      }
+
+      function groupConsecutive(divs) {
+        var groups = [];
+        var i = 0;
+        while (i < divs.length) {
+          var run = [divs[i]];
+          while (i + 1 < divs.length && areConsecutive(run[run.length - 1], divs[i + 1])) {
+            i++;
+            run.push(divs[i]);
+          }
+          groups.push(run);
+          i++;
+        }
+        return groups;
+      }
+
+      var tabGroups = [];
+      var nextTabId = 0;
+
+      function uniqueId() {
+        var id;
+        do { id = 'code-tab-' + (++nextTabId); } while (document.getElementById(id));
+        return id;
+      }
+
+      function makeTabs(run, labels) {
+        var wrapper = document.createElement('div');
+        wrapper.className = 'code-tabs';
+
+        var tabBar = document.createElement('div');
+        tabBar.className = 'code-tab-bar';
+        tabBar.setAttribute('role', 'tablist');
+        tabBar.setAttribute('aria-label', 'Code examples by language');
+        wrapper.appendChild(tabBar);
+
+        var buttons = [];
+        var panels = [];
+
+        function activate(index, focus) {
+          buttons.forEach(function (button, i) {
+            var selected = i === index;
+            button.classList.toggle('active', selected);
+            button.setAttribute('aria-selected', String(selected));
+            button.tabIndex = selected ? 0 : -1;
+            panels[i].hidden = !selected;
+          });
+          if (focus) buttons[index].focus();
+        }
+
+        run.forEach(function (div, idx) {
+          // Keep authored labels (and any fragment IDs); create labels for automatic groups.
+          var label = labels[idx];
+          if (!label) {
+            label = document.createElement('p');
+            var strong = document.createElement('strong');
+            strong.textContent = getLang(div);
+            label.appendChild(strong);
+          }
+          label.classList.add('code-tab-label');
+
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.id = uniqueId();
+          btn.className = 'code-tab-btn';
+          btn.textContent = getLang(div);
+          btn.setAttribute('role', 'tab');
+          tabBar.appendChild(btn);
+          buttons.push(btn);
+
+          var panel = document.createElement('div');
+          panel.id = uniqueId();
+          panel.className = 'code-tab-panel';
+          panel.setAttribute('role', 'tabpanel');
+          panel.setAttribute('aria-labelledby', btn.id);
+          panel.tabIndex = 0;
+          btn.setAttribute('aria-controls', panel.id);
+          panel.appendChild(label);
+          panel.appendChild(div);
+          wrapper.appendChild(panel);
+          panels.push(panel);
+
+          btn.addEventListener('click', function () { activate(idx, false); });
+          btn.addEventListener('keydown', function (e) {
+            var index;
+            if (e.key === 'ArrowRight') index = (idx + 1) % run.length;
+            else if (e.key === 'ArrowLeft') index = (idx + run.length - 1) % run.length;
+            else if (e.key === 'Home') index = 0;
+            else if (e.key === 'End') index = run.length - 1;
+            else return;
+            e.preventDefault();
+            activate(index, true);
+          });
+        });
+
+        activate(0, false);
+        tabGroups.push({ buttons: buttons, panels: panels, activate: activate });
+        return wrapper;
+      }
+
+      function revealFragment(hash, scroll) {
+        if (!hash) return;
+        var id;
+        try { id = decodeURIComponent(hash.slice(1)); } catch (e) { return; }
+        var target = document.getElementById(id);
+        if (!target) return;
+        var scrollTarget = target;
+        tabGroups.forEach(function (group) {
+          group.panels.forEach(function (panel, index) {
+            if (panel.contains(target) || group.buttons[index] === target) {
+              group.activate(index, false);
+              // Authored language labels are hidden on screen after enhancement.
+              if (target.closest('.code-tab-label')) scrollTarget = panel;
+            }
+          });
+        });
+        for (var ancestor = target.parentElement; ancestor; ancestor = ancestor.parentElement) {
+          if (ancestor.tagName === 'DETAILS') ancestor.open = true;
+        }
+        if (scroll) scrollTarget.scrollIntoView();
+      }
+
+      function makeCollapsible(div) {
+        var details = document.createElement('details');
+        details.className = 'code-details';
+        details.open = true;
+
+        var summary = document.createElement('summary');
+        summary.className = 'code-summary';
+        summary.textContent = getLang(div);
+        details.appendChild(summary);
+
+        div.parentNode.insertBefore(details, div);
+        details.appendChild(div);
+      }
+
+      function applyTabs(run) {
+        var parent = run[0].parentNode;
+
+        // Collect lang-label <p> nodes immediately preceding each code block in the run
+        var labels = run.map(function (div) {
+          var prev = div.previousSibling;
+          while (prev && isWhitespace(prev)) prev = prev.previousSibling;
+          return isLangLabel(prev) ? prev : null;
+        });
+
+        // Insertion point: the label before the first block (if it exists), else the first block
+        var insertionPoint = labels[0] || run[0];
+
+        var placeholder = document.createTextNode('');
+        parent.insertBefore(placeholder, insertionPoint);
+
+        var widget = makeTabs(run, labels);
+        parent.replaceChild(widget, placeholder);
+      }
+
+      document.addEventListener('DOMContentLoaded', function () {
+        var all = Array.prototype.slice.call(
+          document.querySelectorAll('.content div.sourceCode')
+        );
+        var groups = groupConsecutive(all);
+        groups.forEach(function (run) {
+          if (run.length >= 2) {
+            applyTabs(run);
+          } else {
+            makeCollapsible(run[0]);
+          }
+        });
+        revealFragment(window.location.hash, true);
+        window.addEventListener('hashchange', function () {
+          revealFragment(window.location.hash, true);
+        });
+        // Also reveal an already-current fragment after its panel has been switched away.
+        document.addEventListener('click', function (e) {
+          var link = e.target.closest('a[href]');
+          if (!link || e.defaultPrevented || e.button !== 0 ||
+              e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+          var url = new URL(link.href, window.location.href);
+          if (url.origin === window.location.origin && url.pathname === window.location.pathname &&
+              url.search === window.location.search && url.hash) {
+            revealFragment(url.hash, true);
+          }
+        });
+      });
+    })();
+  </script>
+
+</body>
+</html>

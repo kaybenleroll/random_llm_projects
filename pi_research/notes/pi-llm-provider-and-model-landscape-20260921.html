@@ -1,0 +1,2239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pi LLM Provider and Model Landscape</title>
+  <style>
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+--nav-h: 56px;
+--sidebar-w: 320px;
+--sidebar-min: 240px;
+--sidebar-max: 520px;
+--accent: #2563eb;
+--accent-dark: #1d4ed8;
+--bg: #f9fafb;
+--surface: #ffffff;
+--border: #e5e7eb;
+--text: #111827;
+--muted: #6b7280;
+--code-bg: #1e1e2e;
+--radius: 6px;
+--font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+--font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", ui-monospace, monospace;
+}
+html { font-size: 16px; scroll-behavior: smooth; }
+body {
+font-family: var(--font-sans);
+color: var(--text);
+background: var(--bg);
+line-height: 1.7;
+}
+
+.navbar {
+position: fixed;
+top: 0; left: 0; right: 0;
+height: var(--nav-h);
+background: var(--accent);
+color: #fff;
+display: flex;
+align-items: center;
+padding: 0 1.5rem;
+z-index: 100;
+box-shadow: 0 2px 8px rgba(0,0,0,.18);
+gap: 1rem;
+}
+.navbar-brand {
+font-size: 1.05rem;
+font-weight: 700;
+letter-spacing: -.01em;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+flex: 1;
+}
+.navbar-meta {
+font-size: .8rem;
+opacity: .75;
+white-space: nowrap;
+}
+
+.layout {
+display: flex;
+margin-top: var(--nav-h);
+min-height: calc(100vh - var(--nav-h));
+}
+
+.sidebar {
+width: clamp(var(--sidebar-min), var(--sidebar-w), var(--sidebar-max));
+min-width: var(--sidebar-min);
+max-width: var(--sidebar-max);
+flex-shrink: 0;
+position: sticky;
+top: var(--nav-h);
+height: calc(100vh - var(--nav-h));
+overflow-y: auto;
+overflow-x: hidden;
+background: var(--surface);
+border-right: 1px solid var(--border);
+padding: 1.25rem 0;
+}
+.sidebar-resizer {
+width: 10px;
+flex: 0 0 10px;
+cursor: col-resize;
+background: linear-gradient(to right, transparent 0, transparent 40%, var(--border) 40%, var(--border) 60%, transparent 60%, transparent 100%);
+user-select: none;
+touch-action: none;
+}
+.layout.is-resizing,
+.layout.is-resizing * {
+cursor: col-resize;
+user-select: none;
+}
+.sidebar-heading {
+font-size: .7rem;
+font-weight: 700;
+text-transform: uppercase;
+letter-spacing: .08em;
+color: var(--muted);
+padding: 0 1.25rem .5rem;
+}
+.sidebar-tools {
+padding: 0 1.25rem .75rem;
+}
+.math-mode-btn {
+width: 100%;
+border: 1px solid var(--border);
+background: #f8fafc;
+color: #334155;
+border-radius: 6px;
+padding: .4rem .55rem;
+font-size: .75rem;
+line-height: 1.2;
+cursor: pointer;
+transition: background .15s, color .15s, border-color .15s;
+}
+.math-mode-btn:hover,
+.math-mode-btn:focus {
+background: #eff6ff;
+color: var(--accent);
+border-color: #bfdbfe;
+}
+
+#TOC {
+font-size: .83rem;
+}
+#TOC ul {
+list-style: none;
+padding: 0;
+}
+#TOC > ul { padding: 0; }
+#TOC li { line-height: 1.4; }
+#TOC a {
+display: block;
+padding: .3rem 1.25rem;
+color: var(--muted);
+text-decoration: none;
+border-left: 2px solid transparent;
+transition: color .15s, border-color .15s, background .15s;
+}
+#TOC a:hover {
+color: var(--accent);
+background: #eff6ff;
+border-left-color: var(--accent);
+}
+
+#TOC ul ul a { padding-left: 2rem; font-size: .78rem; }
+#TOC ul ul ul a { padding-left: 2.75rem; font-size: .75rem; }
+#TOC li.has-toggle {
+display: flex;
+flex-wrap: wrap;
+align-items: baseline;
+}
+#TOC li.has-toggle > .toc-toggle {
+flex: 0 0 auto;
+margin-right: .2rem;
+vertical-align: middle;
+}
+#TOC li.has-toggle > a.toc-link-inline {
+display: inline-block;
+flex: 1 1 0%;
+min-width: 0;
+padding-left: 0;
+border-left: none;
+vertical-align: middle;
+}
+#TOC li.has-toggle.toc-depth-2 > .toc-toggle { margin-left: 2rem; }
+#TOC li.has-toggle.toc-depth-3 > .toc-toggle { margin-left: 2.75rem; }
+#TOC li.has-toggle > ul {
+flex: 1 0 100%;
+width: 100%;
+}
+
+.toc-toggle {
+background: none;
+border: none;
+padding: 0 .3em 0 0;
+margin: 0;
+cursor: pointer;
+color: #9399b2;
+font-size: 1em;
+line-height: 1;
+vertical-align: middle;
+outline: none;
+transition: color .15s;
+}
+.toc-toggle:focus,
+.toc-toggle:hover {
+color: var(--accent);
+}
+.toc-arrow {
+display: inline-block;
+transition: transform .15s;
+}
+.toc-toggle.expanded .toc-arrow {
+transform: rotate(90deg);
+}
+.toc-toggle.collapsed .toc-arrow {
+transform: rotate(0deg);
+}
+
+.content {
+flex: 1;
+min-width: 0;
+
+padding: 2.5rem clamp(1.25rem, 3vw, 3rem);
+max-width: 1400px;
+}
+.content-inner {
+width: 100%;
+display: flex;
+flex-direction: column;
+align-items: stretch;
+}
+.content-inner > :where(h1, h2, h3, h4, h5, h6, p, ul, ol, blockquote) {
+max-width: 100ch;
+}
+.content-inner > :where(pre, .code-tabs, .code-details, div.sourceCode) {
+width: 100%;
+max-width: none;
+}
+.content-inner > :where(table, .broad-table, .compact-table) {
+align-self: flex-start;
+}
+
+h1, h2, h3, h4, h5, h6 {
+font-weight: 700;
+line-height: 1.25;
+margin-top: 2em;
+margin-bottom: .6em;
+color: var(--text);
+scroll-margin-top: calc(var(--nav-h) + 1rem);
+}
+h1 { font-size: 2rem; margin-top: 0; }
+h2 { font-size: 1.45rem; border-bottom: 1px solid var(--border); padding-bottom: .35em; }
+h3 { font-size: 1.15rem; }
+h4 { font-size: 1rem; }
+p { margin-bottom: 1rem; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+strong { font-weight: 650; }
+em { font-style: italic; }
+hr {
+border: none;
+border-top: 1px solid var(--border);
+margin: 2.5rem 0;
+}
+
+table {
+width: fit-content;
+max-width: 100%;
+border-collapse: collapse;
+font-size: .88rem;
+margin: 1.5rem 0;
+background: var(--surface);
+border-radius: var(--radius);
+overflow: hidden;
+box-shadow: 0 1px 3px rgba(0,0,0,.08);
+}
+
+.content-inner > :where(table:has(tr > :nth-child(4)), .broad-table) {
+width: 100%;
+max-width: none;
+}
+.broad-table > table {
+width: 100%;
+max-width: none;
+}
+/* Pandoc derives <col> percentages from Markdown separator widths. */
+    .compact-table {
+      width: fit-content;
+      max-width: 100%;
+      overflow-x: auto;
+    }
+
+    .compact-table > table {
+      width: max-content;
+      max-width: none;
+      table-layout: auto;
+    }
+
+    .compact-table > table colgroup > col {
+      width: auto !important;
+    }
+
+    th {
+      background: #f3f4f6;
+      font-weight: 650;
+      text-align: left;
+      padding: .6rem .9rem;
+      border-bottom: 2px solid var(--border);
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    td {
+      padding: .55rem .9rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+      overflow-wrap: anywhere;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f9fafb; }
+
+    /* ── Code ──────────────────────────────────────────────────────── */
+    code {
+      font-family: var(--font-mono);
+      font-size: .85em;
+      background: #f3f4f6;
+      color: #be185d;
+      padding: .15em .4em;
+      border-radius: 3px;
+    }
+
+    pre {
+      background: var(--code-bg);
+      color: #cdd6f4;
+      border-radius: var(--radius);
+      padding: 1.1rem 1.25rem;
+      overflow-x: auto;
+      margin: 1.25rem 0;
+      font-size: .83rem;
+      line-height: 1.6;
+      box-shadow: inset 0 1px 4px rgba(0,0,0,.3);
+    }
+
+    pre code {
+      background: transparent;
+      color: inherit;
+      padding: 0;
+      font-size: inherit;
+    }
+
+    /* ── Blockquotes ───────────────────────────────────────────────── */
+    blockquote {
+      border-left: 4px solid var(--accent);
+      margin: 1.5rem 0;
+      padding: .75rem 1.25rem;
+      background: #eff6ff;
+      border-radius: 0 var(--radius) var(--radius) 0;
+      color: #1e3a5f;
+      font-style: italic;
+    }
+
+    /* ── Lists ─────────────────────────────────────────────────────── */
+    ul, ol {
+      padding-left: 1.75rem;
+      margin-bottom: 1rem;
+    }
+
+    li { margin-bottom: .3rem; }
+
+    /* ── Syntax highlight overrides (tango theme base) ─────────────── */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    background-color: #232629;
+    color: #7a7c7d;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #7a7c7d;  padding-left: 4px; }
+div.sourceCode
+  { color: #cfcfc2; background-color: #232629; }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span { color: #cfcfc2; } /* Normal */
+code span.al { color: #95da4c; background-color: #4d1f24; font-weight: bold; } /* Alert */
+code span.an { color: #3f8058; } /* Annotation */
+code span.at { color: #2980b9; } /* Attribute */
+code span.bn { color: #f67400; } /* BaseN */
+code span.bu { color: #7f8c8d; } /* BuiltIn */
+code span.cf { color: #fdbc4b; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #3daee9; } /* Char */
+code span.cn { color: #27aeae; font-weight: bold; } /* Constant */
+code span.co { color: #7a7c7d; } /* Comment */
+code span.cv { color: #7f8c8d; } /* CommentVar */
+code span.do { color: #a43340; } /* Documentation */
+code span.dt { color: #2980b9; } /* DataType */
+code span.dv { color: #f67400; } /* DecVal */
+code span.er { color: #da4453; text-decoration: underline; } /* Error */
+code span.ex { color: #0099ff; font-weight: bold; } /* Extension */
+code span.fl { color: #f67400; } /* Float */
+code span.fu { color: #8e44ad; } /* Function */
+code span.im { color: #27ae60; } /* Import */
+code span.in { color: #c45b00; } /* Information */
+code span.kw { color: #cfcfc2; font-weight: bold; } /* Keyword */
+code span.op { color: #cfcfc2; } /* Operator */
+code span.ot { color: #27ae60; } /* Other */
+code span.pp { color: #27ae60; } /* Preprocessor */
+code span.re { color: #2980b9; background-color: #153042; } /* RegionMarker */
+code span.sc { color: #3daee9; } /* SpecialChar */
+code span.ss { color: #da4453; } /* SpecialString */
+code span.st { color: #f44f4f; } /* String */
+code span.va { color: #27aeae; } /* Variable */
+code span.vs { color: #da4453; } /* VerbatimString */
+code span.wa { color: #da4453; } /* Warning */
+
+    /* ── Code tabs ─────────────────────────────────────────────────── */
+    .code-tabs {
+      margin: 1.25rem 0;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.08);
+    }
+
+    .code-tab-bar {
+      display: flex;
+      background: #16161f;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      padding: 0 .5rem;
+      gap: .15rem;
+    }
+
+    .code-tab-btn {
+      padding: .45rem 1rem;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: #9399b2;
+      font-family: var(--font-mono);
+      font-size: .78rem;
+      cursor: pointer;
+      transition: color .15s, border-color .15s;
+      white-space: nowrap;
+    }
+
+    .code-tab-btn:hover { color: #cdd6f4; }
+    .code-tab-btn.active { color: #89b4fa; border-bottom-color: #89b4fa; }
+
+    .code-tab-btn:focus-visible, .code-tab-panel:focus-visible {
+      outline: 2px solid #89b4fa;
+      outline-offset: -2px;
+    }
+
+    .code-tab-panel[hidden] { display: none; }
+    .code-tabs .code-tab-label { display: none; }
+
+    .code-tab-panel > div.sourceCode > pre {
+      margin: 0;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    /* ── Collapsible single code blocks ─────────────────────────────── */
+    .code-details {
+      margin: 1.25rem 0;
+    }
+
+    .code-details > div.sourceCode {
+      margin: 0;
+    }
+
+    .code-details > div.sourceCode > pre {
+      margin: 0;
+      border-radius: 0 0 var(--radius) var(--radius);
+      box-shadow: inset 0 1px 4px rgba(0,0,0,.3);
+    }
+
+    .code-summary {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .4rem .85rem;
+      background: #16161f;
+      color: #9399b2;
+      font-family: var(--font-mono);
+      font-size: .78rem;
+      cursor: pointer;
+      border-radius: var(--radius) var(--radius) 0 0;
+      list-style: none;
+      user-select: none;
+    }
+
+    .code-summary::-webkit-details-marker { display: none; }
+
+    .code-summary::before {
+      content: '▶';
+      font-size: .6rem;
+      transition: transform .15s;
+      flex-shrink: 0;
+    }
+
+    details[open] .code-summary::before { transform: rotate(90deg); }
+
+    details:not([open]) .code-details > div.sourceCode > pre {
+      border-radius: 0;
+    }
+
+    /* ── Responsive: convert sidebar to top TOC on small screens ────── */
+    @media (max-width: 768px) {
+      .layout {
+        display: block;
+      }
+
+      .sidebar {
+        display: block;
+        position: static;
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: .75rem 0;
+      }
+
+      .sidebar-heading {
+        padding-bottom: .25rem;
+      }
+
+      #TOC a {
+        padding-top: .4rem;
+        padding-bottom: .4rem;
+      }
+
+      .sidebar-resizer { display: none; }
+      .navbar-meta { display: none; }
+
+      .content {
+        max-width: 100%;
+        padding-top: 1.25rem;
+      }
+      .content-inner > :where(table, .broad-table, .compact-table) {
+        display: block;
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .content-inner > .broad-table > table {
+        min-width: 48rem;
+      }
+      .content-inner > .compact-table > table {
+        width: max-content;
+      }
+      .code-tab-bar {
+        overflow-x: auto;
+      }
+    }
+
+    @media (min-width: 769px) and (max-width: 1100px) {
+      .sidebar {
+        width: 260px;
+        min-width: 220px;
+      }
+    }
+
+    /* ── Print ─────────────────────────────────────────────────────── */
+    @media print {
+      .navbar, .sidebar, .sidebar-resizer { display: none; }
+      .content { padding: 0; max-width: 100%; }
+      .code-tab-bar { display: none; }
+      .code-tabs { overflow: visible; border: 0; }
+      .code-tabs .code-tab-panel { display: block !important; }
+      .code-tabs .code-tab-label {
+        display: block;
+        color: #000;
+        margin: 1rem 0 .5rem;
+        break-after: avoid;
+      }
+    }
+
+    /* ── Custom code color overrides for readability ── */
+    code span.fu { color: #c792ea !important; } /* function names: lighter purple */
+  </style>
+
+</head>
+<body>
+
+  <nav class="navbar">
+    <span class="navbar-brand">Pi LLM Provider and Model
+Landscape</span>
+    <span class="navbar-meta">2026-09-21</span>
+    <span class="navbar-meta">September 21, 2026</span>
+
+  </nav>
+
+  <div class="layout">
+
+    <aside class="sidebar">
+      <p class="sidebar-heading">Contents</p>
+      <div class="sidebar-tools">
+        <button id="math-mode-toggle" class="math-mode-btn" type="button">Switch math renderer</button>
+      </div>
+      <div id="TOC" aria-label="Table of contents"><ul>
+<li><a href="#pi-llm-provider-and-model-landscape" id="toc-pi-llm-provider-and-model-landscape">Pi LLM provider and model
+landscape</a>
+<ul>
+<li><a href="#executive-summary" id="toc-executive-summary">Executive
+summary</a></li>
+<li><a href="#how-pi-connects-to-providers" id="toc-how-pi-connects-to-providers">How Pi connects to
+providers</a></li>
+<li><a href="#local-models-through-llama.cpp" id="toc-local-models-through-llama.cpp">Local models through
+llama.cpp</a>
+<ul>
+<li><a href="#local-shortlist" id="toc-local-shortlist">Local
+shortlist</a></li>
+</ul></li>
+<li><a href="#hosted-model-comparison" id="toc-hosted-model-comparison">Hosted model comparison</a>
+<ul>
+<li><a href="#hosted-first-model-and-provider-shortlist" id="toc-hosted-first-model-and-provider-shortlist">Hosted-first model
+and provider shortlist</a></li>
+<li><a href="#provider-and-zdr-decision-matrix" id="toc-provider-and-zdr-decision-matrix">Provider and ZDR decision
+matrix</a></li>
+<li><a href="#hosted-only-pi-evaluation-sequence" id="toc-hosted-only-pi-evaluation-sequence">Hosted-only Pi evaluation
+sequence</a></li>
+</ul></li>
+<li><a href="#cost-scenarios" id="toc-cost-scenarios">Cost
+scenarios</a></li>
+<li><a href="#alternatives-to-openrouter" id="toc-alternatives-to-openrouter">Alternatives to OpenRouter</a>
+<ul>
+<li><a href="#openrouter-modelprovider-discovery-and-fees" id="toc-openrouter-modelprovider-discovery-and-fees">OpenRouter
+model/provider discovery and fees</a></li>
+<li><a href="#lower-fee-alternatives-to-openrouter" id="toc-lower-fee-alternatives-to-openrouter">Lower-fee alternatives to
+OpenRouter</a></li>
+</ul></li>
+<li><a href="#data-retention-and-training-policies" id="toc-data-retention-and-training-policies">Data retention and
+training policies</a></li>
+<li><a href="#suggested-pi-portfolio" id="toc-suggested-pi-portfolio">Suggested Pi portfolio</a>
+<ul>
+<li><a href="#three-sensible-starting-configurations" id="toc-three-sensible-starting-configurations">Three sensible starting
+configurations</a></li>
+</ul></li>
+<li><a href="#implemented-starting-point" id="toc-implemented-starting-point">Implemented starting point</a></li>
+<li><a href="#sources" id="toc-sources">Sources</a></li>
+<li><a href="#caveats" id="toc-caveats">Caveats</a></li>
+</ul></li>
+</ul></div>
+
+    </aside>
+
+    <div class="sidebar-resizer" aria-hidden="true" title="Drag to resize sidebar"></div>
+
+    <main class="content">
+      <div class="content-inner">
+<h1 id="pi-llm-provider-and-model-landscape">Pi LLM provider and model
+landscape</h1>
+<p><strong>Research date:</strong> 21 September 2026<br />
+<strong>Scope:</strong> models and providers that can be used from Pi,
+with emphasis on lower-cost alternatives to Anthropic/OpenAI API
+billing. The user already has Anthropic and OpenAI subscriptions, so
+those APIs are treated as subscription fallbacks rather than recommended
+metered providers.</p>
+<h2 id="executive-summary">Executive summary</h2>
+<p>For the current phase, the most useful Pi setup is a hosted-provider
+portfolio, not one universal model:</p>
+<ol type="1">
+<li><strong>Hosted comparison layer:</strong> use OpenRouter with hard
+ZDR routing, provider allowlists, and pinned model IDs. This gives the
+fastest way to compare models without silently falling back to a
+non-compliant provider.</li>
+<li><strong>First-tier cheap models:</strong> test Qwen3.8-Flash,
+DeepSeek <code>deepseek-flash</code> (V4.1-Flash), and GLM-5.3-Flash.
+Their current coding/agent evidence is strong enough that they should
+not be treated as merely bulk workers.</li>
+<li><strong>ZDR-oriented direct alternatives:</strong> use Groq GPT-OSS,
+Fireworks open-model endpoints where the exact ZDR terms are confirmed,
+or Mistral Small 4 if paid-plan ZDR and European processing are
+important.</li>
+<li><strong>Fast short-loop provider:</strong> use Groq GPT-OSS 20B/120B
+when latency matters more than maximum reasoning quality.</li>
+<li><strong>Capability baseline:</strong> keep Gemini 3.8 Flash for
+difficult tasks and as a comparison point, but not as the low-cost
+default.</li>
+<li><strong>Alternative gateway:</strong> use Vercel AI Gateway or
+Hugging Face Inference Providers when a single catalogue and
+provider-selection layer is useful. Cloudflare AI Gateway is primarily a
+control plane and BYOK proxy, not automatically a cheaper model
+marketplace.</li>
+</ol>
+<p>The cheapest model is not necessarily the cheapest coding-agent
+option. A model that makes malformed tool calls, loses state, or needs
+repeated correction can consume more tokens and time than a moderately
+more expensive reliable model.</p>
+<p>All prices, model IDs, quotas, and provider availability below are
+dated observations. Recheck the provider catalogue before spending money
+or putting a model in a durable runbook.</p>
+<h2 id="how-pi-connects-to-providers">How Pi connects to providers</h2>
+<p>Pi 0.86.1 is installed locally as
+<code>@earendil-works/pi-coding-agent</code>. Pi supports:</p>
+<ul>
+<li>built-in provider catalogues and API-key authentication;</li>
+<li>OAuth/subscription logins for selected services;</li>
+<li>custom providers and models in
+<code>~/.pi/agent/models.json</code>;</li>
+<li><code>openai-completions</code>, <code>openai-responses</code>,
+<code>anthropic-messages</code>, and <code>google-generative-ai</code>
+transports;</li>
+<li>first-class <code>llama.cpp</code> router integration.</li>
+</ul>
+<p>Typical built-in use is:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">GEMINI_API_KEY</span><span class="op">=</span>...</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">pi</span> <span class="at">--provider</span> google <span class="at">--model</span> gemini-3.8-flash</span></code></pre></div>
+<p>For a custom OpenAI-compatible endpoint:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;providers&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;local&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;baseUrl&quot;</span><span class="fu">:</span> <span class="st">&quot;http://127.0.0.1:8080/v1&quot;</span><span class="fu">,</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;api&quot;</span><span class="fu">:</span> <span class="st">&quot;openai-completions&quot;</span><span class="fu">,</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;apiKey&quot;</span><span class="fu">:</span> <span class="st">&quot;local&quot;</span><span class="fu">,</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;models&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>        <span class="fu">{</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>          <span class="dt">&quot;id&quot;</span><span class="fu">:</span> <span class="st">&quot;model-id&quot;</span><span class="fu">,</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>          <span class="dt">&quot;reasoning&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>          <span class="dt">&quot;contextWindow&quot;</span><span class="fu">:</span> <span class="dv">32768</span><span class="fu">,</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>          <span class="dt">&quot;cost&quot;</span><span class="fu">:</span> <span class="fu">{</span> <span class="dt">&quot;input&quot;</span><span class="fu">:</span> <span class="dv">0</span><span class="fu">,</span> <span class="dt">&quot;output&quot;</span><span class="fu">:</span> <span class="dv">0</span> <span class="fu">}</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>        <span class="fu">}</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>      <span class="ot">]</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>Partial OpenAI-compatible servers may require:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;compat&quot;</span><span class="er">:</span> <span class="fu">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;supportsDeveloperRole&quot;</span><span class="fu">:</span> <span class="kw">false</span><span class="fu">,</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;supportsReasoningEffort&quot;</span><span class="fu">:</span> <span class="kw">false</span><span class="fu">,</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;supportsUsageInStreaming&quot;</span><span class="fu">:</span> <span class="kw">false</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>The model must support Pi’s actual agent loop: function schemas,
+streaming tool calls, tool-result replay, and multi-turn context.
+Text-generation quality alone is insufficient.</p>
+<p>Sources: <a href="https://pi.dev/docs/latest/providers">Pi
+providers</a>, <a href="https://pi.dev/docs/latest/models">Pi custom
+models</a>, <a href="https://pi.dev/docs/latest/sdk">Pi SDK/model
+registry</a>.</p>
+<h2 id="local-models-through-llama.cpp">Local models through
+llama.cpp</h2>
+<p>Pi’s dedicated router workflow is the best fit for the current Docker
+work:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">llama-server</span> <span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--models-dir</span> ~/models <span class="dt">\</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--no-models-autoload</span> <span class="dt">\</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--jinja</span> <span class="dt">\</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">--host</span> 127.0.0.1 <span class="dt">\</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">--port</span> 8080 <span class="dt">\</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">-ngl</span> 999 <span class="dt">\</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c</span> 32768</span></code></pre></div>
+<p>Then authenticate the connection with <code>/login llama.cpp</code>,
+use <code>/llama</code> to load or unload a GGUF, and use
+<code>/model</code> to select the loaded model. Start without
+<code>--model</code>, <code>-m</code>, or <code>-hf</code>; those select
+single-model mode rather than router mode. <code>--jinja</code> is
+important for modern chat templates and tool calling.</p>
+<h3 id="local-shortlist">Local shortlist</h3>
+<table>
+<colgroup>
+<col style="width: 21%" />
+<col style="width: 28%" />
+<col style="width: 28%" />
+<col style="width: 21%" />
+</colgroup>
+<thead>
+<tr>
+<th>Model</th>
+<th style="text-align: right;">Approximate Q4 weight size</th>
+<th style="text-align: right;">Practical hardware</th>
+<th>Pi suitability</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Qwen3.5 9B</td>
+<td style="text-align: right;">about 5–6 GB</td>
+<td style="text-align: right;">16 GB RAM/unified memory</td>
+<td>Small local default; tool use and optional thinking, but keep tasks
+bounded</td>
+</tr>
+<tr>
+<td>Devstral Small 2 24B</td>
+<td style="text-align: right;">about 14 GB</td>
+<td style="text-align: right;">24 GB VRAM or 32 GB unified memory</td>
+<td>Best first local agentic-coding candidate; native tool format</td>
+</tr>
+<tr>
+<td>Qwen3-Coder 30B-A3B Instruct</td>
+<td style="text-align: right;">about 18–19 GB</td>
+<td style="text-align: right;">24 GB VRAM at modest context; 32–48 GB
+safer</td>
+<td>Coding-specialised MoE with native tool support; non-thinking
+model</td>
+</tr>
+<tr>
+<td>Qwen3.8 27B</td>
+<td style="text-align: right;">about 16–18 GB</td>
+<td style="text-align: right;">24 GB VRAM or 32 GB unified memory</td>
+<td>Strong local Qwen3.8 candidate if the hardware can sustain it;
+compare against Devstral on real Pi tasks</td>
+</tr>
+<tr>
+<td>GLM-4.7-Flash 30B-A3B</td>
+<td style="text-align: right;">about 18 GB</td>
+<td style="text-align: right;">24–48 GB memory</td>
+<td>Reasoning/tool-use alternative; validate the exact chat
+template</td>
+</tr>
+<tr>
+<td>Larger 70B–120B open models</td>
+<td style="text-align: right;">commonly 40–80+ GB Q4</td>
+<td style="text-align: right;">64 GB+ memory and/or multiple GPUs</td>
+<td>Potentially stronger, but poor first target for a single consumer
+machine</td>
+</tr>
+</tbody>
+</table>
+<p>Q4 file size is only a lower bound. Runtime buffers and KV cache
+consume additional memory, and long context can dominate the total.
+Begin at 16–32K context even when the model card advertises 128K–256K.
+Official GGUF and llama.cpp guidance is available for <a href="https://huggingface.co/ggml-org/Devstral-Small-2-24B-Instruct-2512-GGUF">Devstral
+Small 2</a>, <a href="https://huggingface.co/Qwen/Qwen3-Coder-Next-GGUF">Qwen3-Coder</a>,
+and <a href="https://github.com/ggml-org/llama.cpp">llama.cpp</a>.</p>
+<p>Local cost is approximately zero per token. It is better understood
+as fixed hardware/electricity cost plus latency and maintenance. It is
+also the clearest data boundary: prompts, repository contents, and tool
+results remain local if the model server and telemetry are configured
+locally.</p>
+<h2 id="hosted-model-comparison">Hosted model comparison</h2>
+<p>Prices are USD per million tokens, standard input/output, unless
+stated otherwise. Caching, batch, priority tiers, taxes, and gateway
+fees can change the effective price.</p>
+<table>
+<colgroup>
+<col style="width: 17%" />
+<col style="width: 23%" />
+<col style="width: 23%" />
+<col style="width: 17%" />
+<col style="width: 17%" />
+</colgroup>
+<thead>
+<tr>
+<th>Provider and model</th>
+<th style="text-align: right;">Input</th>
+<th style="text-align: right;">Output</th>
+<th>Capability/use</th>
+<th>Main caveat</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Groq <code>openai/gpt-oss-20b</code></td>
+<td style="text-align: right;">$0.075</td>
+<td style="text-align: right;">$0.30</td>
+<td>Very fast lightweight reasoning/tool loops</td>
+<td>Free/developer limits; not the strongest long-horizon coder</td>
+</tr>
+<tr>
+<td>DeepSeek <code>deepseek-flash</code> (V4.1-Flash)</td>
+<td style="text-align: right;">$0.15 off-peak / $0.30 peak</td>
+<td style="text-align: right;">$0.60 off-peak / $1.20 peak</td>
+<td>First-tier coding and agent candidate; 1M context, tool calls,
+Responses API, and vision</td>
+<td>Direct provider policy/jurisdiction is a serious privacy constraint;
+output price is higher than the old V4 Flash table</td>
+</tr>
+<tr>
+<td>Together <code>GLM-5.3-Flash</code></td>
+<td style="text-align: right;">$0.15</td>
+<td style="text-align: right;">$0.50</td>
+<td>Cheap general coding and tool-call candidate</td>
+<td>Validate current function-call behavior in Pi</td>
+</tr>
+<tr>
+<td>Alibaba Cloud <code>qwen3.8-flash</code></td>
+<td style="text-align: right;">$0.15</td>
+<td style="text-align: right;">verify live catalogue</td>
+<td>First-tier coding/agent candidate; 1M context, multimodal input,
+OpenAI/Anthropic-compatible APIs</td>
+<td>Verify current output price, region, quotas, and exact endpoint</td>
+</tr>
+<tr>
+<td>Groq <code>openai/gpt-oss-120b</code></td>
+<td style="text-align: right;">$0.15</td>
+<td style="text-align: right;">$0.60</td>
+<td>Larger open-weight reasoning fallback</td>
+<td>Developer tier currently lists 250K TPM and 1K RPM</td>
+</tr>
+<tr>
+<td>Mistral Small</td>
+<td style="text-align: right;">about $0.15</td>
+<td style="text-align: right;">about $0.60</td>
+<td>Direct European-provider option; good cost-sensitive path</td>
+<td>Verify exact current model ID, endpoint, and ZDR eligibility</td>
+</tr>
+<tr>
+<td>Gemini 3.8 Flash</td>
+<td style="text-align: right;">$0.75</td>
+<td style="text-align: right;">$3.75</td>
+<td>Best first serious hosted baseline; long-horizon coding and tool
+use</td>
+<td>Introductory pricing ends 31 December 2026</td>
+</tr>
+<tr>
+<td>Vercel <code>alibaba/qwen3-coder-next</code></td>
+<td style="text-align: right;">$0.50</td>
+<td style="text-align: right;">$1.20</td>
+<td>Hosted coding model through a managed gateway</td>
+<td>Routing/provider selection must be pinned</td>
+</tr>
+<tr>
+<td>Together <code>gpt-oss-120B</code></td>
+<td style="text-align: right;">$0.15</td>
+<td style="text-align: right;">$0.60</td>
+<td>Open-weight reasoning through a direct host</td>
+<td>Tool reliability is provider/model-specific</td>
+</tr>
+<tr>
+<td>Fireworks open models</td>
+<td style="text-align: right;">model-dependent</td>
+<td style="text-align: right;">model-dependent</td>
+<td>Broad catalogue, serverless-to-dedicated migration path</td>
+<td>Current per-model prices must be fetched from its live
+catalogue</td>
+</tr>
+<tr>
+<td>Cerebras open models</td>
+<td style="text-align: right;">model-dependent</td>
+<td style="text-align: right;">model-dependent</td>
+<td>Very low latency</td>
+<td>Direct pricing/model availability needs account-level
+verification</td>
+</tr>
+</tbody>
+</table>
+<p>Together’s current serverless table gives the clearest low-cost
+catalogue: GLM-5.3-Flash at $0.15/$0.50, GPT-OSS 120B at $0.15/$0.60,
+and Qwen3.5 9B at $0.17/$0.25. <a href="https://www.together.ai/pricing">Together pricing</a></p>
+<p>Qwen3.8-Flash deserves first-tier testing rather than being treated
+as a routine-only model: Alibaba describes it as multimodal, 1M-context,
+and compatible with both OpenAI and Anthropic API protocols, and reduced
+its input price to $0.15 per million tokens. Verify the current output
+price in the live catalogue. <a href="https://www.alibabacloud.com/en/notice/model_studioqwen38flash_price_reduction_notice_859">Qwen3.8-Flash
+price notice</a></p>
+<p>The DeepSeek model name also needs care. The current direct API model
+is <code>deepseek-flash</code>, which serves DeepSeek-V4.1-Flash; legacy
+V4 Flash names are temporarily routed to it. It supports tool calls, the
+Responses API, vision, and 1M context. Official pricing is
+peak/off-peak: $0.30/$1.20 or $0.15/$0.60 per million input/output
+tokens, respectively. The provider also reports strong agent benchmarks,
+but those results should still be validated in Pi because benchmark
+harness and reasoning-effort settings materially affect agent outcomes.
+<a href="https://api-docs.deepseek.com/news/news260910/">DeepSeek
+V4.1-Flash release</a>, <a href="https://api-docs.deepseek.com/quick_start/pricing/">DeepSeek
+pricing</a></p>
+<p>Groq publishes current model prices and rate limits. Its GPT-OSS 20B
+and 120B entries are $0.075/$0.30 and $0.15/$0.60 respectively, with
+131K context windows and developer-tier limits shown in the catalogue.
+<a href="https://console.groq.com/docs/models">Groq models</a>, <a href="https://console.groq.com/docs/rate-limits">Groq limits</a></p>
+<p>Gemini 3.8 Flash is currently $0.75/$3.75 through 31 December 2026,
+with standard prices of $1.50/$7.50 from 1 January 2027. Google
+specifically describes longer-running tool use and iterative
+verification for this model. <a href="https://ai.google.dev/gemini-api/docs/latest-model">Gemini model
+announcement</a></p>
+<p>Mistral’s pricing page gives Mistral Large as an example at
+$0.50/$1.50 and states that batch can halve price and cached input can
+reduce input cost by up to 90%. Cost-sensitive projects are directed
+toward Mistral Small; verify its current exact price before budgeting.
+<a href="https://mistral.ai/pricing/">Mistral pricing</a></p>
+<h3 id="hosted-first-model-and-provider-shortlist">Hosted-first model
+and provider shortlist</h3>
+<p>The model and the serving endpoint must be evaluated separately. The
+same Qwen, DeepSeek, or GPT-OSS weights can have different prices, tool
+behaviour, regions, and retention terms depending on whether they are
+served by the model owner, Together, Fireworks, Groq, OpenRouter, or
+another gateway.</p>
+<table>
+<colgroup>
+<col style="width: 18%" />
+<col style="width: 18%" />
+<col style="width: 25%" />
+<col style="width: 18%" />
+<col style="width: 18%" />
+</colgroup>
+<thead>
+<tr>
+<th>Model</th>
+<th>Providers to try</th>
+<th style="text-align: right;">Current cost signal</th>
+<th>Why it belongs in the first test</th>
+<th>Main qualification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Qwen3.8-Flash</strong></td>
+<td>OpenRouter with ZDR; Together; Alibaba Model Studio</td>
+<td style="text-align: right;">Together $0.15/$0.47; Alibaba input price
+$0.15, verify output live</td>
+<td>Strong quality-per-dollar candidate with 1M context, multimodal
+input, reasoning controls, and tool/API compatibility</td>
+<td>Confirm endpoint-specific retention and actual output price</td>
+</tr>
+<tr>
+<td><strong>DeepSeek V4.1-Flash</strong>
+(<code>deepseek-flash</code>)</td>
+<td>OpenRouter with ZDR; Fireworks/Together if endpoint policy
+qualifies; direct DeepSeek for non-sensitive work</td>
+<td style="text-align: right;">Official $0.15/$0.60 off-peak;
+$0.30/$1.20 peak</td>
+<td>Strongest current vendor-reported agent results in this set; 1M
+context, tool calls, Responses API, vision</td>
+<td>Direct DeepSeek is not a ZDR recommendation; benchmark results use
+DeepSeek’s own harness and max effort</td>
+</tr>
+<tr>
+<td><strong>GLM-5.3-Flash</strong></td>
+<td>OpenRouter with ZDR; Together</td>
+<td style="text-align: right;">Together $0.15/$0.50</td>
+<td>Strong independent small-sample hosted comparison and good
+cost/latency balance</td>
+<td>Validate provider’s exact tool-call and retention behaviour</td>
+</tr>
+<tr>
+<td><strong>GPT-OSS 120B</strong></td>
+<td>Groq; Together; OpenRouter with ZDR</td>
+<td style="text-align: right;">$0.15/$0.60</td>
+<td>Useful open-model control; Groq adds very low latency and explicit
+data controls</td>
+<td>Tool reliability may trail Qwen/GLM/DeepSeek on difficult loops</td>
+</tr>
+<tr>
+<td><strong>GPT-OSS 20B</strong></td>
+<td>Groq; OpenRouter with ZDR</td>
+<td style="text-align: right;">Groq $0.075/$0.30</td>
+<td>Cheapest serious fast worker for triage, routing, review, and
+retries</td>
+<td>Not the first choice for autonomous multi-file work</td>
+</tr>
+<tr>
+<td><strong>Mistral Small 4</strong></td>
+<td>Direct Mistral paid ZDR endpoint; OpenRouter if pinned to a
+qualifying provider</td>
+<td style="text-align: right;">$0.15/$0.60</td>
+<td>Best explicit European ZDR-oriented alternative in this price
+band</td>
+<td>Mistral ZDR is limited to eligible paid, stateless endpoints; do not
+use stateful Agents/Files APIs for this privacy requirement</td>
+</tr>
+<tr>
+<td><strong>Gemini 3.8 Flash</strong></td>
+<td>Direct Google; OpenRouter if policy route is acceptable</td>
+<td style="text-align: right;">$0.75/$3.75 introductory</td>
+<td>More expensive capability/reliability baseline for long-horizon
+tasks</td>
+<td>Not the low-cost default and account/product data terms must be
+checked</td>
+</tr>
+</tbody>
+</table>
+<p>An independent 19-prompt Flash-tier comparison reported GLM-5.3-Flash
+with the highest average score, followed by DeepSeek V4.1-Flash and
+Qwen3.8-Flash; Qwen had the lowest recorded cost. This is a small
+directional test, not a replacement for a Pi-specific coding benchmark.
+Vendor-reported DeepSeek and Qwen scores should likewise be treated as
+evidence for testing, not proof of ranking in Pi. <a href="https://bshp.io/articles/flash-tier-shootout-benchmark/">Flash-tier
+comparison</a>, <a href="https://api-docs.deepseek.com/updates/">DeepSeek release
+benchmarks</a></p>
+<h3 id="provider-and-zdr-decision-matrix">Provider and ZDR decision
+matrix</h3>
+<p>“No training” and “zero data retention” are different claims. A
+provider may retain abuse logs, metadata, or cached requests while still
+promising not to train on prompts. A gateway’s ZDR filter also does not
+erase the provider’s operational metadata or your own Pi/session
+logs.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Provider/path</th>
+<th>ZDR or retention posture</th>
+<th>Recommendation for Pi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>OpenRouter</strong></td>
+<td>Supports <code>zdr: true</code>,
+<code>data_collection: &quot;deny&quot;</code>, provider ordering, and allowlists.
+Upstream provider policy still applies; unrestricted fallback can defeat
+the privacy goal.</td>
+<td>Best initial comparison layer. Use pinned model IDs, an explicit
+provider allowlist, and fail-closed routing for sensitive
+repositories.</td>
+</tr>
+<tr>
+<td><strong>Groq</strong></td>
+<td>Inference content is not retained by default; explicit data controls
+can disable reliability/abuse logging. Metadata and excluded
+products/features remain separate concerns.</td>
+<td>Best direct low-cost/ZDR-oriented path for GPT-OSS 20B/120B and
+latency-sensitive work.</td>
+</tr>
+<tr>
+<td><strong>Fireworks</strong></td>
+<td>Public materials describe no training and no prompt/generation
+logging for qualifying open-model inference, but verify the exact
+endpoint and contractual terms.</td>
+<td>Strong alternative for Qwen/DeepSeek if the selected endpoint is
+explicitly confirmed.</td>
+</tr>
+<tr>
+<td><strong>Together AI</strong></td>
+<td>Attractive catalogue and privacy controls, but do not infer
+universal ZDR from the open-weight model or the generic privacy
+page.</td>
+<td>Excellent model/cost experiment; confirm account settings and
+endpoint terms before sensitive code.</td>
+</tr>
+<tr>
+<td><strong>Mistral direct</strong></td>
+<td>Explicit paid-plan ZDR for eligible stateless endpoints; stateful
+Agents, Files, and Conversations products are excluded.</td>
+<td>Strongest European/ZDR-oriented option if approval and endpoint
+constraints are acceptable.</td>
+</tr>
+<tr>
+<td><strong>Vercel AI Gateway</strong></td>
+<td>Provides no-markup routing and ZDR-aware provider selection. The
+gateway and upstream terms remain separate; BYOK providers may need
+explicit compliance marking.</td>
+<td>Good policy-controlled alternative to OpenRouter, especially if
+central routing and fallback rules matter.</td>
+</tr>
+<tr>
+<td><strong>Hugging Face Inference Providers</strong></td>
+<td>HF describes no storage of request bodies/responses but retains
+debugging logs and defers to the selected upstream provider.</td>
+<td>Useful for experiments, not a blanket ZDR guarantee. Pin the actual
+upstream.</td>
+</tr>
+<tr>
+<td><strong>DeepSeek direct</strong></td>
+<td>Strong capability/price, but no clear direct API ZDR commitment was
+found; jurisdiction and privacy policy are material concerns.</td>
+<td>Use for non-sensitive evaluation or through a qualifying ZDR
+intermediary.</td>
+</tr>
+<tr>
+<td><strong>Alibaba Model Studio/Qwen direct</strong></td>
+<td>Alibaba states Model Studio data is not used for training, but that
+is not a universal prompt-ZDR guarantee for every feature or
+region.</td>
+<td>Good official Qwen control route; prefer explicit ZDR endpoints for
+sensitive code.</td>
+</tr>
+</tbody>
+</table>
+<p>Primary policy references: <a href="https://openrouter.ai/blog/insights/zero-data-retention/">OpenRouter
+routing</a>, <a href="https://console.groq.com/docs/your-data">Groq data
+controls</a>, <a href="https://fireworks.ai/privacy-policy">Fireworks
+privacy</a>, <a href="https://docs.mistral.ai/admin/monitor-comply/zero-data-retention/">Mistral
+ZDR</a>, <a href="https://vercel.com/i/secure-ai-gateway">Vercel secure
+AI Gateway</a>, <a href="https://huggingface.co/docs/inference-providers/security">Hugging
+Face provider security</a>, <a href="https://www.alibabacloud.com/help/en/model-studio/faq-about-model-studio">Alibaba
+Model Studio FAQ</a></p>
+<h3 id="hosted-only-pi-evaluation-sequence">Hosted-only Pi evaluation
+sequence</h3>
+<p>Start with the following provider/model pairs, rather than trying
+every model through one unexamined gateway:</p>
+<ol type="1">
+<li><strong>OpenRouter with hard ZDR routing:</strong> Qwen3.8-Flash,
+DeepSeek V4.1-Flash, GLM-5.3-Flash, and GPT-OSS 120B.</li>
+<li><strong>Together Qwen3.8-Flash:</strong> compare the same model
+against OpenRouter’s qualifying providers and measure tool-call/latency
+differences.</li>
+<li><strong>DeepSeek direct <code>deepseek-flash</code>:</strong>
+capability and price control test, restricted to non-sensitive
+repositories unless policy requirements are met.</li>
+<li><strong>Groq GPT-OSS 120B and 20B:</strong> fast direct/ZDR-oriented
+controls.</li>
+<li><strong>Mistral Small 4 direct:</strong> privacy/regional control
+comparison.</li>
+<li><strong>Vercel AI Gateway:</strong> compare its ZDR-aware routing
+and operational cost against OpenRouter.</li>
+<li><strong>Gemini 3.8 Flash:</strong> expensive reliability/capability
+baseline.</li>
+</ol>
+<p>Measure successful tool-call rate, correction turns, time to a
+passing test, context truncation, provider errors, cache hits, output
+tokens, and effective cost per completed task. Never combine a ZDR
+requirement with unrestricted automatic fallback: on a failed primary,
+fail or move only to an explicitly approved ZDR provider.</p>
+<h2 id="cost-scenarios">Cost scenarios</h2>
+<p>These examples assume <strong>10M input tokens plus 2M output
+tokens</strong>. They are not a prediction of actual monthly use; coding
+agents can produce very different ratios depending on context reuse,
+tool loops, and compaction.</p>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th style="text-align: right;">Approximate cost for scenario</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Local llama.cpp</td>
+<td style="text-align: right;">$0 marginal inference cost</td>
+</tr>
+<tr>
+<td>Groq GPT-OSS 20B</td>
+<td style="text-align: right;">$1.35</td>
+</tr>
+<tr>
+<td>DeepSeek <code>deepseek-flash</code> (V4.1-Flash)</td>
+<td style="text-align: right;">$2.70 off-peak / $5.40 peak</td>
+</tr>
+<tr>
+<td>Together GLM-5.3-Flash</td>
+<td style="text-align: right;">$2.50</td>
+</tr>
+<tr>
+<td>Groq GPT-OSS 120B</td>
+<td style="text-align: right;">$2.70</td>
+</tr>
+<tr>
+<td>Mistral Small</td>
+<td style="text-align: right;">about $2.70</td>
+</tr>
+<tr>
+<td>Vercel Qwen3-Coder Next</td>
+<td style="text-align: right;">about $7.40</td>
+</tr>
+<tr>
+<td>Gemini 3.8 Flash</td>
+<td style="text-align: right;">$15.00</td>
+</tr>
+</tbody>
+</table>
+<p>Formula:</p>
+<pre class="text"><code>cost = input_tokens / 1,000,000 * input_price
+     + output_tokens / 1,000,000 * output_price</code></pre>
+<p>For a Pi coding agent, output price matters disproportionately
+because every tool call, plan, retry, and verification step produces
+output tokens.</p>
+<h2 id="alternatives-to-openrouter">Alternatives to OpenRouter</h2>
+<p>OpenRouter is useful, but it is not the only way to get a
+multi-provider catalogue.</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Alternative</th>
+<th>What it provides</th>
+<th>Cost/control</th>
+<th>Recommendation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Direct Gemini/Together/Mistral/Groq/DeepSeek</td>
+<td>One vendor, direct billing and policy</td>
+<td>Usually clearest price and data terms</td>
+<td>Preferred for the main hosted lane</td>
+</tr>
+<tr>
+<td>Vercel AI Gateway</td>
+<td>Managed catalogue, provider filtering, routing, spend
+visibility</td>
+<td>Current catalogue advertises $5 monthly gateway credit and no token
+markup; upstream still matters</td>
+<td>Best managed gateway alternative</td>
+</tr>
+<tr>
+<td>Hugging Face Inference Providers</td>
+<td>Multi-provider catalogue with provider selection and
+cheapest/preferred routing</td>
+<td>Small free credit; exact cost depends on selected provider</td>
+<td>Good experimentation alternative</td>
+</tr>
+<tr>
+<td>Cloudflare AI Gateway</td>
+<td>BYOK proxy, analytics, cache, rate limits, DLP/control features</td>
+<td>Provider token rates pass through; not intrinsically cheaper</td>
+<td>Use as a control plane, not as a model choice</td>
+</tr>
+<tr>
+<td>Cloudflare Workers AI</td>
+<td>Cloudflare-hosted open models</td>
+<td>Very low entry cost, but small models may be inadequate for coding
+agents</td>
+<td>Consider only after testing larger tool-capable models</td>
+</tr>
+<tr>
+<td>Fireworks</td>
+<td>Open-model serverless hosting and dedicated deployment path</td>
+<td>$1 starter credit; model prices vary</td>
+<td>Good if deployment control may matter later</td>
+</tr>
+<tr>
+<td>OpenCode Zen/Go</td>
+<td>Coding-focused balance/subscription</td>
+<td>OpenCode Go currently advertises $10/month; usage is model/plan
+dependent</td>
+<td>Interesting experiment, not a transparent cost benchmark</td>
+</tr>
+<tr>
+<td>Direct local server</td>
+<td>llama.cpp, Ollama, vLLM, LM Studio</td>
+<td>No token billing; hardware-bound</td>
+<td>Best privacy/default lane</td>
+</tr>
+</tbody>
+</table>
+<p>OpenRouter’s current Standard plan lists a 5.5% platform fee, while
+its free tier lists 25+ models and 50 requests/day. It can route to
+different upstream providers, so model and provider must be pinned for
+reproducibility and data control. <a href="https://openrouter.ai/pricing">OpenRouter pricing</a>, <a href="https://openrouter.ai/docs/api/api-reference/providers/list-all-providers">provider
+API</a></p>
+<h3 id="openrouter-modelprovider-discovery-and-fees">OpenRouter
+model/provider discovery and fees</h3>
+<p>OpenRouter does provide API discovery for this use case, but it is
+split across several endpoints. The most useful calls are:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Models with at least one ZDR-capable endpoint; add price/provider/context filters.</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="st">&#39;https://openrouter.ai/api/v1/models?zdr=true&amp;max_price=1&amp;max_output_price=5&amp;sort=pricing-low-to-high&#39;</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Models filtered by the account&#39;s provider preferences, privacy settings,</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="co"># and guardrails. This requires an authenticated API key.</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-H</span> <span class="st">&quot;Authorization: Bearer </span><span class="va">$OPENROUTER_API_KEY</span><span class="st">&quot;</span> <span class="dt">\</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="st">&#39;https://openrouter.ai/api/v1/models/user&#39;</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Current published ZDR endpoint list.</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="st">&#39;https://openrouter.ai/api/v1/endpoints/zdr&#39;</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Providers and their privacy/terms metadata.</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-H</span> <span class="st">&quot;Authorization: Bearer </span><span class="va">$OPENROUTER_API_KEY</span><span class="st">&quot;</span> <span class="dt">\</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>  <span class="st">&#39;https://openrouter.ai/api/v1/providers&#39;</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Actual endpoints for one model, including provider, pricing, limits, and</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="co"># performance metadata. The endpoint API requires a management key.</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-H</span> <span class="st">&quot;Authorization: Bearer </span><span class="va">$OPENROUTER_MANAGEMENT_KEY</span><span class="st">&quot;</span> <span class="dt">\</span></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>  <span class="st">&#39;https://openrouter.ai/api/v1/models/qwen/qwen3.8-flash/endpoints&#39;</span></span></code></pre></div>
+<p>The important qualification is that <code>models?zdr=true</code>
+means “models with at least one ZDR endpoint”; it does not mean that
+every provider serving each returned model is ZDR. Use the per-model
+endpoint list and the live ZDR list to inspect the actual route.
+OpenRouter documents <code>zdr=true</code> and
+<code>data_collection=deny</code> as request-level routing controls:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;model&quot;</span><span class="fu">:</span> <span class="st">&quot;qwen/qwen3.8-flash&quot;</span><span class="fu">,</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;messages&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="fu">{</span><span class="dt">&quot;role&quot;</span><span class="fu">:</span> <span class="st">&quot;user&quot;</span><span class="fu">,</span> <span class="dt">&quot;content&quot;</span><span class="fu">:</span> <span class="st">&quot;Hello&quot;</span><span class="fu">}</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;provider&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;zdr&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;data_collection&quot;</span><span class="fu">:</span> <span class="st">&quot;deny&quot;</span><span class="fu">,</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;only&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;together&quot;</span><span class="ot">,</span> <span class="st">&quot;fireworks&quot;</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;allow_fallbacks&quot;</span><span class="fu">:</span> <span class="kw">false</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>For sensitive work, the <code>only</code> list and
+<code>allow_fallbacks: false</code> matter: ZDR does not make
+unrestricted fallback safe. OpenRouter still retains request metadata
+such as model, cost, latency, and token counts, and Pi, extensions, MCP
+tools, and terminal logs are separate retention surfaces. <a href="https://openrouter.ai/docs/api/api-reference/models/list-all-models-and-their-properties">OpenRouter
+model API</a>, <a href="https://openrouter.ai/docs/api/api-reference/models/list-models-filtered-by-user-provider-preferences-privacy-settings-and-guardrails">filtered
+model API</a>, <a href="https://openrouter.ai/blog/insights/zero-data-retention/">endpoint
+ZDR guidance</a></p>
+<p>The fee model is also worth separating:</p>
+<table>
+<colgroup>
+<col style="width: 30%" />
+<col style="width: 40%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th>OpenRouter path</th>
+<th style="text-align: right;">Additional cost</th>
+<th>Practical implication</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Standard prepaid credits</td>
+<td style="text-align: right;">Current pricing page lists a <strong>5.5%
+platform fee on the pay-as-you-go plan</strong>; taxes/payment-specific
+charges may also apply</td>
+<td>A $100 credit purchase is approximately $105.50 before any tax or
+checkout-specific charge. The checkout total is authoritative.</td>
+</tr>
+<tr>
+<td>BYOK</td>
+<td style="text-align: right;">Current plan includes an allowance; after
+it, OpenRouter charges <strong>5% of equivalent list-price
+inference</strong> from OpenRouter credits</td>
+<td>BYOK avoids paying the model provider through OpenRouter, but it is
+not permanently free routing. Prevent shared-provider fallback if you
+need cost or privacy control.</td>
+</tr>
+<tr>
+<td>Business</td>
+<td style="text-align: right;">Current pricing page lists
+<strong>8%</strong>, so it is not attractive for this individual
+low-cost use case</td>
+<td>Enterprise/contract terms may differ.</td>
+</tr>
+<tr>
+<td>Direct provider</td>
+<td style="text-align: right;">No OpenRouter fee; provider billing and
+any provider payment/credit terms apply</td>
+<td>Usually the best default when one provider has the model and policy
+you want.</td>
+</tr>
+</tbody>
+</table>
+<p>The fee is significant at small spend levels because it is charged on
+the credit purchase rather than only on consumed tokens. Avoid large
+prepayments until the model/provider route is proven.</p>
+<h3 id="lower-fee-alternatives-to-openrouter">Lower-fee alternatives to
+OpenRouter</h3>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Route</th>
+<th>Models to try</th>
+<th>Billing/fee posture</th>
+<th>Recommendation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Together direct</strong></td>
+<td>Qwen3.8-Flash, GLM-5.3-Flash, DeepSeek, GPT-OSS</td>
+<td>No separately published OpenRouter-style gateway surcharge; prepaid
+provider credits</td>
+<td>Best direct low-cost route for the current Qwen/GLM shortlist.
+Confirm account privacy controls before sensitive use.</td>
+</tr>
+<tr>
+<td><strong>Groq direct</strong></td>
+<td>GPT-OSS 20B/120B</td>
+<td>No published platform surcharge; payment method and usage billing
+rather than OpenRouter credits</td>
+<td>Best fast direct route and a useful ZDR-oriented control.</td>
+</tr>
+<tr>
+<td><strong>Fireworks direct</strong></td>
+<td>Qwen, DeepSeek, GPT-OSS, Kimi, other open models</td>
+<td>No separately published gateway surcharge; per-model
+serverless/dedicated rates</td>
+<td>Strong alternative when the exact endpoint’s ZDR and region are
+confirmed.</td>
+</tr>
+<tr>
+<td><strong>Mistral direct</strong></td>
+<td>Mistral Small 4 and other Mistral models</td>
+<td>Direct pay-as-you-go/prepaid provider billing</td>
+<td>Best European/ZDR-oriented route, subject to paid-plan/stateless
+endpoint requirements.</td>
+</tr>
+<tr>
+<td><strong>Vercel AI Gateway</strong></td>
+<td>Provider-dependent catalogue</td>
+<td>No token markup; currently advertises an initial monthly credit;
+provider and payment terms still apply</td>
+<td>Good policy/routing alternative if its free credit and ZDR-aware
+routing offset the extra intermediary.</td>
+</tr>
+<tr>
+<td><strong>Hugging Face Inference Providers</strong></td>
+<td>Provider-dependent catalogue</td>
+<td>No markup over provider rates; small account/Pro credits</td>
+<td>Useful discovery layer, but pin the upstream provider: HF’s own
+retention policy does not automatically make the upstream ZDR.</td>
+</tr>
+</tbody>
+</table>
+<p>My current billing recommendation is therefore: use <strong>Together
+direct</strong> for Qwen3.8-Flash and GLM-5.3-Flash, <strong>Groq
+direct</strong> for GPT-OSS, and <strong>Fireworks or Mistral
+direct</strong> where their exact privacy/region terms fit. Use
+OpenRouter when its ZDR filtering, model coverage, or routing
+convenience is worth the 5.5% credit fee—not as the default path for
+every request. <a href="https://openrouter.ai/pricing">OpenRouter
+pricing</a>, <a href="https://openrouter.ai/docs/guides/overview/auth/byok">BYOK
+documentation</a>, <a href="https://www.together.ai/pricing">Together
+pricing</a>, <a href="https://console.groq.com/docs/billing-faqs">Groq
+billing</a>, <a href="https://fireworks.ai/pricing">Fireworks
+pricing</a>, <a href="https://vercel.com/docs/ai-gateway/pricing">Vercel
+AI Gateway pricing</a>, <a href="https://huggingface.co/docs/inference-providers/pricing">Hugging
+Face provider pricing</a></p>
+<h2 id="data-retention-and-training-policies">Data retention and
+training policies</h2>
+<p>The important distinction is between:</p>
+<ul>
+<li><strong>training use:</strong> whether prompts may be used to
+improve models;</li>
+<li><strong>operational retention:</strong> logs retained for abuse
+prevention, debugging, or billing;</li>
+<li><strong>routing exposure:</strong> how many upstream processors
+receive the request;</li>
+<li><strong>your own retention:</strong> Pi sessions and provider logs
+may persist locally or in the provider account even if the provider
+advertises no training.</li>
+</ul>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Provider/path</th>
+<th>Practical policy posture for repository code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Local llama.cpp</td>
+<td>Strongest boundary if the server is local and telemetry/logging are
+controlled. No provider receives the prompt.</td>
+</tr>
+<tr>
+<td>Gemini paid API</td>
+<td>Google states paid API content is not used to improve products.
+Free-tier content has different terms and should not be treated as
+equivalent.</td>
+</tr>
+<tr>
+<td>Mistral</td>
+<td>Potentially strong EU/ZDR option, but ZDR is eligibility/endpoint
+dependent. Regional processing is not itself a retention guarantee.</td>
+</tr>
+<tr>
+<td>Groq</td>
+<td>Provider documentation describes no inference-content retention by
+default, with optional ZDR controls; verify current account terms.</td>
+</tr>
+<tr>
+<td>Cerebras</td>
+<td>Public materials state strong no-retention handling, but verify the
+direct product/account terms before treating it as contractual.</td>
+</tr>
+<tr>
+<td>Together</td>
+<td>Check current account controls and terms for the selected endpoint;
+do not infer ZDR from hosting an open model.</td>
+</tr>
+<tr>
+<td>Fireworks</td>
+<td>Check current DPA and endpoint policy. Use explicit stateless
+settings where supported; do not assume all endpoints have identical
+retention.</td>
+</tr>
+<tr>
+<td>DeepSeek</td>
+<td>Treat as unsuitable for sensitive repositories until current API
+terms clearly meet the required training/retention standard.</td>
+</tr>
+<tr>
+<td>OpenRouter</td>
+<td>The upstream provider may change under fallback routing. Apply
+provider allowlists and data-policy/ZDR filters where available;
+otherwise it is not a dependable privacy boundary.</td>
+</tr>
+<tr>
+<td>Vercel AI Gateway</td>
+<td>Gateway logs and the selected upstream provider are separate
+concerns. Pin provider/model and inspect the live model metadata and
+provider terms.</td>
+</tr>
+<tr>
+<td>Hugging Face Providers</td>
+<td>Policy depends on the selected inference provider. Provider pinning
+is essential.</td>
+</tr>
+<tr>
+<td>Cloudflare AI Gateway</td>
+<td>Cloudflare may provide control/logging features, but upstream
+provider retention still applies when BYOK or pass-through routing is
+used.</td>
+</tr>
+<tr>
+<td>OpenCode Go/Zen</td>
+<td>Treat as an intermediary subscription service; inspect current terms
+before sending proprietary code.</td>
+</tr>
+</tbody>
+</table>
+<p>For high-sensitivity work, the preferred order is local llama.cpp,
+then a direct provider with explicit paid no-training/ZDR terms, then a
+pinned gateway route. Avoid free-tier or automatic-fallback routes for
+secrets, credentials, or proprietary source.</p>
+<h2 id="suggested-pi-portfolio">Suggested Pi portfolio</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Model/path</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>OpenRouter with hard ZDR routing</td>
+<td>Controlled hosted comparison layer; pin providers and fail
+closed</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Qwen3.8-Flash or DeepSeek <code>deepseek-flash</code></td>
+<td>First-tier low-cost coding/agent evaluation; strong reported agent
+results and long context</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Together GLM-5.3-Flash</td>
+<td>Strong cheap hosted coding and review comparison point</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Groq GPT-OSS 20B/120B</td>
+<td>Fast direct/ZDR-oriented path for triage and inexpensive
+retries</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Mistral Small 4 direct</td>
+<td>European paid-ZDR alternative for supported stateless endpoints</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Gemini 3.8 Flash</td>
+<td>Difficult multi-file work and reliable hosted tool-loop
+baseline</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Existing Claude/OpenAI subscriptions through Pi</td>
+<td>Frontier escalation without API billing</td>
+</tr>
+<tr>
+<td>Separate boundary</td>
+<td>Local Devstral Small 2 or Qwen3.5 9B</td>
+<td>Private edits and work that should not leave the machine</td>
+</tr>
+</tbody>
+</table>
+<p>The first hosted experiment should compare six model/provider pairs:
+Qwen3.8- Flash through OpenRouter ZDR routing, Qwen3.8-Flash through
+Together, DeepSeek <code>deepseek-flash</code> direct, GLM-5.3-Flash
+through Together, GPT-OSS 120B through Groq, and Gemini 3.8 Flash
+direct. Add Mistral Small 4 and Fireworks after the first pass if ZDR
+and regional requirements make them relevant. Use the same repository
+tasks and record tool-call success, correction count, latency,
+input/output tokens, and total cost. Add providers only when the results
+justify the extra policy and credential surface.</p>
+<h3 id="three-sensible-starting-configurations">Three sensible starting
+configurations</h3>
+<p>These are deliberately different choices rather than a single
+ranking:</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Configuration</th>
+<th>Start with</th>
+<th>Why choose it</th>
+<th>What you give up</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Privacy-first</strong></td>
+<td>Local Devstral Small 2 24B; fall back to local Qwen3.5 9B; use a
+direct paid provider only for hard problems</td>
+<td>Repository contents and tool results can stay inside the local
+machine, and recurring token cost is zero</td>
+<td>Hardware, electricity, model downloads, latency, and weaker
+long-horizon reliability than the best hosted models</td>
+</tr>
+<tr>
+<td><strong>Lowest-cost hosted</strong></td>
+<td>Groq GPT-OSS 20B for fast small tasks; Together GLM-5.3-Flash,
+Qwen3.8-Flash, or DeepSeek <code>deepseek-flash</code> for cheap bulk
+work</td>
+<td>Low measured token rates and simple OpenAI-compatible connections;
+good for triage, review, tests, and bounded edits</td>
+<td>More correction/retry risk, changing catalogues, and
+provider-specific privacy caveats</td>
+</tr>
+<tr>
+<td><strong>Balanced hosted default</strong></td>
+<td>OpenRouter with hard ZDR routing for Qwen/DeepSeek/GLM; Together
+Qwen3.8-Flash as a direct comparison; Gemini 3.8 Flash for
+escalation</td>
+<td>Keeps most spending near the cheap end while preserving provider
+controls and a more capable hosted escalation path</td>
+<td>Requires provider allowlists, multiple credentials, and careful
+interpretation of ZDR; Gemini’s output price is materially higher</td>
+</tr>
+<tr>
+<td><strong>Capability-first without API-heavy frontier
+billing</strong></td>
+<td>Gemini 3.8 Flash as the hosted default; local model for sensitive
+work; existing Claude/OpenAI subscriptions for exceptional
+escalation</td>
+<td>Gives the strongest first hosted baseline in this survey while
+avoiding routine Anthropic/OpenAI API metering</td>
+<td>Higher cost than open-model hosts and continued dependence on a
+provider’s changing model/pricing policy</td>
+</tr>
+</tbody>
+</table>
+<p>My recommendation for this phase is <strong>Balanced hosted
+default</strong>. It has the best cost/capability/privacy shape while
+keeping the work non-local: enforce ZDR routing at the gateway, compare
+Qwen3.8-Flash and DeepSeek against GLM, and reserve Gemini for
+escalation. Choose <strong>Privacy-first</strong> instead if code must
+remain on the machine; choose <strong>Lowest-cost hosted</strong> if the
+main goal is experimentation; choose <strong>Capability-first</strong>
+if failed tool loops cost more than the additional tokens.</p>
+<p>Do not select a provider solely from the input-token price. For
+agentic coding, compare the complete task cost: output tokens, retries,
+malformed tool calls, latency, and the amount of human correction. A
+$0.15/$0.50 model that completes a task in one pass can be cheaper in
+practice than a $0.075/$0.30 model that needs several repair loops.</p>
+<h2 id="implemented-starting-point">Implemented starting point</h2>
+<p>The repository now includes a portable <a href="../artifacts/pi-hosted-provider-discovery.py">hosted-provider
+discovery helper</a> and a <a href="../artifacts/pi-hosted-provider-runbook.md">Pi hosted-provider
+runbook</a>. The helper is read-only, uses only Python’s standard
+library, does not contain credentials, and captures OpenRouter’s live
+ZDR-capable model/endpoint view. The runbook keeps actual keys and
+machine-specific Pi configuration at user scope, gives a direct-provider
+template, and defines a minimal tool-call smoke test before a model is
+trusted with real repositories.</p>
+<p>The first execution is recorded in the <a href="pi-connectivity-run-20260921.md">Pi connectivity run</a>: the
+public OpenRouter discovery returned 239 ZDR-eligible models, while the
+local llama.cpp route passed both text and read-only tool-loop probes
+using the currently loaded Qwen3.6 model. Hosted Pi probes remain
+pending until a provider credential is configured outside the
+repository.</p>
+<h2 id="sources">Sources</h2>
+<ul>
+<li><a href="https://pi.dev/docs/latest/providers">Pi providers</a></li>
+<li><a href="https://pi.dev/docs/latest/models">Pi custom
+models</a></li>
+<li><a href="https://pi.dev/docs/latest/llama-cpp">Pi llama.cpp
+documentation</a></li>
+<li><a href="https://github.com/ggml-org/llama.cpp">llama.cpp</a></li>
+<li><a href="https://www.together.ai/pricing">Together pricing</a></li>
+<li><a href="https://console.groq.com/docs/models">Groq models</a></li>
+<li><a href="https://console.groq.com/docs/rate-limits">Groq rate
+limits</a></li>
+<li><a href="https://ai.google.dev/gemini-api/docs/pricing">Gemini
+pricing</a></li>
+<li><a href="https://ai.google.dev/gemini-api/docs/latest-model">Gemini
+latest model details</a></li>
+<li><a href="https://mistral.ai/pricing/">Mistral pricing</a></li>
+<li><a href="https://fireworks.ai/pricing">Fireworks pricing</a></li>
+<li><a href="https://openrouter.ai/pricing">OpenRouter pricing</a></li>
+<li><a href="https://openrouter.ai/docs/api/api-reference/providers/list-all-providers">OpenRouter
+provider metadata</a></li>
+<li><a href="https://vercel.com/docs/ai-gateway/pricing">Vercel AI
+Gateway pricing</a></li>
+<li><a href="https://huggingface.co/docs/inference-providers/pricing">Hugging
+Face Inference Providers pricing</a></li>
+<li><a href="https://developers.cloudflare.com/workers-ai/platform/pricing/">Cloudflare
+Workers AI pricing</a></li>
+<li><a href="https://dev.opencode.ai/docs/go/">OpenCode Go</a></li>
+</ul>
+<h2 id="caveats">Caveats</h2>
+<p>This report is a current research snapshot, not a contractual
+statement of provider policy. Prices, model names, quotas, retention
+terms, tool support, and regional availability can change without a Pi
+release. Before adoption, fetch the live provider catalogue, confirm the
+model’s function-calling behavior in Pi, and review the current provider
+terms for the exact endpoint and account tier.</p>
+      </div>
+    </main>
+
+  </div>
+
+  <script>
+    // Robust collapsible TOC logic: wait for #TOC, add logging
+    function firstChildByTag(parent, tagName) {
+      var children = parent.children;
+      for (var i = 0; i < children.length; i++) {
+        if (children[i].tagName === tagName) {
+          return children[i];
+        }
+      }
+      return null;
+    }
+
+    function tocDepth(li, tocRoot) {
+      var depth = 0;
+      var node = li;
+      while (node && node !== tocRoot) {
+        if (node.tagName === 'UL') {
+          depth += 1;
+        }
+        node = node.parentElement;
+      }
+      return depth;
+    }
+
+    function makeTOCCollapsible() {
+      var toc = document.getElementById('TOC');
+      if (!toc) { return false; }
+      // Only run once
+      if (toc.classList.contains('collapsible-ready')) { return true; }
+      toc.classList.add('collapsible-ready');
+
+      Array.prototype.forEach.call(toc.querySelectorAll('li'), function (li) {
+        var depth = tocDepth(li, toc);
+        li.classList.add('toc-depth-' + String(depth));
+
+        var sublist = firstChildByTag(li, 'UL');
+        if (sublist && depth >= 1) {
+          var btn = document.createElement('button');
+          btn.setAttribute('type', 'button');
+          btn.className = 'toc-toggle';
+          btn.innerHTML = '<span class="toc-arrow">▶</span>';
+          btn.setAttribute('aria-label', 'Expand/collapse section');
+          var firstLink = firstChildByTag(li, 'A');
+          li.classList.add('has-toggle');
+          if (firstLink) {
+            firstLink.classList.add('toc-link-inline');
+            li.insertBefore(btn, firstLink);
+          } else {
+            li.insertBefore(btn, li.firstChild);
+          }
+          sublist.style.display = 'none';
+          btn.classList.add('collapsed');
+          btn.setAttribute('aria-expanded', 'false');
+          btn.addEventListener('click', function () {
+            var open = sublist.style.display !== 'none';
+            sublist.style.display = open ? 'none' : '';
+            btn.classList.toggle('collapsed', open);
+            btn.classList.toggle('expanded', !open);
+            btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+          });
+        }
+      });
+      console.log('[TOC] Collapsible TOC initialized');
+      return true;
+    }
+
+    // Try on DOMContentLoaded, then poll for late-injected TOC
+    function initTOCWithRetries() {
+      var tries = 0;
+      var maxTries = 20;
+      var interval = setInterval(function () {
+        var done = makeTOCCollapsible();
+        if (done || ++tries > maxTries) clearInterval(interval);
+      }, 200);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initTOCWithRetries);
+    } else {
+      initTOCWithRetries();
+    }
+
+    // Math renderer toggle: switch between generated mathjax/mathml files.
+    (function initMathModeToggle() {
+      var btn = document.getElementById('math-mode-toggle');
+      if (!btn) {
+        return;
+      }
+
+      var path = window.location.pathname || '';
+      var targetPath = '';
+      var label = '';
+      var defaultMathRenderer = 'mathjax';
+
+      if (path.endsWith('.mathml.html')) {
+        targetPath = path.slice(0, -('.mathml.html'.length)) + '.mathjax.html';
+        label = 'Switch to MathJax';
+      } else if (path.endsWith('.mathjax.html')) {
+        targetPath = path.slice(0, -('.mathjax.html'.length)) + '.mathml.html';
+        label = 'Switch to MathML';
+      } else if (path.endsWith('.html')) {
+        if (defaultMathRenderer === 'mathml') {
+          targetPath = path.slice(0, -('.html'.length)) + '.mathjax.html';
+          label = 'Switch to MathJax';
+        } else {
+          targetPath = path.slice(0, -('.html'.length)) + '.mathml.html';
+          label = 'Switch to MathML';
+        }
+      }
+
+      if (!targetPath) {
+        btn.style.display = 'none';
+        return;
+      }
+
+      btn.textContent = label;
+      btn.addEventListener('click', function () {
+        window.location.href = targetPath + (window.location.search || '') + (window.location.hash || '');
+      });
+    })();
+
+      // Sidebar resizer logic (existing)
+      var root = document.documentElement;
+      var layout = document.querySelector('.layout');
+      var sidebar = document.querySelector('.sidebar');
+      var resizer = document.querySelector('.sidebar-resizer');
+      var STORAGE_KEY = 'llm_primer_sidebar_width';
+
+      // if (!layout || !sidebar || !resizer) {
+      //   return;
+      // }
+
+
+      function cssPxVar(name, fallback) {
+        var raw = getComputedStyle(root).getPropertyValue(name).trim();
+        var n = parseFloat(raw);
+        return Number.isFinite(n) ? n : fallback;
+      }
+
+      function clamp(value, min, max) {
+        return Math.min(max, Math.max(min, value));
+      }
+
+      function applyWidth(px) {
+        root.style.setProperty('--sidebar-w', px + 'px');
+      }
+
+      var min = cssPxVar('--sidebar-min', 240);
+      var max = cssPxVar('--sidebar-max', 520);
+
+      var saved = parseFloat(localStorage.getItem(STORAGE_KEY) || '');
+      if (Number.isFinite(saved)) {
+        applyWidth(clamp(saved, min, max));
+      }
+
+      var dragging = false;
+
+      function onMove(ev) {
+        if (!dragging) {
+          return;
+        }
+        var next = clamp(ev.clientX, min, max);
+        applyWidth(next);
+      }
+
+      function onUp() {
+        if (!dragging) {
+          return;
+        }
+        dragging = false;
+        layout.classList.remove('is-resizing');
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+        localStorage.setItem(STORAGE_KEY, parseFloat(getComputedStyle(root).getPropertyValue('--sidebar-w')) || min);
+      }
+
+      resizer.addEventListener('pointerdown', function (ev) {
+        dragging = true;
+        layout.classList.add('is-resizing');
+        resizer.setPointerCapture(ev.pointerId);
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onUp);
+      });
+  </script>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var LANG_NAMES = {
+        python: 'Python', r: 'R', julia: 'Julia',
+        bash: 'Shell', sh: 'Shell', text: 'Output', markdown: 'Markdown'
+      };
+
+      function getLang(sourceDiv) {
+        var pre = sourceDiv.querySelector('pre');
+        if (!pre) return 'Code';
+        var classes = Array.prototype.slice.call(pre.classList);
+        for (var i = 0; i < classes.length; i++) {
+          var cls = classes[i];
+          if (cls === 'sourceCode') continue;
+          return LANG_NAMES[cls] || (cls.charAt(0).toUpperCase() + cls.slice(1));
+        }
+        return 'Code';
+      }
+
+      // A <p><strong>…</strong></p> language label inserted by the markdown author
+      function isLangLabel(node) {
+        if (!node || node.nodeType !== Node.ELEMENT_NODE || node.tagName !== 'P') return false;
+        var nonEmpty = Array.prototype.filter.call(node.childNodes, function (n) {
+          return !(n.nodeType === Node.TEXT_NODE && n.textContent.trim() === '');
+        });
+        return nonEmpty.length === 1 && nonEmpty[0].tagName === 'STRONG';
+      }
+
+      function isWhitespace(node) {
+        return node.nodeType === Node.TEXT_NODE && node.textContent.trim() === '';
+      }
+
+      // Sibling blocks may have whitespace or labels between them. Fenced .code-group
+      // wrappers bound explicit groups; unwrapped automatic groups still work as before.
+      function areConsecutive(a, b) {
+        var node = a.nextSibling;
+        while (node) {
+          if (node === b) return true;
+          if (isWhitespace(node) || isLangLabel(node)) { node = node.nextSibling; continue; }
+          return false;
+        }
+        return false;
+      }
+
+      function groupConsecutive(divs) {
+        var groups = [];
+        var i = 0;
+        while (i < divs.length) {
+          var run = [divs[i]];
+          while (i + 1 < divs.length && areConsecutive(run[run.length - 1], divs[i + 1])) {
+            i++;
+            run.push(divs[i]);
+          }
+          groups.push(run);
+          i++;
+        }
+        return groups;
+      }
+
+      var tabGroups = [];
+      var nextTabId = 0;
+
+      function uniqueId() {
+        var id;
+        do { id = 'code-tab-' + (++nextTabId); } while (document.getElementById(id));
+        return id;
+      }
+
+      function makeTabs(run, labels) {
+        var wrapper = document.createElement('div');
+        wrapper.className = 'code-tabs';
+
+        var tabBar = document.createElement('div');
+        tabBar.className = 'code-tab-bar';
+        tabBar.setAttribute('role', 'tablist');
+        tabBar.setAttribute('aria-label', 'Code examples by language');
+        wrapper.appendChild(tabBar);
+
+        var buttons = [];
+        var panels = [];
+
+        function activate(index, focus) {
+          buttons.forEach(function (button, i) {
+            var selected = i === index;
+            button.classList.toggle('active', selected);
+            button.setAttribute('aria-selected', String(selected));
+            button.tabIndex = selected ? 0 : -1;
+            panels[i].hidden = !selected;
+          });
+          if (focus) buttons[index].focus();
+        }
+
+        run.forEach(function (div, idx) {
+          // Keep authored labels (and any fragment IDs); create labels for automatic groups.
+          var label = labels[idx];
+          if (!label) {
+            label = document.createElement('p');
+            var strong = document.createElement('strong');
+            strong.textContent = getLang(div);
+            label.appendChild(strong);
+          }
+          label.classList.add('code-tab-label');
+
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.id = uniqueId();
+          btn.className = 'code-tab-btn';
+          btn.textContent = getLang(div);
+          btn.setAttribute('role', 'tab');
+          tabBar.appendChild(btn);
+          buttons.push(btn);
+
+          var panel = document.createElement('div');
+          panel.id = uniqueId();
+          panel.className = 'code-tab-panel';
+          panel.setAttribute('role', 'tabpanel');
+          panel.setAttribute('aria-labelledby', btn.id);
+          panel.tabIndex = 0;
+          btn.setAttribute('aria-controls', panel.id);
+          panel.appendChild(label);
+          panel.appendChild(div);
+          wrapper.appendChild(panel);
+          panels.push(panel);
+
+          btn.addEventListener('click', function () { activate(idx, false); });
+          btn.addEventListener('keydown', function (e) {
+            var index;
+            if (e.key === 'ArrowRight') index = (idx + 1) % run.length;
+            else if (e.key === 'ArrowLeft') index = (idx + run.length - 1) % run.length;
+            else if (e.key === 'Home') index = 0;
+            else if (e.key === 'End') index = run.length - 1;
+            else return;
+            e.preventDefault();
+            activate(index, true);
+          });
+        });
+
+        activate(0, false);
+        tabGroups.push({ buttons: buttons, panels: panels, activate: activate });
+        return wrapper;
+      }
+
+      function revealFragment(hash, scroll) {
+        if (!hash) return;
+        var id;
+        try { id = decodeURIComponent(hash.slice(1)); } catch (e) { return; }
+        var target = document.getElementById(id);
+        if (!target) return;
+        var scrollTarget = target;
+        tabGroups.forEach(function (group) {
+          group.panels.forEach(function (panel, index) {
+            if (panel.contains(target) || group.buttons[index] === target) {
+              group.activate(index, false);
+              // Authored language labels are hidden on screen after enhancement.
+              if (target.closest('.code-tab-label')) scrollTarget = panel;
+            }
+          });
+        });
+        for (var ancestor = target.parentElement; ancestor; ancestor = ancestor.parentElement) {
+          if (ancestor.tagName === 'DETAILS') ancestor.open = true;
+        }
+        if (scroll) scrollTarget.scrollIntoView();
+      }
+
+      function makeCollapsible(div) {
+        var details = document.createElement('details');
+        details.className = 'code-details';
+        details.open = true;
+
+        var summary = document.createElement('summary');
+        summary.className = 'code-summary';
+        summary.textContent = getLang(div);
+        details.appendChild(summary);
+
+        div.parentNode.insertBefore(details, div);
+        details.appendChild(div);
+      }
+
+      function applyTabs(run) {
+        var parent = run[0].parentNode;
+
+        // Collect lang-label <p> nodes immediately preceding each code block in the run
+        var labels = run.map(function (div) {
+          var prev = div.previousSibling;
+          while (prev && isWhitespace(prev)) prev = prev.previousSibling;
+          return isLangLabel(prev) ? prev : null;
+        });
+
+        // Insertion point: the label before the first block (if it exists), else the first block
+        var insertionPoint = labels[0] || run[0];
+
+        var placeholder = document.createTextNode('');
+        parent.insertBefore(placeholder, insertionPoint);
+
+        var widget = makeTabs(run, labels);
+        parent.replaceChild(widget, placeholder);
+      }
+
+      document.addEventListener('DOMContentLoaded', function () {
+        var all = Array.prototype.slice.call(
+          document.querySelectorAll('.content div.sourceCode')
+        );
+        var groups = groupConsecutive(all);
+        groups.forEach(function (run) {
+          if (run.length >= 2) {
+            applyTabs(run);
+          } else {
+            makeCollapsible(run[0]);
+          }
+        });
+        revealFragment(window.location.hash, true);
+        window.addEventListener('hashchange', function () {
+          revealFragment(window.location.hash, true);
+        });
+        // Also reveal an already-current fragment after its panel has been switched away.
+        document.addEventListener('click', function (e) {
+          var link = e.target.closest('a[href]');
+          if (!link || e.defaultPrevented || e.button !== 0 ||
+              e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+          var url = new URL(link.href, window.location.href);
+          if (url.origin === window.location.origin && url.pathname === window.location.pathname &&
+              url.search === window.location.search && url.hash) {
+            revealFragment(url.hash, true);
+          }
+        });
+      });
+    })();
+  </script>
+
+</body>
+</html>
