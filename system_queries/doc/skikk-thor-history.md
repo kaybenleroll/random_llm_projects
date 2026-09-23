@@ -1142,4 +1142,30 @@ Cannot currently distinguish these — both are plausible given available eviden
 
 ---
 
+### §2.56 — Idle/eval thermal investigation: Tctl never settles at idle, boost-off test supportive but not conclusive (2026-09-23)
+
+**Needle eval halted on its own stop-rule; no eval case completes since.** `experimental_llamacpp` needle-split eval self-halted at 10:32:26 (Tctl 30s mean ≥90°C, peak 90.8°C); repeated trips since that mean no case completes. Script: `~/workspace/experimental_llamacpp/.scratch/run-needle-split-20260923.sh` lines 14-22 (trip: 30s mean ≥90 or ≥93 on 2 polls; resume gate: Tctl <67°C continuously for 90s). Needle-eval session informed.
+
+**Idle, Tctl bounces 65-77°C, never holding under 67°C (13:49-15:19).** Conditions: load avg ~1, GPU ~1-2% util/11W/P8, containers idle, AC plugged, battery full 0W, journal clean of ACPI/thermal/NVRM events. DIMMs 52-55°C at near-idle (chassis heat-soak indicator).
+
+**Boost toggle test** (`.scratch/boost_thermal_test.sh`, csv `.scratch/boost_test_*.csv`, 5s samples; phases not counterbalanced, phase A began heat-soaked). Tctl min/mean/max:
+
+| Phase | N | Tctl | <67°C samples | Longest run <67°C |
+|-------|---|------|---------------|-------------------|
+| A boost on | 19 | 68.6/71.9/81.2 | 0 | — |
+| B boost off | 36 | 61.1/62.0/68.6 | 35/36 | 175s |
+| C boost restored | 13 | 61.1/63.8/69.9 | 12/13 | 50s |
+
+Boost restored to 1 afterwards. **Supportive, not conclusive:** order confound (A began heat-soaked; C stayed cool with boost on). Load-condition behaviour untested.
+
+**Fan.** No software fan RPM readout (no `fan1_input` in any hwmon). Fan confirmed to ramp under sustained load (§2.26, §2.54) but idle-band fan behaviour has never been characterised; EC fallback curve is a permanent won't-fix (§2.43). User reports fan does not seem to come on as expected at idle-ish temps — unverified, audible/tactile only.
+
+**Guake freeze, upstream search (sub-note).** Exact gnome-shell log string "Frame has assigned frame counter but no frame drawn time" appears in Guake/guake#2299 (open) and prusa3d/PrusaSlicer#15007; no matching upstream Mutter GitLab issue found. Possible action: file one.
+
+**Open next steps:** (1) run one eval case with boost off or fewer threads (`-t 8`) under load, log peak/mean Tctl; (2) check BIOS Operating Mode (Turbo) on next reboot (not software-verifiable, §2.26); (3) cooling/repaste/warranty route only if the above points to heat transfer.
+
+**Status: OPEN, investigation in progress; idle Tctl behaviour observed, cause not established.**
+
+---
+
 _End of draft._
