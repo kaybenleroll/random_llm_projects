@@ -1116,4 +1116,16 @@ Cannot currently distinguish these — both are plausible given available eviden
 
 ---
 
+### §2.54 — GPU power-limit cap finding (new, unconfirmed root cause), fan-control reconfirmed working under real load (2026-09-23)
+
+**GPU power limit still capped at 65W, confirmed live.** `nvidia-smi -q -d POWER` (10:37 IST, GPU idle at 10.64W draw): Current/Requested/Default Power Limit all **65.00 W**, Max Power Limit **140.00 W**, Min 5.00 W. Matches last night's observation (same 65W cap on Current/Requested/Default). This is well below both NVIDIA's own 140W spec ceiling for this GPU and SKIKK's cited 115W TGP figure for this config (`doc/machines/skikk-thor-spec-sheet.pdf`). **Hypothesis, not confirmed:** nvidia-open 595.91.07 not applying the vendor-configured board power limit (TGP) at driver init, leaving the GPU pinned at its floor default instead. Not root-caused this pass — no driver-log/vbios correlation attempted. Worth a controlled test (e.g. `nvidia-smi -pl <value>` to see if it's settable at all, or check behaviour after a driver downgrade/upgrade) if picked up.
+
+**Needle-split eval (`experimental_llamacpp`, run log `needle-split-run-20260923-102153.log`) — NOT currently active.** No `llama-server`/`llama-cli` process found (`pgrep -af 'llama|needle'` returns only this session's own log-tail monitor). The run log is stale as of the 10:37 check (last line 10:33:08, cooldown wait for case `n0-d0.5`) — its most recent recorded event: **`STOP-RULE TRIPPED` at 10:32:26, CPU Tctl 30s rolling mean ≥90C (peak 90.8C this run), case `n0-d0.1` → `FAILED_STOP_RULE`.** So the run self-terminated/stalled on its own thermal stop-rule rather than still grinding; current Tctl is back down to 70.0C (`sensors`) with load average 1.09 — no throttled-frequency reproduction possible right now (`/proc/cpuinfo` MHz spread is the normal idle-to-boost range, not the pinned-low pattern). Cross-check the orchestrating session (`Needle split orchestration — resume after Auto Mode unblock`, pid 972051) for why the run didn't resume past the stop-rule trip.
+
+**Fan-control genuinely responds to real sustained load — reconfirms §2.26's "no OS-level fan path, but the fan itself is fine" framing, no regression.** This run log shows Tctl climbing 60→90.8C under combined CPU+GPU load with no manual intervention, consistent with the fan audibly ramping under last night's eval per the user's own observation (CPU 88.0°C, DIMMs 64.5°C/60.8°C during that run — the DIMM figures are **genuinely over** the 55.0°C `spd5118` ALARM threshold, not marginal, worth flagging even though no fix is expected here: this is the family-26/`tuxedo_compatibility_check` WON'T-FIX gap from §2.26/tuxedo-drivers#376, permanent). Current idle DIMM reading (this check): 55.5°C (ALARM) / 52.5°C — i.e. one DIMM sits at/above the alarm threshold even at near-idle load (1.09 load avg), underscoring this machine runs hot at baseline, not just under eval load.
+
+**Status: power-limit cap OPEN (hypothesis only, needs follow-up if GPU-bound work is planned); needle-eval run status OPEN (stalled post-stop-rule, not resumed as of this check — orchestrating session should confirm intent); fan-control CLOSED, no regression, DIMM-over-alarm-under-load reconfirmed as a known (won't-fix) risk, not new.**
+
+---
+
 _End of draft._
