@@ -1168,4 +1168,22 @@ Boost restored to 1 afterwards. **Supportive, not conclusive:** order confound (
 
 ---
 
+### §2.57 — BIOS Operating Mode found at Office, reset to Turbo; all 2026-09-23 thermal data was taken under Office (2026-09-24)
+
+**Finding.** User inspected BIOS setup on 2026-09-24: Operating Mode was **Office** (other options: Balanced, Turbo). §2.26 (2026-07-28) records Balance → Turbo, which dropped idle Tctl from 73-75°C to 65.4°C. So the setting either reverted after 2026-07-28 or was never in the state the docs assumed. User set it to **Turbo**. Not software-verifiable (§2.26, §2.56: no software readout); only the BIOS UI showed it.
+
+**When/why it changed: unknown.** Factual history only: no CMOS/CMOS-reset mention exists anywhere in the docs. Related events on record: BIOS date `03/26/2026` (§2.26, predates the July change); hard power resets/freezes 2026-07-31 (§2.34 and related), and a series of §2.34-pattern freezes through Aug/Sep; no BIOS/firmware update is recorded after 2026-07-28. All are unverified candidates, none established as cause.
+
+**Consequences.**
+1. All 2026-09-23 thermal measurements (§2.54, §2.56 boost test, idle 65-77°C bounce, eval 90°C trips and the boost-off mitigation) were taken under Office mode. NOT comparable with the July Turbo baseline; post-Turbo behaviour needs re-measuring.
+2. Likely (unverified until re-measured) explains the warm idle and the "fan not coming on as expected" complaint.
+3. Per §2.26, Turbo does NOT improve sustained-load throttling (~97°C), so heavy-load/eval behaviour may not improve.
+4. §2.56 open step (2), "check BIOS Operating Mode on next reboot", is now done. Steps (1) and (3) stand, but re-run them under Turbo before drawing conclusions.
+
+**Immediate post-change reading (single early snapshot after the reboot, NOT a settled baseline).** Boot 2026-09-24 01:12:02, kernel 7.0.0-34-generic, `cpufreq/boost` = 1 (boost on). Tctl 67.5°C, Tccd1 47.4, Tccd2 45.4. GPU 8.70 W, 44°C, 0% util. No llama/needle processes. Five Tctl samples 15s apart: 67.2, 54.1, 53.2, 53.5, 58.4°C.
+
+**Status: OPEN, re-measurement pending under Turbo.** Next: idle soak and one eval case under Turbo, compare against §2.26 (65.4°C idle) and §2.56 tables.
+
+---
+
 _End of draft._
