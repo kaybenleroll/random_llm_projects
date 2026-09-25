@@ -81,7 +81,7 @@ Frequentist pass: recall flat at 50.4-58.5%; no comparison survives Holm across 
 | Sonnet medium | use (cheap baseline) | 6.68 [6.30, 7.09] at $0.201/run; high adds +0.92 items [+0.29, +1.56] for +$0.124. |
 | Sonnet high | use (default) | Best recall and recall-per-dollar among well-sampled default-prompt arms: 7.61 [7.12, 8.11] at $0.325/run. |
 | Sonnet xhigh | avoid | -0.28 [-0.94, +0.38] vs high for +$0.26/run; P(ratio<0) 0.75 (#184 deny kept as a dated cost default). |
-| Opus high | avoid (no measured gain over medium) | Indistinguishable from medium: -0.09 [-0.62, +0.45], P(|diff|<0.5) 0.86; $0.461 vs $0.340/run. |
+| Opus high | not supported over medium | Indistinguishable from medium: -0.09 [-0.62, +0.45], P(|diff|<0.5) 0.86; $0.461 vs $0.340/run. |
 | Opus xhigh | escalate-only | +0.92 items over high [+0.32, +1.52] at 2.2x the cost ($1.029/run); P(>1 item) 0.43; no per-effort escalation rule adopted. |
 | max | inconclusive | n=1 arms, intervals about +/-1 item; no benefit shown, stays off the sweep. |
 
