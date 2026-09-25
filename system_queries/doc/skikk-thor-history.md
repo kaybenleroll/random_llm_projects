@@ -1168,4 +1168,29 @@ Boost restored to 1 afterwards. **Supportive, not conclusive:** order confound (
 
 ---
 
+### §2.57 — BIOS Operating Mode found at Office, reset to Turbo; all 2026-09-23 thermal data was taken under Office (2026-09-24)
+
+**Finding.** User inspected BIOS setup on 2026-09-24: Operating Mode was **Office** (other options: Balanced, Turbo). §2.26 (2026-07-28) records Balance → Turbo, which dropped idle Tctl from 73-75°C to 65.4°C. So the setting either reverted after 2026-07-28 or was never in the state the docs assumed. User set it to **Turbo**. Not software-verifiable (§2.26, §2.56: no software readout); only the BIOS UI showed it.
+
+**When/why it changed: unknown.** Factual history only: no CMOS/CMOS-reset mention exists anywhere in the docs. Related events on record: BIOS date `03/26/2026` (§2.26, predates the July change); hard power resets/freezes 2026-07-31 (§2.34 and related), and a series of §2.34-pattern freezes through Aug/Sep; no BIOS/firmware update is recorded after 2026-07-28. All are unverified candidates, none established as cause.
+
+**Consequences.**
+1. All 2026-09-23 thermal measurements (§2.54, §2.56 boost test, idle 65-77°C bounce, eval 90°C trips and the boost-off mitigation) were taken under Office mode. NOT comparable with the July Turbo baseline; post-Turbo behaviour needs re-measuring.
+2. Likely (unverified until re-measured) explains the warm idle and the "fan not coming on as expected" complaint.
+3. Per §2.26, Turbo does NOT improve sustained-load throttling (~97°C), so heavy-load/eval behaviour may not improve.
+4. §2.56 open step (2), "check BIOS Operating Mode on next reboot", is now done. Steps (1) and (3) stand, but re-run them under Turbo before drawing conclusions.
+
+**Immediate post-change reading (single early snapshot after the reboot, NOT a settled baseline).** Boot 2026-09-24 01:12:02, kernel 7.0.0-34-generic, `cpufreq/boost` = 1 (boost on). Tctl 67.5°C, Tccd1 47.4, Tccd2 45.4. GPU 8.70 W, 44°C, 0% util. No llama/needle processes. Five Tctl samples 15s apart: 67.2, 54.1, 53.2, 53.5, 58.4°C.
+
+**Status: OPEN, re-measurement pending under Turbo.** Next: idle soak and one eval case under Turbo, compare against §2.26 (65.4°C idle) and §2.56 tables.
+
+**Addendum (2026-09-24, later same day): physical mode switch, manual findings, BIOS baseline.**
+- **Manual.** Vendor User's Manual is `doc/machines/skikk-thor-spec-sheet.pdf` (text extracted to `.scratch/spec.txt`, not committed). p.20 lists a physical "Custom / Turbo / Balance / Office mode switch" with LED indicator: Office = green, Balance = blue, Turbo = purple, Custom = white ("always on"). p.41 (BIOS Advanced menu): "Operating Mode includes the Fan Speed and CPU power level setting to optimize overall performance and heat dissipation." Nothing else on modes is documented: the manual is silent on whether the physical switch and the BIOS Operating Mode are the same setting, whether the selection persists across reboot, what Custom relates to, PL1/PL2 values or fan curves. It also does not document GCU OverClock Recovery, CPU Core Count Control, SMT, Memory Speed, UMA Frame Buffer or RTC wake.
+- **Button (user-observed).** User confirmed 2026-09-24 that pressing the physical button cycles the LED colours. **Working hypothesis, UNVERIFIED:** an accidental button press is the probable cause of the silent Turbo → Office revert above, since no BIOS update, CMOS clear or Restore Defaults event is recorded. Not established whether the button and the BIOS setting are the same variable.
+- **Check going forward.** The LED gives a software-free way to verify the mode: expect purple (Turbo). User will keep it on purple.
+- **Assessment (inference, not vendor-documented).** Per the manual wording, Turbo likely raises the CPU power level as well as fan behaviour, so expect more draw on the shipped 280W charger and higher sustained-load temperatures (§2.26: ~97°C pinning under load). Manual's adapter line is generic ("Adapter 280 Watts (20V/14A) / 250 Watts (20V/12.5A) by model"), not model-specific; see GitHub issue #115 (charger conflict).
+- **BIOS baseline (photos 2026-09-24, recorded as state, not analysed).** Operating Mode = Turbo Mode; Display Mode = dGPU; CPU Core Count Control = CCD0 Enable / CCD1 Enable; SMT = Enabled; Wake on LAN = Disabled; Memory Speed = Automatic; UMA Frame Buffer Size = Auto; NVMe RAID mode = Disabled; two NVMe controllers SSDPB-PX600-1K0-80 (1000.2GB). Setup utility "Version 2.22.0059, Copyright (C) 2026 AMI" is the AMI setup-utility version, not necessarily the firmware version; real BIOS version/date needs `dmidecode` (sudo, not available to agents).
+
+---
+
 _End of draft._
