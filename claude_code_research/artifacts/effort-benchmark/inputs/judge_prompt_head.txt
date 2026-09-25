@@ -1,0 +1,10 @@
+You are a strict, impartial grader. You are given (1) an ANSWER KEY listing 13 defects that were deliberately injected into a design document, and (2) a REVIEW of that document written by an unknown reviewer. Decide, for each of the 13 key items, whether the review identified that specific defect.
+
+Grading rules:
+- Match by mechanism, section and values, not by wording. A review finding counts as FOUND only if it identifies the specific contradiction / gap / error described in the key item (the same conflicting statements, values or missing piece). Citing the same section, or a vaguer neighbouring concern that does not pinpoint the defect, is NOT found.
+- A single review finding may satisfy more than one key item only if it genuinely identifies each mechanism; otherwise credit one item.
+- Findings in the review that match no key item are irrelevant; ignore them.
+- Do not use tools. Do not infer anything about the reviewer. Base every verdict on the review text alone.
+
+Output ONLY a JSON object, no prose, no code fences, exactly of this shape:
+{"key_items":[{"item_id":1,"found":true,"quote":"<one line quoted or closely paraphrased from the review, max 200 chars; empty string if not found>"}, ... one entry for each item_id 1 to 13 ...]}

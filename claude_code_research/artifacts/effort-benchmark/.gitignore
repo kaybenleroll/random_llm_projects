@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+runs/
+runs-*/
+judgments/
+judgments-*/
+logs/
+cwd/
+bayes_cache/
+STATUS.txt
+STOP
+schedule*.json
+results.md
+BAYES_RESULTS.md
