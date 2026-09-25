@@ -66,7 +66,7 @@ Judge sensitivity (sec. 3b/3c): contrast means move by at most 0.27 items; Sonne
 - n=1 arms have intervals about +/-1 item wide; they neither support nor refute max.
 
 ## Earlier significance-test summary (source `results.md`, `step4_findings.md`, `step4_tables.md` under `E/`)
-Frequentist pass: recall flat at 50.4-58.5%; no comparison survives Holm across 12 (smallest Holm p 0.17); Opus xhigh vs medium +6.5 pp, permutation p=0.067, Holm 0.565. Read literally that is "nothing found". The Bayesian reading is more informative: the corrected tests could not resolve the roughly +0.9 item steps at Sonnet medium -> high and Opus high -> xhigh that the intervals show. Caveat: these intervals are unadjusted for the roughly 12 contrasts inspected, so the two largest are probably optimistic; the two views are consistent, not contradictory.
+Frequentist pass: recall flat at 50.4-58.5%; no comparison survives Holm across 12 (smallest Holm p 0.17); Opus xhigh vs medium +6.5 pp, permutation p=0.067, Holm 0.565. Read literally that is "nothing found". The Bayesian reading is more informative: the corrected tests could not resolve the roughly +0.9 item steps at Sonnet medium -> high and Opus high -> xhigh that the intervals show. Caveat: these intervals are unadjusted for the 16 contrasts inspected (count from the analysis script's contrast table), so the two largest are probably optimistic; the two views are consistent, not contradictory.
 
 ## Fable result
 - 5.5-6.3/13, 1.1-1.3 items below Sonnet-high/Opus-xhigh (CrI about -0.4 to -2.0), but this is model plus prompt confounded: Fable used cap10 at n=5, the Opus/Sonnet arms the default prompt at n=10. The prompt effect is identified only by one n=1 pair; its posterior (+0.12 logit, CrI -1.3 to +1.6) is essentially the prior. Do not read this as a Fable deficit.
@@ -91,7 +91,7 @@ Frequentist pass: recall flat at 50.4-58.5%; no comparison survives Holm across 
 
 ## Caveats
 - One synthetic, tool-less task, 13 items, one target document; results describe this document, not review quality generally.
-- Contrasts are unadjusted (about 12 inspected, no pooling across arms), so the largest gains are probably optimistic.
+- Contrasts are unadjusted (16 inspected, per the analysis script's contrast table; no pooling across arms), so the largest gains are probably optimistic.
 - Sonnet-max is a truncation-recovered run (`budget_exhausted`), costing $2.75; an anecdote. No default-prompt Opus max arm exists.
 - Judge choice moves contrasts by at most 0.27 items; both judges share model families with reviewers.
 - Cost is `total_cost_usd` (API-list equivalent), not subscription spend.
