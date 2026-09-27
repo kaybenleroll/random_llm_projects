@@ -768,6 +768,8 @@ A second freeze occurred at **17:04:26 IST**, this time during active use, not i
 
 **Status: MONITORING → ESCALATE.** No longer purely idle-triggered (17:04 occurrence was during active use) — the "idle-state hard-freeze" framing in this entry's title/opening no longer holds as the full explanation; idle-PM remains one plausible trigger among freezes with no confirmed common cause. Podman/container workload is ruled out as a cause. 6 occurrences in ~2 weeks with two now tightly coupled to §2.29's AC-boot-hang is enough to prioritize a BIOS/EC firmware check over further passive log monitoring. Not merged with §2.29 as a single entry — root cause still unconfirmed, and the freeze/hang relationship, while increasingly suggestive, isn't proven identical.
 
+**Cross-reference (2026-09-26):** A further hard freeze occurred 2026-09-20 08:32, but under sustained llama-server load rather than idle; the owner decided it does not join this tally and is tracked as a separate event — see §2.58.
+
 ---
 
 ### §2.35 — AC-adapter flapping (ACPI `ac_adapter`) caught live, likely shared root cause for §2.29 + §2.34 + the "double chime" (2026-08-06)
@@ -1190,6 +1192,29 @@ Boost restored to 1 afterwards. **Supportive, not conclusive:** order confound (
 - **Check going forward.** The LED gives a software-free way to verify the mode: expect purple (Turbo). User will keep it on purple.
 - **Assessment (inference, not vendor-documented).** Per the manual wording, Turbo likely raises the CPU power level as well as fan behaviour, so expect more draw on the shipped 280W charger and higher sustained-load temperatures (§2.26: ~97°C pinning under load). Manual's adapter line is generic ("Adapter 280 Watts (20V/14A) / 250 Watts (20V/12.5A) by model"), not model-specific; see GitHub issue #115 (charger conflict).
 - **BIOS baseline (photos 2026-09-24, recorded as state, not analysed).** Operating Mode = Turbo Mode; Display Mode = dGPU; CPU Core Count Control = CCD0 Enable / CCD1 Enable; SMT = Enabled; Wake on LAN = Disabled; Memory Speed = Automatic; UMA Frame Buffer Size = Auto; NVMe RAID mode = Disabled; two NVMe controllers SSDPB-PX600-1K0-80 (1000.2GB). Setup utility "Version 2.22.0059, Copyright (C) 2026 AMI" is the AMI setup-utility version, not necessarily the firmware version; real BIOS version/date needs `dmidecode` (sudo, not available to agents).
+
+### §2.58 — Hard freeze under llama-server load, 2026-09-20 08:32 (recorded 2026-09-26; excluded from §2.34 tally)
+
+**Finding.** Boot -7 ended Sun 2026-09-20 08:32:39 IST; boot -6 began 08:33:07 (28 s later, consistent with a manual power-cycle). No shutdown sequence in the journal: the last lines of boot -7 are at 08:32:39 from `llamacpp` (a slot starting task 46574) and `aider-overnight` (test output). The UFW BLOCK lines at 08:32:12 are only the last *kernel* lines. So the freeze hit mid-request under sustained load, during the first Qwen3.6 Aider attempt.
+
+**Signature.** No Xid at the freeze, no thermal line. Last poll: Tctl 88°C / GPU 71°C (per `experimental_llamacpp/docs/decisions.md` ~l.58). Boot -7 has 9 `nvAssertFailedNoLog` lines at `osapi.c:2116` (3 at boot on 09-17, 6 on 09-19 at 18:02), none near the freeze and no burst. The Xid lines in boot -7 are the 2026-09-19 llama.cpp `MUL_MAT_ID` incidents, not this freeze.
+
+**Driver.** Boot -7 (from 2026-09-17 23:06) already loaded 595.91.07, so the driver did NOT change at the 09-20 reboot; it was upgraded on 2026-09-08 (dpkg.log). The "moved at the reboot" line in `experimental_llamacpp/docs/decisions.md` is wrong and is being corrected there.
+
+**Power.** upower battery history shows fully-charged from 2026-09-19 18:16:33 with no state change recorded before the freeze, and the next boot's line at 08:33:07 reads `AC Adapter [AC0] (on-line)`. As far as the records go the machine was on mains. Caveat: upower writes history periodically, so a change in the last minutes before a hard hang may never have reached disk. Which adapter was in use (§2.41, §2.50, §2.52) is unknown.
+
+**Unverified / unknown.**
+- Adapter in use and BAT0 state at the time: unknown.
+- User suspects the laptop was jolted: unconfirmed.
+- Any link to the AC-flap theory (§2.35/§2.41, unconfirmed): not established.
+- Any link to the CPU-heat edge (Tctl 87-88°C for 90-98% of polls under GPU runs, §2.56): not established.
+- BIOS Operating Mode at the time: unknown (§2.57 found it at Office on 2026-09-24; when it changed is unknown).
+
+**§2.34 tally: decided — excluded.** The owner has decided this event does not count as the 8th §2.34 occurrence: it happened under sustained load rather than at idle, unlike the §2.34 pattern, and the cause here is unverified and possibly a different failure mode. It is tracked as a separate event, cross-referenced with §2.34. The §2.34 count in `machines/skikk-thor.md` stays at 7.
+
+**Sources.** GitHub issue #119 and its 2026-09-24 correction comment; `experimental_llamacpp/docs/decisions.md` ~l.58; `experimental_llamacpp/.scratch/research-system-queries-split.md`; `journalctl --list-boots`.
+
+**Status: OPEN, cause not established; tracked separately from the §2.34 tally (see above).**
 
 ---
 
