@@ -1193,7 +1193,7 @@ Boost restored to 1 afterwards. **Supportive, not conclusive:** order confound (
 - **Assessment (inference, not vendor-documented).** Per the manual wording, Turbo likely raises the CPU power level as well as fan behaviour, so expect more draw on the shipped 280W charger and higher sustained-load temperatures (§2.26: ~97°C pinning under load). Manual's adapter line is generic ("Adapter 280 Watts (20V/14A) / 250 Watts (20V/12.5A) by model"), not model-specific; see GitHub issue #115 (charger conflict).
 - **BIOS baseline (photos 2026-09-24, recorded as state, not analysed).** Operating Mode = Turbo Mode; Display Mode = dGPU; CPU Core Count Control = CCD0 Enable / CCD1 Enable; SMT = Enabled; Wake on LAN = Disabled; Memory Speed = Automatic; UMA Frame Buffer Size = Auto; NVMe RAID mode = Disabled; two NVMe controllers SSDPB-PX600-1K0-80 (1000.2GB). Setup utility "Version 2.22.0059, Copyright (C) 2026 AMI" is the AMI setup-utility version, not necessarily the firmware version; real BIOS version/date needs `dmidecode` (sudo, not available to agents).
 
-### §2.58 — Hard freeze under llama-server load, 2026-09-20 08:32 (recorded 2026-09-26; tally inclusion undecided)
+### §2.58 — Hard freeze under llama-server load, 2026-09-20 08:32 (recorded 2026-09-26; excluded from §2.34 tally)
 
 **Finding.** Boot -7 ended Sun 2026-09-20 08:32:39 IST; boot -6 began 08:33:07 (28 s later, consistent with a manual power-cycle). No shutdown sequence in the journal: the last lines of boot -7 are at 08:32:39 from `llamacpp` (a slot starting task 46574) and `aider-overnight` (test output). The UFW BLOCK lines at 08:32:12 are only the last *kernel* lines. So the freeze hit mid-request under sustained load, during the first Qwen3.6 Aider attempt.
 
