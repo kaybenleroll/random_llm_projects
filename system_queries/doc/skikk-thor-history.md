@@ -768,6 +768,8 @@ A second freeze occurred at **17:04:26 IST**, this time during active use, not i
 
 **Status: MONITORING → ESCALATE.** No longer purely idle-triggered (17:04 occurrence was during active use) — the "idle-state hard-freeze" framing in this entry's title/opening no longer holds as the full explanation; idle-PM remains one plausible trigger among freezes with no confirmed common cause. Podman/container workload is ruled out as a cause. 6 occurrences in ~2 weeks with two now tightly coupled to §2.29's AC-boot-hang is enough to prioritize a BIOS/EC firmware check over further passive log monitoring. Not merged with §2.29 as a single entry — root cause still unconfirmed, and the freeze/hang relationship, while increasingly suggestive, isn't proven identical.
 
+**Cross-reference (2026-09-26):** A further hard freeze occurred 2026-09-20 08:32, but under sustained llama-server load rather than idle; the owner decided it does not join this tally and is tracked as a separate event — see §2.58.
+
 ---
 
 ### §2.35 — AC-adapter flapping (ACPI `ac_adapter`) caught live, likely shared root cause for §2.29 + §2.34 + the "double chime" (2026-08-06)
@@ -1208,11 +1210,11 @@ Boost restored to 1 afterwards. **Supportive, not conclusive:** order confound (
 - Any link to the CPU-heat edge (Tctl 87-88°C for 90-98% of polls under GPU runs, §2.56): not established.
 - BIOS Operating Mode at the time: unknown (§2.57 found it at Office on 2026-09-24; when it changed is unknown).
 
-**§2.34 tally: NOT decided here.** By date it would be the 8th occurrence after the 7 recorded (Jul 29-Aug 15, incl. §2.40), but it happened under sustained load rather than at idle, unlike the §2.34 pattern. The §2.34 count in `machines/skikk-thor.md` is left at 7 pending the owner's decision.
+**§2.34 tally: decided — excluded.** The owner has decided this event does not count as the 8th §2.34 occurrence: it happened under sustained load rather than at idle, unlike the §2.34 pattern, and the cause here is unverified and possibly a different failure mode. It is tracked as a separate event, cross-referenced with §2.34. The §2.34 count in `machines/skikk-thor.md` stays at 7.
 
 **Sources.** GitHub issue #119 and its 2026-09-24 correction comment; `experimental_llamacpp/docs/decisions.md` ~l.58; `experimental_llamacpp/.scratch/research-system-queries-split.md`; `journalctl --list-boots`.
 
-**Status: OPEN, cause not established; tally inclusion awaiting owner decision.**
+**Status: OPEN, cause not established; tracked separately from the §2.34 tally (see above).**
 
 ---
 
