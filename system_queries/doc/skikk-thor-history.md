@@ -1286,4 +1286,22 @@ Dated history above is left as written; this entry supersedes the affected wordi
 
 ---
 
+### §2.62 — Guake "not big enough" after the 2026-09-28 relaunch: old vs new geometry, cause not established (2026-09-29)
+
+**Symptom.** After the 2026-09-28 fullscreen-toggle freeze (§2.59) and a manual relaunch, Guake's window was reported as not big enough.
+
+**Old measurement (pid 25603, window 0x80000f).** 2880x1916 px at (4320,64) on eDP-1 (3840x2400 physical, logical 1920x1200, scale 2). Width 2880 = 75% (matches `window-width=75`); height 1916 = 79.8% of the panel despite `window-height=95`. `_NET_WORKAREA` = (0,64,7680,1954). Hypothesis (~65% confidence, unreconciled): Guake takes height% of `monitor.get_workarea()`; dash-to-dock (BOTTOM, dock-fixed true, extend-height true) shrinks the work area, giving 95% of ~2017 = 1916.
+
+**Fix.** User killed and relaunched Guake (new pid 2870368, `nohup guake` from a Claude Bash shell) and reports sizing now looks fixed. Cause **not established**.
+
+**New measurement (2026-09-29, read-only, window visible so no toggle needed).** window 0x80000f (same X id as before; ids are per-client so likely coincidence, unverified): 2880x2084 px at (4320,64), mapped/focused. gsettings: `window-height=95`, `window-width=75`, `display-n=0`. `_NET_WORKAREA` unchanged (0,64,7680,1954). Height = 86.8% of panel (2400 px), 106.7% of the 1954-px work-area height; 2084 is not 95% of the panel (2280) and not 95% of the work area (1856).
+
+**Interpretation (uncertain).** Height rose 1916 -> 2084 (+168 px) with an identical dock and work area, so the dock/work-area hypothesis alone does not explain the old size; the old process was in some bad or stale state. The new height still matches neither 95% of the panel nor of the work area, so the sizing formula itself is unexplained (possible factors: reposition extension `move_frame`/work-area handling, §2.36; xwininfo reporting of the frame vs client size). "Fixed" is a change in size, not a confirmed correct 95%.
+
+**Untested options.** Change dash-to-dock `dock-fixed`/`extend-height`; set `window-height=100`. Neither tried.
+
+**Status: OPEN (cause unknown; user-perceived fixed by kill + relaunch).**
+
+---
+
 _End of draft._
