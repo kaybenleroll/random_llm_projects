@@ -1246,4 +1246,24 @@ Guake did not auto-respawn via session autostart on its own after the kill, henc
 
 ---
 
+### §2.60 — Adapter reference rating settled at 280W (shipped charger), vendor claim, unmeasured; vendor query parked (2026-09-29)
+
+**Decision (random_llm_projects#115; experimental_llamacpp#3 is the same problem from that repo's side).** The reference adapter for sustained CPU+GPU load is the **shipped 280W charger (A621-2001400W-B31)**, documented explicitly as a **vendor claim, unmeasured**. Sustained load never runs on the 230W Delippo power bank (§2.50). No 420W unit has ever been physically on hand (§2.52), so a 420W-only rule could not be followed.
+
+**The contradiction is recorded, not resolved.** Four vendor-originated sources disagree: (1) SKIKK's spec pages list 420W, including the RTX 5090 config page (§2.55); (2) SKIKK's printed manual gives a generic "280W (20V/14A) / 250W (20V/12.5A) by model" (§2.57 addendum); (3) SKIKK support defended ~280W by TDP arithmetic (115W GPU + 75W CPU + ~90W headroom, §2.55); (4) the shipped 280W model's own compatibility listing names Thor 15/Loki/Niflheim/Bifrost/Lynx, not Thor 16 (§2.52). None was reconciled by the vendor.
+
+**No measurement.** No wall-meter, UPS or RAPL sustained-load reading exists in either repo; the only power telemetry is GPU-only `nvidia-smi` (peaks ~65-70W under the §2.54 cap). None was available or pursued; forcing one would stall the issue on an unscheduled equipment purchase. Adequacy of 280W for sustained combined load is therefore unmeasured.
+
+**Vendor query parked.** Open and unanswered on the spec question; the drafted §2.55 follow-up will not be sent and no further reply is planned.
+
+**Reopen conditions (the rule is conditional, not permanent).** Revisit (reopen #115 or file a fresh issue) if: the GPU ~65W power-limit cap (§2.54) is lifted; Turbo-mode CPU draw proves a problem on 280W (§2.57 addendum: user now runs Turbo); an adapter-linked freeze or AC-flap recurs on the 280W charger; SKIKK replies; or someone takes a measurement.
+
+**Not established.** Which adapter was in use during any given past eval or freeze; whether the adapter is linked to the AC-flap/freeze cluster (§2.35, §2.41). There is no causal link to the Guake/Mutter freeze (§2.44 ruled out; §2.44-§2.59 are a separate Mutter rendering bug).
+
+**Sources.** random_llm_projects#115; experimental_llamacpp#3; §2.50, §2.52, §2.54, §2.55, §2.57.
+
+**Status: DECIDED (conditional). Reference rating 280W, vendor claim, unmeasured; vendor query parked; sustained-load rule documented in `doc/machines/skikk-thor.md` (2026-09-29 update).**
+
+---
+
 _End of draft._
