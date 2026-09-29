@@ -1218,4 +1218,32 @@ Boost restored to 1 afterwards. **Supportive, not conclusive:** order confound (
 
 ---
 
+### §2.59 — Guake freeze: new fullscreen-toggle trigger; destructive restart confirmed working; untested non-destructive recovery hierarchy proposed (2026-09-28)
+
+**New trigger observed: toggling a window fullscreen on then off.** The user fullscreened a window and then un-fullscreened it, which triggered the same Guake rendering-freeze bug (§2.46/§2.47/§2.51; log signature "Frame has assigned frame counter but no frame drawn time"). This is a new trigger event, distinct from the `move_frame()` reposition-on-window-map trigger documented in §2.51 and the draft issue (`.scratch/mutter-guake-freeze-issue-draft.md`) — consistent with the working theory that this is a Mutter frame-clock/frame-counter bug around compositor-driven window state changes generally, not narrowly tied to Guake's own reposition extension.
+
+**Destructive recovery performed, confirmed working — but loses all tabs/SSH sessions.** The freeze this time took down the user's open Guake tabs, including live SSH connections to other machines. Recovered via kill + relaunch:
+```
+pgrep -a guake
+kill <pid>
+nohup guake >/dev/null 2>&1 & disown
+```
+Guake did not auto-respawn via session autostart on its own after the kill, hence the manual `nohup`/`disown` relaunch. This is the same method as §2.45's workaround, and it worked — but it is destructive: every open tab and any live SSH session in them is lost, unlike the minimize/restore recovery documented in §2.51's draft issue, which recovers the frozen window in place without killing the process.
+
+**Untested non-destructive recovery hierarchy proposed for next occurrence.** Since minimize/restore is documented (draft issue "Recovery behaviour" section) as forcing a repaint and recovering the window without process loss, but Guake has no normal taskbar entry to minimize/restore via the usual UI gesture, the following hierarchy was proposed as a set of **untested hypotheses**, ordered least to most drastic, to try before resorting to the destructive kill/restart:
+
+1. Toggle Guake's own hide/show hotkey twice.
+2. Switch to another GNOME workspace and back.
+3. Force a WM-level minimize/restore via `xdotool`: `xdotool search --name "guake" windowminimize` then `xdotool search --name "guake" windowactivate` — mimics minimize/restore without needing Guake to expose a normal taskbar entry.
+4. `wmctrl` equivalent: `wmctrl -r :ACTIVE: -b add,hidden` then `wmctrl -r :ACTIVE: -b remove,hidden`.
+5. **Last resort (destructive, confirmed working today):** kill and relaunch the guake process as above — loses all tabs/SSH sessions.
+
+**None of options 1-4 have been tried.** They are hypotheses derived from the confirmed minimize/restore mechanism in §2.51/the draft issue, not confirmed fixes — validate on the next occurrence, in order, before falling back to the destructive kill/restart.
+
+**Cross-reference.** §2.46, §2.47, §2.51 (prior extension-side fix attempts, both confirmed insufficient); draft upstream Mutter issue at `.scratch/mutter-guake-freeze-issue-draft.md` — **drafted, not yet filed**; user still needs to file it manually at https://gitlab.gnome.org/GNOME/mutter/-/issues/new.
+
+**Status: OPEN. Destructive recovery confirmed working (re-confirms §2.45); non-destructive hierarchy untested, needs validation on next occurrence; upstream issue still unfiled.**
+
+---
+
 _End of draft._
