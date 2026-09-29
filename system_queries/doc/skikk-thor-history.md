@@ -1266,4 +1266,24 @@ Guake did not auto-respawn via session autostart on its own after the kill, henc
 
 ---
 
+### §2.61 — Correction: Guake is an XWayland client, and §2.59's Sep 28 log-signature implication is unsupported; extension-disabled test still outstanding (2026-09-29)
+
+Dated history above is left as written; this entry supersedes the affected wording.
+
+**Correction 1: Guake runs as an XWayland/X11 client, not native Wayland.** The session is Wayland, but Guake's `main.py` sets `GDK_BACKEND=x11` and its window is visible to `xwininfo`. Wording in earlier entries and in the draft upstream issue implying native Wayland (e.g. "GTK3 `window.move()` is a silent no-op under native Wayland" in §2.32 and the Guake bullets in `doc/machines/skikk-thor.md`; "Wayland forbids clients positioning") is therefore wrong or at best imprecise for the current setup. §2.32's own verification (relaunch with `GDK_BACKEND=x11` made `move()` work) and the later autostart revert are not reconciled here; how Guake ends up on X11 under the current autostart is not re-derived in this entry. The Mutter frame-counter freeze is still a compositor-side symptom, but the X11-client framing must replace "native Wayland" in the upstream issue draft.
+
+**Correction 2: §2.59 implies the 2026-09-28 freeze showed the log signature; it did not.** The journal has no "Frame has assigned frame counter but no frame drawn time" line for Sep 28. That freeze is **user-reported only**.
+
+**New finding: signature counts per day (Guake-window lines; PySol lines excluded).** Sep 21: 7, Sep 22: 8, Sep 23: 1, Sep 24: 8, Sep 29: 4. All 4 Sep 29 freezes coincide with a `move_frame` log line from the reposition extension, supporting the §2.51 correlation on that day. The Sep 28 fullscreen-toggle trigger has no such log corroboration.
+
+**Not yet tested.** The freeze has never been reproduced with `guake-reposition@skikk-thor.local` disabled (the 2026-09-01/02 isolation attempt was too short and is inconclusive). It remains unconfirmed whether `move_frame()` is required or window state changes in general can trigger it.
+
+**Recommendation.** Run the extension-disabled fullscreen-toggle test first; file the upstream Mutter issue (`.scratch/mutter-guake-freeze-issue-draft.md`, still drafted, unfiled) only if the freeze still reproduces without the extension.
+
+**Cross-reference.** §2.32, §2.46, §2.47, §2.51, §2.59.
+
+**Status: OPEN. Docs corrected; extension-disabled test outstanding; upstream issue unfiled.**
+
+---
+
 _End of draft._
