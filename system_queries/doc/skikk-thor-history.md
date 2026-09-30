@@ -1302,6 +1302,22 @@ Dated history above is left as written; this entry supersedes the affected wordi
 
 **Status: OPEN (cause unknown; user-perceived fixed by kill + relaunch).**
 
+### §2.63 — Guake sizing recurs after reboot: autostart race against the work area, delay added (2026-09-30)
+
+**Symptom.** After the 2026-09-30 reboot (09:30:55) Guake again came up 2880x1916 at (4320,64) on the panel, 79.8% of the 2400 px panel height: the same bad size as §2.62's old process. GNOME Shell started 09:34:30; Guake autostarted (XDG autostart, `app-gnome-guake-<pid>.scope`) at 09:34:31, one second later.
+
+**Measurements.** `_NET_WORKAREA` was `0,64,7680,1954` in earlier readings and is now `0,64,7680,2194`. §2.62's post-restart height of 2084 px equals 95% of 2194 (2084.3). Guake computes height % from the work area (`guake/utils.py` `set_final_window_rect` uses `monitor.get_workarea()`) and only at process init.
+
+**Interpretation (about 70% confidence).** Guake autostarted before the dock/work area had settled and sized itself from a transient work area. Not confirmed: the value Guake actually read at start-up; 1916 does not match 95% of any single measured figure. This partly resolves §2.62's "cause not established" and the earlier dock-shrinks-work-area hypothesis: the dock is part of why the work area changes as the shell settles, not itself the cause.
+
+**Fix applied.**
+1. Guake killed and respawned (pid 806290). After first show it measured 2880x2084 at (4320,64), mapped: 95.0% of the 2194 work area (86.8% of panel), as expected (confirmed). The freshly respawned window was unmapped with a 1468x942 placeholder size until first shown.
+2. Autostart delay in `~/.config/autostart/guake.desktop`: `Exec=sh -c "sleep 8; exec guake"`. `X-GNOME-Autostart-Delay` was not used: no reference to that key found in `/usr/libexec/gnome-session-service` or `gnome-session-ctl`, and no `gnome-session-binary` in this install (absence of evidence, not a documented rejection). The file is not chezmoi-managed and no `/etc/xdg/autostart/guake.desktop` exists. **The delay is untested until the next logout/login.** Whether to add the file to chezmoi is a pending user decision.
+
+**Side observations (unverified beyond one read).** Panel connector is now `eDP-2` (was `eDP-1` in §2.62) at 3840x2400+3840+0, with DP-1 at 3840x2160+0+240. GDK monitor index 0 is the external monitor, so `guake.general` `display-n=0` points at the external monitor, not the panel, yet the window appears on the panel (the reposition extension moves it). No hotplug/DRM/mutter monitor events in the journal after Guake started.
+
+**Status: PARTLY RESOLVED (mechanism plausible, delay fix untested until next login).**
+
 ---
 
 _End of draft._
