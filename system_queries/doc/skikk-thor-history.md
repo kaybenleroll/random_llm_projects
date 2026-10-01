@@ -1340,4 +1340,30 @@ Dated history above is left as written; this entry supersedes the affected wordi
 
 ---
 
+### §2.65 — Guake sizing recurs after external-monitor hotplug: `display-n` meaning flips, follower service added (2026-10-01)
+
+**Symptom.** After the external monitor (DP-1) was reconnected for an AV test, Guake shrank to 2880x1916 again. Before the reconnect `display-n=1` gave the right size (2880x2084, §2.64). After it, `display-n=1` gave 2880x1916 and `display-n=0` gave 2880x2084.
+
+**Evidence the setting is not flipping by itself.** The watcher log (`system_queries/.scratch/guake-displayn-watch.log`, `dconf watch /org/guake/general/`) shows no outside change to `display-n`. The dconf path is `/org/guake/general/`, not `/apps/guake/`: the first watcher used the wrong path and was restarted at 13:20:32. So the stored value is stable and Guake's effective monitor order changes on hotplug. Hotplug theory, about 75% confidence.
+
+**Inference (not directly verified).** Guake's effective index appears to follow the Wayland-backend GDK monitor order. Earlier Wayland probe: 0 = external, 1 = panel, with `display-n=1` working. Now: 0 = panel NE160QDM-NZL, 1 = DP-1 'Display', with `display-n=0` working. If so, this resolves §2.64's puzzle: the `GDK_BACKEND=x11` probe order (0 = eDP-1, 1 = DP-1) was the wrong reference for Guake.
+
+**`mouse-display=true` rejected.** Tried on 2026-08-06 (§2.32: "zero observable effect", cause GTK3 Wayland `window.move()` being a no-op) and on 2026-10-01 only with the pointer on the panel (same correct size). Code analysis (`utils.py` `get_final_window_monitor`/`set_final_window_rect`, `guake_app.py` `show()`): size comes from the monitor under the pointer at show time (75% x 95% of that monitor's work area); the `guake-reposition` extension then moves the window to the panel regardless. With the pointer on the external the window would appear on the panel but about 1916 px high (recomputed each show, so not sticky). It trades "wrong after hotplug" for "wrong when the pointer is on the external". The pointer-on-external case was never tested.
+
+**Other checks.** GNOME primary is already the panel and setting primary would not help (§2.64; Wayland GDK has no primary concept, Guake has no 'use primary' option, `get_primary_monitor()` is only an out-of-range fallback). The only code paths found writing `display-n` are Guake's Preferences dialog (`prefs.py` `on_display_n_changed` ~437-452 and `_load_screen_settings` ~1016); the event order inside the dialog was not traced.
+
+**Fix built (user-level, not chezmoi-managed, not in this repo).**
+- `~/.local/bin/guake-follow-panel` (python3): subscribes to `org.gnome.Mutter.DisplayConfig` `MonitorsChanged` on the session bus, debounces about 1.5 s, runs a fresh Wayland-backend GDK probe subprocess, matches the panel by model constant `PANEL_MODEL='NE160QDM-NZL'`, and sets `guake.general` `display-n` only if it differs. It never toggles or restarts Guake and leaves `display-n` unchanged if the panel is not found.
+- `~/.config/systemd/user/guake-follow-panel.service` (enabled, running).
+- Verified: probe lists `['NE160QDM-NZL','Display']` (panel index 0); `--once` flipped `display-n` 1 -> 0 and logged it; the journal shows the startup sync and "subscribed to MonitorsChanged"; Guake still 2880x2084. **Not verified:** a real `MonitorsChanged` signal triggering the debounce and sync (needs a real hotplug); installation of the bus match rule was not confirmed. Final `display-n=0`.
+- Remove: `systemctl --user disable --now guake-follow-panel.service; rm ~/.config/systemd/user/guake-follow-panel.service ~/.local/bin/guake-follow-panel; systemctl --user daemon-reload`.
+
+**Supersedes further.** §2.63's autostart-race explanation (already superseded by §2.64) is now doubly unsupported. The 8 s autostart delay stays, probably unnecessary.
+
+**Open.** The autostart-delay file and the two service files are not under chezmoi; whether to track them is undecided. The Mutter upstream issue is still unfiled and, with Guake an XWayland client and the reposition extension implicated, still unrecommended until the extension-disabled freeze test (§2.61).
+
+**Status: MITIGATED (service active, startup sync verified); hotplug-triggered sync untested.**
+
+---
+
 _End of draft._
