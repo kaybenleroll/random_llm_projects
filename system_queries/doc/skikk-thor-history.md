@@ -1320,4 +1320,24 @@ Dated history above is left as written; this entry supersedes the affected wordi
 
 ---
 
+### §2.64 — Guake sizing root-caused: it sizes from the monitor named by `display-n`, which selected the external monitor; `display-n=1` applied (2026-10-01)
+
+**Mechanism (verified in Guake source).** The fullscreen toggle, and any hide/show, makes Guake recompute its size: `guake_app.py` `show()` and `FullscreenManager.unfullscreen()` (`utils.py:228`) both call `RectCalculator.set_final_window_rect`. That re-reads `guake.general` `display-n` and `mouse-display` every time (`get_final_window_monitor`, `utils.py` ~333-344) and sets 75% x 95% of that monitor's `get_workarea()` in GDK logical units (X11 window px = 2x). The `guake-reposition@skikk-thor.local` extension only calls `move_frame()`; it never resizes.
+
+**Controlled experiment (script `system_queries/.scratch/guake_exp.sh`).** With `display-n=0` the window was 2880x1916 at (4320,64), unchanged after hide/show twice. After `gsettings set guake.general display-n 1` it became 2880x2084 at (4320,64). `mouse-display=true` gave the same 2880x2084 (no effect on the result). Expected sizes: external DP-1 work area 1009 logical -> 958 -> 1916 px; panel eDP-1 work area 1097 -> 1042 -> 2084 px. So the bad size is Guake using the external monitor's work area. Window position stayed at (4320,64) in every step, so position does not show which monitor Guake picked.
+
+**Unexplained puzzle.** A fresh `GDK_BACKEND=x11 /usr/bin/python3` probe shows index 0 = eDP-1 panel (primary, 1920x1200 logical, scale 2, work area 1097) and index 1 = DP-1 external (1920x1080, work area 1009). A Wayland-backend probe shows the opposite order (0 = external 'Display', 1 = panel NE160QDM-NZL). Guake's own process behaves as if index 0 = external and index 1 = panel, so its view differs from the fresh X11 probe. Cause not established.
+
+**Primary display is not a lever.** GNOME primary is already the panel (Mutter `GetCurrentState` flags eDP-1 BOE NE160QDM-NZL primary; `~/.config/monitors.xml` has the panel primary in separate configs for eDP-1, eDP-1-0 and eDP-2). The connector is renamed eDP-1 -> eDP-2 on some boots and the panel serial is 0x00000000, so GNOME treats renamed connectors as new configs. GDK's Wayland backend has no primary concept, and Guake has no 'use primary' option (it falls back to `get_primary_monitor` only if the index is out of range). Setting the primary display therefore will not stabilise anything.
+
+**Fix applied.** `gsettings set guake.general display-n 1` (left in place; `mouse-display=false`). Revert: `gsettings set guake.general display-n 0`. A mistaken intermediate step: `display-n` was briefly set to 1 then reverted to 0 on the faulty belief that the X11 probe order applied to Guake; the experiment then showed 1 is the working value. Odd: in the experiment the first `guake -t` after changing `display-n` did not hide the window (possible race; not investigated).
+
+**Supersedes §2.63's cause.** §2.63's autostart-race explanation (about 70% confidence) is superseded. The 8 s autostart delay in `~/.config/autostart/guake.desktop` (not chezmoi-managed) is probably unnecessary, left in place.
+
+**Untested.** Across reboots and hotplug the index may flip again; if the size is wrong again, check `display-n` first. Fallback ideas (untested): a login-time wrapper that sets `display-n` by matching the model NE160QDM-NZL; `mouse-display=true`.
+
+**Status: FIXED for the current session (verified live); persistence across reboot/hotplug untested.**
+
+---
+
 _End of draft._
