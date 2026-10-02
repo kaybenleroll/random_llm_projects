@@ -1380,7 +1380,11 @@ Dated history above is left as written; this entry supersedes the affected wordi
 
 **Revert.** `sudo rm /etc/UPower/UPower.conf.d/50-poweroff-10pct.conf && sudo systemctl restart upower` (the script also leaves a timestamped copy of `UPower.conf` as `UPower.conf.bak-<ts>`; restoring that is equivalent).
 
-**Status: script prepared, not yet applied/verified. Overheat cause OPEN.**
+**Status: UPower change applied 2026-10-02 12:23 IST** (backup `/etc/UPower/UPower.conf.bak-20261002-122317`). Verified: `upower.service` active; drop-in present (root:root 644); journal since 12:20 shows only the stop/start at 12:23:19, no parse, 'Invalid' or 'ignoring' warnings. Effective thresholds NOT directly observable (upower prints no effective config) — the first real low-battery event, or journal evidence from one, is the only proof.
+
+**Workspace grid:** restoration needs a re-login; user to confirm (not confirmed).
+
+**Still OPEN, unchanged:** overheat root cause; the never-resumed 7 h s2idle suspend.
 
 ---
 
