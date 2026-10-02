@@ -62,6 +62,7 @@ Suspected manifestations of this one fault:
 | Guake rendering freeze (deferred `move_frame()`, §2.46/§2.47) | `guake-reposition@skikk-thor.local` extension.js | **Confirmed insufficient (§2.51)** — recurs 5x/day on a clean boot; recoverable via minimise/restore, not disabling extension |
 | Guake top edge hidden under GNOME top bar (extension used raw monitor geometry, not work area — see §2.36) | `guake-reposition@skikk-thor.local` extension.js | Live |
 | Kernel upgraded 6.17.0-23-generic → 7.0.0-29-generic (unheld, motivated by §2.37 crash) | GRUB / DKMS | Live, monitoring for recurrence |
+| UPower critical action: PowerOff at 10% (was HybridSleep at 2%) | `/etc/UPower/UPower.conf.d/50-poweroff-10pct.conf` | Applied 2026-10-02 12:23 IST; service active, drop-in present, journal clean (restart only); effective thresholds not directly observable — `doc/skikk-thor-history.md` §2.66 |
 
 **NVPCF fix status:** superseded by BIOS (Dec 2025 fixes it natively); initrd override harmless but inert. Full detail: `doc/skikk-thor-history.md` §2.16.
 

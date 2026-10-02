@@ -1366,4 +1366,26 @@ Dated history above is left as written; this entry supersedes the affected wordi
 
 ---
 
+### §2.66 — 2026-10-02 08:22 thermal shutdown, extension fallout, and UPower thresholds moved to PowerOff at 10% (2026-10-02)
+
+**Event.** At 2026-10-02 08:22:51 the kernel logged a thermal HARDWARE PROTECTION shutdown (acpitz critical), about 70 s after a cold boot. gnome-shell was then SIGKILLed on its stop timeout, and Ubuntu's `org.gnome.Shell-disable-extensions` OnFailure unit set `disable-user-extensions=true`. That killed wsmatrix (workspace grid) until the key was reset.
+
+**Refuted.** Battery exhaustion: UPower's `CriticalPowerAction` was `HybridSleep` (PercentageCritical=5, PercentageAction=2), so a battery-driven stop would have been a sleep, not a hard shutdown.
+
+**Overheat root cause: OPEN.** Fans/tccd logged 'Fan API not available' at 08:22:50, with NVRM assertions around the same time. The preceding 7 h s2idle suspend never resumed. Link between these and the thermal trip not established.
+
+**Recurrence note.** Any gnome-shell stop timeout re-sets `disable-user-extensions`; fix is `gsettings set org.gnome.shell disable-user-extensions false`.
+
+**Change (UPower).** Agreed with the user: PowerOff rather than Hibernate/HybridSleep (hibernate readiness unverified; the prior s2idle suspend never resumed). Thresholds: `UsePercentageForPolicy=true`, `PercentageLow=20`, `PercentageCritical=15`, `PercentageAction=10`, `CriticalPowerAction=PowerOff` (required ordering Low > Critical > Action). UPower 1.91.1 supports drop-ins (`/etc/UPower/UPower.conf.d/NN-name.conf`, pattern confirmed in the upowerd binary), so the change is a drop-in `50-poweroff-10pct.conf` rather than an edit of the main file. Applied by `.scratch/upower_poweroff10.sh` (untracked; run `bash .scratch/upower_poweroff10.sh`).
+
+**Revert.** `sudo rm /etc/UPower/UPower.conf.d/50-poweroff-10pct.conf && sudo systemctl restart upower` (the script also leaves a timestamped copy of `UPower.conf` as `UPower.conf.bak-<ts>`; restoring that is equivalent).
+
+**Status: UPower change applied 2026-10-02 12:23 IST** (backup `/etc/UPower/UPower.conf.bak-20261002-122317`). Verified: `upower.service` active; drop-in present (root:root 644); journal since 12:20 shows only the stop/start at 12:23:19, no parse, 'Invalid' or 'ignoring' warnings. Effective thresholds NOT directly observable (upower prints no effective config) — the first real low-battery event, or journal evidence from one, is the only proof.
+
+**Workspace grid:** restoration needs a re-login; user to confirm (not confirmed).
+
+**Still OPEN, unchanged:** overheat root cause; the never-resumed 7 h s2idle suspend.
+
+---
+
 _End of draft._
