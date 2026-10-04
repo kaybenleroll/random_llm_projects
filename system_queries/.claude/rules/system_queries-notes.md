@@ -1,0 +1,14 @@
+# system_queries notes
+
+Subproject-scoped learnings from `/reflect` that don't belong in the shared root rules file (`../../../.claude/rules/skill-hygiene.md`).
+
+- Applications that write config on clean exit (e.g. PySol) will overwrite any edits made while running — ensure the app is fully closed before modifying its config files.
+- Chrome (and other X11/XWayland apps) position windows by raw X11 screen coordinates, not GNOME's logical display arrangement — when physical monitors can't be rearranged but window placement must be controlled: add `--window-position=X,Y` to the app's `.desktop` launcher Exec line to force new windows onto the target screen, or bulk-move already-open windows with `wmctrl -r <id> -e 0,X,Y,-1,-1` (read current position first with `xdotool getwindowgeometry`).
+- Waydroid regenerates `waydroid.prop` from `waydroid.cfg` on each session start — persist configuration changes in `waydroid.cfg`, not `waydroid.prop`, otherwise changes are silently lost on restart.
+- umu Steam Runtime redownloads (e.g. `~/.local/share/umu/steamrt3`) don't preserve execute bits — 500+ files across multiple directories lose `+x`. Restore selectively by detecting actual executables/scripts, not a blanket `chmod +x`.
+- Stage privileged writes in `.scratch/` first, then `sudo cp` to the destination — piping to `sudo tee <file>` truncates the file on open, creating a race if anything reads it concurrently.
+- When a daemon owns a config file, stop it before writing — daemons that restart overwrite the file, discarding edits. Sequence: stop → write → start. Applies to any service-managed config.
+- On Ubuntu 22.04+, SSH runs via systemd socket activation — `ssh.service` is inactive by design and `systemctl restart ssh.service` will fail. Apply `sshd_config` changes with `sudo systemctl restart ssh.socket`; scripts using `set -euo pipefail` will abort otherwise.
+- mise shims for npm tools are not created automatically — run `npm install -g <package> && mise reshim` before referencing the shim path in any config (e.g. `~/.claude/mcp.json`); the shim does not exist until mise detects the globally installed binary, producing ENOENT otherwise.
+- Bare SSH doesn't source the login-shell profile, so mise-managed tool shims (e.g. chezmoi) won't appear on PATH even when the tool is installed and works interactively — verify remote tool availability by sourcing the shell profile in the SSH command (e.g. `ssh host 'source ~/.zshrc && which tool'`), not a bare `ssh host 'which tool'`.
+- In bwrap userns tests, `bwrap: execvp /bin/true: No such file or directory` means namespace creation succeeded (AppArmor/uid-mapping layer cleared) and the test merely lacks a bind-mounted filesystem — add `--ro-bind / /` and retest; a genuine AppArmor block shows `Permission denied` on uid mapping.
