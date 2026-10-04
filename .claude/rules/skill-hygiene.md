@@ -14,8 +14,6 @@ Keep this section first, before General — `/reflect` appends new learnings
 to the end of General, never here.
 Skip these on WSL/headless machines.
 
-- Guake's `display-n` (schema `guake.general`) is a GDK monitor index, not an xrandr index — the two orderings can be reversed. Verify with `/usr/bin/python3 -c "import gi; gi.require_version('Gdk','3.0'); from gi.repository import Gdk; d=Gdk.Display.get_default(); [print(i, d.get_monitor(i).get_geometry().x, d.get_monitor(i).get_geometry().y) for i in range(d.get_n_monitors())]"` and match geometry, not the index number, to the physical screen. Note: the mise python3 shim shadows `gi`; use `/usr/bin/python3` directly.
-- Guake applies `guake.general` settings (`display-n`, `window-height`/`window-width`) at process-init, and live `gsettings set` takes inconsistently — sometimes immediately, sometimes not until restart. If a change doesn't take, `pgrep -a guake` then `kill <pid>` and let it respawn (session autostart/systemd); a `guake -t`/hotkey toggle is not enough. Running terminal processes survive the restart. Always verify visually — `gsettings get` reports the stored value regardless of whether the window has caught up.
 - Hooks spawned by Claude Code may not inherit the D-Bus session address `notify-send` needs — a notify-based hook guard can fail silently; forward the session address explicitly or implement a fallback delivery mechanism.
 
 ### GitHub Issue Repo Policy — HARD RULE
