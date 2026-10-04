@@ -30,7 +30,6 @@ Skip these on WSL/headless machines.
 
 ### General
 
-- In Justfiles, backtick expressions (e.g. `` `cd .. && pwd` ``) spawn subshells that CC's security sandbox blocks — use `$(dirname $(realpath .))` or hardcoded paths instead.
 - When `rm -rf` is blocked by deny rules, remove directory contents file-by-file then `rmdir` empty directories.
 - In `settings.json` bash allowlists, use `**` to match paths containing `/` — single `*` only matches within one directory level and silently fails on multi-segment paths.
 - Shell aliases that use interactive flags (e.g. `rm -i`, `mv -i`) block CC Bash tool execution in non-interactive contexts — guard such aliases with `[[ -o interactive ]]` so they only apply in interactive shells.
@@ -38,7 +37,6 @@ Skip these on WSL/headless machines.
 - Chezmoi's built-in `.chezmoi.hostname`/`.chezmoi.fqdnHostname` detection can be corrupted by an unrelated but legitimate `/etc/hosts` loopback entry (e.g. for a local dev tool) — define an explicit `[data] hostname = "..."` per machine in `chezmoi.toml` and reference `.hostname` (not `.chezmoi.hostname`) in host-conditional `.tmpl` files instead.
 - `chezmoi status` flags pure file-permission-mode drift (umask differences, e.g. 664/775 vs 644/755) the same as real content drift — diff actual file contents before treating a modified status as unsafe.
 - Verify a dotfile is chezmoi-managed (`chezmoi managed | grep ...` or `chezmoi source-path`) before recommending a direct edit — if managed, edit the chezmoi source repo and apply/push so the change propagates instead of drifting on next sync.
-- In Justfiles, recipe lines run under `sh -cu` (dash on Ubuntu) regardless of invocation context — dash's `echo` doesn't support `-e` (it prints a literal `-e ` prefix instead of interpreting escapes); use `printf` instead.
 - Use an unquoted heredoc terminator (`<<EOF`, not `<<'EOF'`) when the heredoc body needs `$(...)` command substitution to actually execute — quoted terminators suppress all expansions, which silently breaks constructs like `gh pr create --body "$(cat <<EOF ... EOF)"`.
 - GitHub auto-closes a dependent/stacked PR when its base branch is deleted, even though the underlying commit is safe — open a fresh PR from the same branch/commit against the updated base (e.g. `main`) rather than trying to reopen the closed one.
 - Before cutting new feature branches, verify local main has no unpushed commits and reset feature branches to `origin/main` — unpushed commits ride along into every branch cut from that head, silently polluting each branch's diff and PR scope.
