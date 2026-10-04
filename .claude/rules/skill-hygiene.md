@@ -2,8 +2,9 @@
 
 Promoted from session captures. Review with `/reflect`.
 
-This file holds portable, machine-agnostic rules only. It's imported by the
-root `CLAUDE.md`, so it loads in every subproject on every machine.
+This file holds portable, machine-agnostic rules only. It loads as a rules file
+from the repo's `.claude/rules` directory in every subproject on every machine
+(the `@import` in the root `CLAUDE.md` adds nothing).
 Hardware/firmware/chassis-specific findings belong in
 `system_queries/doc/machines/<slug>.md` instead.
 
@@ -12,14 +13,11 @@ Hardware/firmware/chassis-specific findings belong in
 ### GitHub Issue Repo Policy — HARD RULE
 
 - **HARD RULE:** File a GitHub issue about Claude Code skill/agent/hook/config work in `kaybenleroll/dotfiles`, not `kaybenleroll/random_llm_projects`, whenever the work touches any file under dotfiles' chezmoi source (`dot_claude/skills/`, `dot_claude/agents/`, hooks, `settings.json`, etc.) — even when the same task also touches random_llm_projects files. Dotfiles wins any tie. Only file in `random_llm_projects` when the work touches zero dotfiles files (pure claude_code_research notes/experiments/artifacts with no dotfiles-implemented change).
-  - **Why:** same-repo `Closes #N` auto-close only works within one repo; cross-repo issue↔PR linking is unreliable (confirmed 2026-08-28 — dotfiles PR #38 merged, random_llm_projects#86 needed a manual `gh issue close`). Decided 2026-08-28 in a dedicated policy session after both repos turned out to already hold overlapping, undocumented issue histories on the same topic (31 issues in dotfiles, ~35-40 tagged `area: claude-code-research` in random_llm_projects).
-  - **Existing issues:** grandfathered in place — no bulk migration. Only issues from the old ad hoc split that are still *open* may be individually transferred (native GitHub issue transfer, same account — preserves comments/history but assigns a new number) to dotfiles; closed issues stay untouched as historical record.
 
 ### Issue Work Branch Policy — HARD RULE
 
 - **HARD RULE:** All work on a GitHub issue (this repo or `kaybenleroll/dotfiles`) goes on a dedicated feature branch and merges via PR — never commit directly to `main`, even mid-task from a subagent. Any subagent prompt that delegates issue implementation must explicitly instruct it to create/checkout the branch before its first commit, not just tell it to commit.
-  - **Why:** 2026-09-11 — random_llm_projects#101's Steps 4-6 were committed straight to `main` by three sequential subagents with no external review gate, continuing a pattern already present in Steps 0-3 that went unquestioned until flagged after the fact. A branch+PR gives `/check-acs` (or a manual AC check) an actual diff to verify against before merge, instead of subagents self-certifying onto `main`.
-  - **How to apply:** when delegating issue implementation, name the branch (derive from issue number + short slug, e.g. `issue-101-keep-max-dedup`) in the subagent prompt and require it to branch before committing; open a PR referencing the issue (`Closes #N` same-repo, full `owner/repo#N` cross-repo per the general rule above) once the final step's tests are green; verify ACs against the diff (`/check-acs` or manually) before merging.
+  - **How to apply:** when delegating issue implementation, name the branch (derive from issue number + short slug, e.g. `issue-101-keep-max-dedup`) in the subagent prompt and require it to branch before committing; open a PR referencing the issue (`Closes #N` same-repo, full `owner/repo#N` cross-repo — a bare `reponame#N` in a PR body silently fails to close a cross-repo issue) once the final step's tests are green; verify ACs against the diff (`/check-acs` or manually) before merging.
 
 ### General
 
