@@ -9,13 +9,6 @@ Hardware/firmware/chassis-specific findings belong in
 
 ---
 
-### Desktop-Linux only
-Keep this section first, before General — `/reflect` appends new learnings
-to the end of General, never here.
-Skip these on WSL/headless machines.
-
-- Hooks spawned by Claude Code may not inherit the D-Bus session address `notify-send` needs — a notify-based hook guard can fail silently; forward the session address explicitly or implement a fallback delivery mechanism.
-
 ### GitHub Issue Repo Policy — HARD RULE
 
 - **HARD RULE:** File a GitHub issue about Claude Code skill/agent/hook/config work in `kaybenleroll/dotfiles`, not `kaybenleroll/random_llm_projects`, whenever the work touches any file under dotfiles' chezmoi source (`dot_claude/skills/`, `dot_claude/agents/`, hooks, `settings.json`, etc.) — even when the same task also touches random_llm_projects files. Dotfiles wins any tie. Only file in `random_llm_projects` when the work touches zero dotfiles files (pure claude_code_research notes/experiments/artifacts with no dotfiles-implemented change).
@@ -41,10 +34,6 @@ Skip these on WSL/headless machines.
 - GitHub auto-closes a dependent/stacked PR when its base branch is deleted, even though the underlying commit is safe — open a fresh PR from the same branch/commit against the updated base (e.g. `main`) rather than trying to reopen the closed one.
 - Before cutting new feature branches, verify local main has no unpushed commits and reset feature branches to `origin/main` — unpushed commits ride along into every branch cut from that head, silently polluting each branch's diff and PR scope.
 - A validation hook demanding taxonomy labels absent from the repo's actual label set creates a circular blocker — both `gh issue create` and label assignment fail; reconcile the hook's expected taxonomy against `gh label list` before creating issues or labels.
-- When wiring gitleaks into a pre-commit hook, always pass an explicit `-c <hardened-config-path>` — without it, gitleaks falls back to any in-repo `.gitleaks.toml`, and a permissive or malicious in-repo config can silently disable the security gate.
-- When searching Claude Code transcript JSONL files for `tool_use` content, search recursively — `tool_use` objects nest inside `message.content` arrays, not at each line's top level, so a top-level-only search produces false negatives (content wrongly reported absent when it's just nested).
-- Bash traps are replace-on-set, not additive — a new `trap 'cmd' EXIT` silently overwrites any earlier EXIT trap (including one set by a sourced library) with no error; compose/chain onto the existing handler instead of overwriting it.
-- `os.replace()` breaks `flock()`-based locking — the lock is held on the old inode, which replace unlinks, so a process opening the path afterward acquires an independent lock on the new inode and mutual exclusion silently fails. Keep the atomic replace for the data file itself, and take the lock on a persistent sidecar `.lock` path that is never replaced.
 - Network-mounted directories (e.g. rclone OneDrive/GoogleDrive FUSE mounts) can hang `find`, `rg`, `fd`, `du`, or any recursive walker indefinitely during whole-home scans — this is a genuine blocking-I/O hang (the walker blocks on `lstat` of the mountpoint itself when the daemon is unresponsive), not slowness, and `-xdev`/`-mount` does not reliably prevent it. Exclude such mounts by explicit path before running any whole-home scan.
 
 <!-- demoted from global — global copy pending removal in a follow-up PR -->
