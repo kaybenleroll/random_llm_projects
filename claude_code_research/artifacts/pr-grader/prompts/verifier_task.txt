@@ -1,0 +1,12 @@
+Verify the single claim below about a merged change.
+
+Issue text (title and body): {{ISSUE_PATH}}
+Merged diff: {{DIFF_PATH}}
+Source tree after the merge (root of the repository snapshot): {{TREE_PATH}}
+
+Paths in the claim are relative to the source tree root.
+
+Claim to verify:
+{{CLAIM_JSON}}
+
+Reply with the JSON object only.
