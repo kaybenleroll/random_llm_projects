@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["verdict", "confirmed_severity", "needs_execution", "reasoning", "evidence"],
+  "properties": {
+    "verdict": {"type": "string", "enum": ["confirmed", "refuted", "unverifiable"]},
+    "confirmed_severity": {"type": "string", "enum": ["blocker", "major", "minor", "not_a_defect", "not_applicable"]},
+    "needs_execution": {"type": "boolean"},
+    "reasoning": {"type": "string", "minLength": 1},
+    "evidence": {"type": "string", "minLength": 1}
+  }
+}

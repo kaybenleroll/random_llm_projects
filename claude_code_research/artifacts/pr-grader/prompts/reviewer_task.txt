@@ -1,0 +1,7 @@
+Review the merged change described below.
+
+Issue text (title and body): {{ISSUE_PATH}}
+Merged diff: {{DIFF_PATH}}
+Source tree after the merge (root of the repository snapshot): {{TREE_PATH}}
+
+Paths in your findings are relative to the source tree root. Start by reading the issue, then the diff, then the post-merge source. Reply with the JSON object only.
