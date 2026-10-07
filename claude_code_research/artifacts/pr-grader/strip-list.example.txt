@@ -1,0 +1,21 @@
+# Strip list: repo-specific files and directories removed from the extracted tree
+# and the diff before any reviewer sees them (process and workflow documentation,
+# agent-usage analytics). Paths are relative to the repository root.
+#   plain/path        that file, or everything below that directory
+#   dir/**            everything below dir
+#   *.ext, ?          within one path component
+#   **/name           name at any depth
+# Lines starting with # are comments. Generic process config (.claude, .github,
+# CLAUDE.md, plans directories ...) is always stripped without being listed here.
+# Run `stage` and read `strip_patterns_unmatched`: a pattern that matches nothing
+# is stale or mistyped.
+#
+# Example for the poc_planning_tool repository (checked present at merge commit
+# 10aaab8b of describe-data/poc_planning_tool):
+docs/developer-guide/workflow-guide.md
+docs/developer-guide/skills-reference.md
+DEVELOPMENT_WORKFLOW.md
+GETTING_STARTED.md
+NEWDEV_GUIDE.md
+docs/operations/token-usage-analysis.md
+devtools/data/token-analysis/**

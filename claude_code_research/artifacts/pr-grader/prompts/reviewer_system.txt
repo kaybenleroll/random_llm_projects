@@ -26,4 +26,4 @@ Output contract: your final message must be one JSON object and nothing else: no
 
 {{SCHEMA}}
 
-Use double-quoted strings, escape newlines inside strings, and make `line` an integer. Compute `grade` with the rubric rules from your own findings, ACs, test adequacy and scope.
+Use double-quoted strings, escape newlines inside strings, and make `line` an integer. Compute `assessable_fraction` (ACs you could judge from source divided by all ACs) and `grade` with the rubric rules, including the caps, from your own findings, ACs, test adequacy and scope.
