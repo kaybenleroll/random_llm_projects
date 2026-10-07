@@ -2,17 +2,19 @@
   "_watch_meta": {
     "issue": "anthropics/claude-code#84780",
     "title": "[BUG] Thinking block summaries truncated mid-sentence (showThinkingSummaries: true)",
-    "fetched_at": "2026-09-22T00:00:00Z",
-    "source": "mcp__github__search_issues (gh CLI and direct GitHub API access were unavailable in this session's environment; issue_read/curl to api.github.com were denied because this session is scoped to kaybenleroll/random_llm_projects and cross-owner repo attachment is not supported)",
-    "note": "comments field is a COUNT, not the full comment list, since the comments endpoint could not be reached from this session. A jump in this count signals new activity; the watcher cannot itself determine comment authorship without a session that has API access to anthropics/claude-code."
+    "fetched_at": "2026-10-07T00:00:00Z",
+    "source": "mcp__github__search_issues (gh CLI / REST API access to anthropics/claude-code was denied again this session - access scoped to kaybenleroll/random_llm_projects, and add_repo push access was refused since this account has no push rights there; search_issues worked without repo attachment)",
+    "note": "comments field is a COUNT, not the full comment list, since the comments endpoint could not be reached from this session (issue_read/gh api both denied). A jump in this count signals new activity; the watcher cannot itself determine comment authorship without a session that has API access to anthropics/claude-code."
   },
-  "state": "open",
+  "state": "closed",
+  "state_reason": "not_planned",
+  "closed_at": "2026-10-06T10:16:19Z",
   "labels": [
     "area:tui",
     "stale"
   ],
   "assignees": [],
   "milestone": null,
-  "comments": 8,
-  "updatedAt": "2026-09-21T22:10:38Z"
+  "comments": 9,
+  "updatedAt": "2026-10-06T10:16:19Z"
 }
