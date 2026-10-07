@@ -21,7 +21,10 @@ What it computes
        subagents) matches ``issue-N`` (so ``issue-N`` and ``feature/issue-N-*``);
     3. the first user prompt has a line starting ``Task: #N``;
     4. subagent transcripts take their parent session's verdict (the parent is
-       the session directory the transcript is stored under).
+       the session directory the transcript is stored under);
+    5. (only with --pr-repo OWNER/NAME) the session's own ``pr-link`` entries
+       name a pull request of that repository which the --issues file lists
+       for an issue. This is a weak, session-level signal, so it ranks last.
   When a tier names more than one issue the session is split by turn: a turn
   whose own branch names one of the issues goes to that issue, every other turn
   is **shared** between the named issues. Sessions with no signal go to an
@@ -234,7 +237,8 @@ def scan_file(path, is_subagent, hook_prefix):
     """Scan one transcript. Returns a dict of per-file facts and raw turns.
     Prompt text is matched here and discarded."""
     info = {"titles": [], "entrypoints": set(), "task_issue": None,
-            "hook_prompt": False, "turns": [], "usage_lines": 0}
+            "hook_prompt": False, "turns": [], "usage_lines": 0,
+            "pr_links": set()}
     seen_first_prompt = False
     try:
         fh = open(path, "r", errors="replace")
@@ -246,6 +250,7 @@ def scan_file(path, is_subagent, hook_prefix):
             if not line:
                 continue
             if ('"usage"' not in line and '"custom-title"' not in line
+                    and '"pr-link"' not in line
                     and '"type":"user"' not in line
                     and '"type": "user"' not in line):
                 continue
@@ -259,6 +264,11 @@ def scan_file(path, is_subagent, hook_prefix):
             if ep:
                 info["entrypoints"].add(ep)
             typ = o.get("type")
+            if typ == "pr-link":
+                n = o.get("prNumber")
+                if isinstance(n, int) and not is_subagent:
+                    info["pr_links"].add((o.get("prRepository") or "", n))
+                continue
             if typ == "custom-title":
                 t = o.get("customTitle")
                 if isinstance(t, str) and t:
@@ -321,6 +331,7 @@ def scan_store(root, project_globs, hook_prefix=DEFAULT_HOOK_PROMPT_PREFIX):
     nomsgid = 0
     raw_usage_lines = 0
     cross_session_dups = 0
+    nested_files = 0
     for fidx, (proj, sid, is_sub, path) in enumerate(files):
         info = scan_file(path, is_sub, hook_prefix)
         key = (proj, sid)
@@ -330,7 +341,7 @@ def scan_store(root, project_globs, hook_prefix=DEFAULT_HOOK_PROMPT_PREFIX):
                 "project": proj, "session_id": sid, "titles": [],
                 "entrypoints": set(), "task_issue": None, "hook_prompt": False,
                 "main_files": 0, "subagent_files": 0, "main_usage_lines": 0,
-                "agent_types": Counter(),
+                "agent_types": Counter(), "pr_links": set(),
             }
         s["entrypoints"] |= info["entrypoints"]
         if is_sub:
@@ -342,12 +353,19 @@ def scan_store(root, project_globs, hook_prefix=DEFAULT_HOOK_PROMPT_PREFIX):
             if info["task_issue"] is not None and s["task_issue"] is None:
                 s["task_issue"] = info["task_issue"]
             s["hook_prompt"] = s["hook_prompt"] or info["hook_prompt"]
+            s["pr_links"] |= info["pr_links"]
             s["main_usage_lines"] += info["usage_lines"]
         raw_usage_lines += info["usage_lines"]
+        # subagent transcripts below an extra directory level, e.g.
+        # <session>/subagents/workflows/<run>/agent-*.jsonl
+        nested = is_sub and len(os.path.relpath(
+            path, os.path.join(root, proj)).split(os.sep)) > 3
+        nested_files += nested
         for rec in info["turns"]:
             rec["session"] = key
             rec["sub"] = is_sub
             rec["fidx"] = fidx
+            rec["nested"] = nested
             if rec["id"]:
                 k = rec["id"]
             else:
@@ -363,7 +381,8 @@ def scan_store(root, project_globs, hook_prefix=DEFAULT_HOOK_PROMPT_PREFIX):
                 best[k] = rec
     return {"files": files, "sessions": sessions, "best": best,
             "raw_usage_lines": raw_usage_lines,
-            "cross_session_dup_lines": cross_session_dups}
+            "cross_session_dup_lines": cross_session_dups,
+            "nested_files": nested_files}
 
 
 # --------------------------------------------------------------------------
@@ -387,7 +406,16 @@ def session_is_hook(s, hook_turn_max=3):
             and (s["hook_prompt"] or s["main_usage_lines"] <= hook_turn_max))
 
 
-def attribute_session(s, turns, alias):
+def pr_link_issues(s, alias, pr_repo):
+    """Issues whose pull requests the session itself linked (pr-link entries).
+    Only PRs in `alias` (listed issues' PRs) in the repository `pr_repo` count."""
+    if not pr_repo:
+        return frozenset()
+    return frozenset(alias[n] for repo, n in s["pr_links"]
+                     if repo == pr_repo and n in alias)
+
+
+def attribute_session(s, turns, alias, pr_repo=None):
     """Decide attribution for one session.
 
     Returns (signal, issues_frozenset, mode). turn_target(turn) then maps each
@@ -406,6 +434,9 @@ def attribute_session(s, turns, alias):
         return "branch", b_issues
     if task is not None:
         return "task", frozenset([task])
+    p_issues = pr_link_issues(s, alias, pr_repo)
+    if p_issues:
+        return "pr", p_issues
     return "none", frozenset()
 
 
@@ -457,7 +488,7 @@ def price_turns(store):
     return diag
 
 
-def build(store, issues_meta, tail_days=14, branch_wins=False):
+def build(store, issues_meta, tail_days=14, branch_wins=False, pr_repo=None):
     """Attribute every winning turn. Returns the analysis dict."""
     alias = {}
     for it in issues_meta:
@@ -493,7 +524,7 @@ def build(store, issues_meta, tail_days=14, branch_wins=False):
     for key in sorted(store["sessions"]):
         s = store["sessions"][key]
         turns = by_session.get(key, [])
-        signal, issues = attribute_session(s, turns, alias)
+        signal, issues = attribute_session(s, turns, alias, pr_repo)
         scls = classify_session(s, turns)
         s["class"] = scls
         s["signal"] = signal
@@ -662,6 +693,7 @@ def reconcile(store, cc_rows, tolerance):
     ours = defaultdict(int)
     ours_main = defaultdict(int)
     mod = defaultdict(lambda: Counter())
+    nested_nano = 0
     sid_set = {k[1] for k in store["sessions"]}
     for rec in store["best"].values():
         sid = rec["session"][1]
@@ -669,6 +701,8 @@ def reconcile(store, cc_rows, tolerance):
         if not rec["sub"]:
             ours_main[sid] += rec["nano"]
         if sid in cc_rows:
+            if rec.get("nested"):
+                nested_nano += rec["nano"]
             t = mod[rec["norm_model"]]
             t["input"] += rec["input"]
             t["output"] += rec["output"]
@@ -692,6 +726,7 @@ def reconcile(store, cc_rows, tolerance):
     unpriced = sorted(m for m, c in cc_model.items()
                       if c["nano"] == 0 and (c["input"] + c["output"] + c["read"]) > 0)
     adj_ours = our_total - sum(mod[m]["nano"] for m in unpriced)
+    nested_files = store.get("nested_files", 0)
     adj_cc = cc_total
     per_model = [{"model": m, "ours": dict(mod.get(m, {})),
                   "ccusage": dict(cc_model.get(m, {}))}
@@ -725,6 +760,8 @@ def reconcile(store, cc_rows, tolerance):
         "sessions_only_in_ccusage": only_cc,
         "ccusage_nano": cc_total, "ours_nano": our_total,
         "delta_raw": rel(our_total, cc_total),
+        "nested_files": nested_files, "nested_nano": nested_nano,
+        "delta_without_nested": rel(our_total - nested_nano, cc_total),
         "ccusage_unpriced_models": unpriced,
         "ours_adjusted_nano": adj_ours, "ccusage_adjusted_nano": adj_cc,
         "delta_adjusted": rel(adj_ours, adj_cc),
@@ -900,6 +937,9 @@ def recon_json(r):
         "ccusage_usd": fmt_usd(r["ccusage_nano"]),
         "ours_usd": fmt_usd(r["ours_nano"]),
         "delta_raw_pct": "%.3f" % (100 * r["delta_raw"]),
+        "nested_subagent_files": r["nested_files"],
+        "nested_subagent_usd": fmt_usd(r["nested_nano"]),
+        "delta_without_nested_pct": "%.3f" % (100 * r["delta_without_nested"]),
         "ccusage_unpriced_models": r["ccusage_unpriced_models"],
         "ours_adjusted_usd": fmt_usd(r["ours_adjusted_nano"]),
         "delta_adjusted_pct": "%.3f" % (100 * r["delta_adjusted"]),
@@ -939,6 +979,9 @@ def render_recon(r):
          "", "Raw delta %s%%. Delta after excluding ccusage-unpriced models %s%% against a tolerance of +/-%.2f%%: %s."
          % (j["delta_raw_pct"], j["delta_adjusted_pct"], 100 * r["tolerance"],
             "within tolerance" if r["within_tolerance"] else "OUTSIDE tolerance"),
+         "", "Nested subagent transcripts (`<session>/subagents/<dir>/.../agent-*.jsonl`, e.g. workflow agents): %d files costing %s USD in this script. "
+         "ccusage does not read them. Delta with those turns removed: %s%%."
+         % (j["nested_subagent_files"], j["nested_subagent_usd"], j["delta_without_nested_pct"]),
          "", "Sessions in the store but not in ccusage: %d. Sessions in ccusage but not in the store (other projects): %d."
          % (j["sessions_only_in_store"], j["sessions_only_in_ccusage"]),
          "", "## Subagent roll-up check", "",
@@ -1082,6 +1125,10 @@ def build_arg_parser():
     ap.add_argument("--ccusage-tolerance", type=float, default=0.005,
                     help="relative tolerance on the adjusted total (default 0.005 = 0.5%%)")
     ap.add_argument("--hook-prompt-prefix", default=DEFAULT_HOOK_PROMPT_PREFIX)
+    ap.add_argument("--pr-repo", metavar="OWNER/NAME",
+                    help="enable the lowest-priority `pr` signal: a session that itself linked a "
+                         "pull request of this repository (a pr-link entry) which belongs to a "
+                         "listed issue is attributed to that issue. Off when omitted.")
     ap.add_argument("--turn-branch-wins", action="store_true",
                     help="sensitivity mode: a turn on a branch naming issue M goes to M even "
                          "when the session title/prompt names a different single issue "
@@ -1097,7 +1144,7 @@ def main(argv=None):
         since = datetime.strptime(args.coverage_since, "%Y-%m-%d").replace(tzinfo=timezone.utc)
     issues_meta = load_issues(args.issues)
     store = scan_store(args.projects_root, globs, args.hook_prompt_prefix)
-    result = build(store, issues_meta, args.tail_days, args.turn_branch_wins)
+    result = build(store, issues_meta, args.tail_days, args.turn_branch_wins, args.pr_repo)
     recon = None
     if args.ccusage_json:
         recon = reconcile(store, load_ccusage_sessions(args.ccusage_json),
@@ -1106,12 +1153,17 @@ def main(argv=None):
               "coverage_since": args.coverage_since or "",
               "hook_prompt_prefix": args.hook_prompt_prefix,
               "turn_branch_wins": bool(args.turn_branch_wins),
+              "pr_repo": args.pr_repo or "",
               "issues_file_sha256": hashlib.sha256(
                   json.dumps(issues_meta, sort_keys=True).encode()).hexdigest()
               if issues_meta else ""}
     write_outputs(args.out, result, store, params, since, recon)
     print("wrote %s (%d files, %d sessions, %d turns)"
           % (args.out, len(store["files"]), len(store["sessions"]), len(store["best"])))
+    if recon is not None and not recon["within_tolerance"]:
+        print("ccusage reconciliation OUTSIDE tolerance: see %s"
+              % os.path.join(args.out, "reconciliation.md"), file=sys.stderr)
+        return 3
     return 0
 
 

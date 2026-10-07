@@ -13,7 +13,7 @@ import episode_cost as E
 PROJ = "-proj-demo"
 
 
-def asst(msg_id, ts, model="claude-sonnet-5", branch="main", out=10, inp=0,
+def asst(msg_id, ts, model="claude-sonnet-5", branch="main", out=0, inp=0,
          read=0, cw1h=0, entrypoint="cli"):
     return {
         "type": "assistant", "timestamp": ts, "gitBranch": branch,
@@ -51,8 +51,11 @@ class Store:
             for e in entries:
                 fh.write(json.dumps(e) + "\n")
 
-    def subagent(self, sid, agent, entries, agent_type="Explore", project=PROJ):
+    def subagent(self, sid, agent, entries, agent_type="Explore", project=PROJ,
+                 nested=None):
         d = os.path.join(self.root, project, sid, "subagents")
+        if nested:
+            d = os.path.join(d, *nested)
         os.makedirs(d, exist_ok=True)
         with open(os.path.join(d, "agent-%s.jsonl" % agent), "w") as fh:
             for e in entries:
@@ -191,6 +194,40 @@ class AttributionTests(unittest.TestCase):
         # without the alias the same title is a two-issue session
         _, res = run(self, s, [])
         self.assertEqual(session_row(res, "s1")["issues"], "9 100")
+
+
+class PrLinkTests(unittest.TestCase):
+    META = [{"number": 70, "prs": [71]}]
+
+    def _store(self, repo):
+        s = Store(self)
+        s.session("s1", [{"type": "pr-link", "prNumber": 71, "prRepository": repo,
+                          "prUrl": "https://example.invalid/pull/71"},
+                         asst("m1", "2026-09-01T10:00:00Z", inp=1000000)])
+        return s
+
+    def test_pr_link_is_last_resort_signal(self):
+        s = self._store("o/r")
+        scanned = E.scan_store(s.root, ["*"])
+        res = E.build(scanned, self.META, pr_repo="o/r")
+        row = session_row(res, "s1")
+        self.assertEqual((row["signal"], row["issues"]), ("pr", "70"))
+        self.assertEqual(res["issues"][70]["total_nano"], 2 * 10**9)
+
+    def test_pr_link_off_without_repo_and_ignores_other_repos(self):
+        s = self._store("other/repo")
+        scanned = E.scan_store(s.root, ["*"])
+        for kw in ({}, {"pr_repo": "o/r"}):
+            res = E.build(scanned, self.META, **kw)
+            self.assertEqual(session_row(res, "s1")["signal"], "none")
+
+    def test_title_beats_pr_link(self):
+        s = Store(self)
+        s.session("s1", [title("#5 x"),
+                         {"type": "pr-link", "prNumber": 71, "prRepository": "o/r"},
+                         asst("m1", "2026-09-01T10:00:00Z", inp=1000000)])
+        res = E.build(E.scan_store(s.root, ["*"]), self.META, pr_repo="o/r")
+        self.assertEqual(session_row(res, "s1")["signal"], "title")
 
 
 class MultiIssueTests(unittest.TestCase):
@@ -338,7 +375,7 @@ class WindowTests(unittest.TestCase):
         _, res = run(self, s, meta)
         r = res["issues"][60]
         self.assertEqual((r["episode_nano"], r["tail_nano"], r["late_nano"]),
-                         (2 * 10**9, 2 * 10**9, 2 * 10**9))
+                         (2 * 10**9, 2 * 10**9, 4 * 10**9))
         self.assertEqual(r["first_ts"], "2026-09-01T10:00:00Z")
         self.assertEqual(r["episode_last_ts"], "2026-09-01T10:00:00Z")
 
@@ -413,6 +450,22 @@ class ReconcileTests(unittest.TestCase):
         self.assertEqual(r["rollup"]["sessions_with_subagents"], 1)
         self.assertEqual(r["rollup"]["delta_with_rollup"], 0.0)
         self.assertAlmostEqual(r["rollup"]["delta_main_only"], -0.75)
+
+    def test_nested_subagent_transcripts_are_counted_and_reported(self):
+        s = Store(self)
+        s.session("p1", [asst("m1", "2026-09-01T10:00:00Z", inp=1000000)])
+        s.subagent("p1", "aaa", [asst("a1", "2026-09-01T10:05:00Z", inp=1000000)])
+        s.subagent("p1", "bbb", [asst("a2", "2026-09-01T10:06:00Z", inp=1000000)],
+                   nested=("workflows", "wf_1"))
+        sc, res = run(self, s)
+        self.assertEqual(session_row(res, "p1")["cost_nano"], 6 * 10**9)
+        # an exporter that skips the nested directory sees only two of the three
+        cc = {"p1": {"totalCost": 4.0, "modelBreakdowns": []}}
+        r = E.reconcile(sc, cc, 0.005)
+        self.assertEqual(r["nested_files"], 1)
+        self.assertEqual(r["nested_nano"], 2 * 10**9)
+        self.assertEqual(r["delta_without_nested"], 0.0)
+        self.assertAlmostEqual(r["delta_raw"], 0.5)
 
 
 if __name__ == "__main__":
