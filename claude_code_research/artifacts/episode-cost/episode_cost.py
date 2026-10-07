@@ -10,25 +10,32 @@ What it computes
 ----------------
 * An **issue episode** is every session (and its subagent transcripts)
   attributable to issue N, from its first turn to the merge of the PR that
-  closed N (``merged_at`` in the --issues file), plus a tail window (default 14
-  days) that is reported separately. Turns after the tail are reported as
-  ``late``.
-* **Attribution signals**, highest priority first. The first tier that yields
-  any issue number decides the session:
+  closed N (``merged_at`` in the --issues file). Turns after the merge are reported
+  separately and never join the episode: ``tail`` (same-issue branch, within
+  --tail-days), post-merge default-branch activity (not attributable to the
+  issue), cost on other issues' branches, and ``late`` (after the tail).
+* **Attribution**. By default (**branch-first**) turn-level branch evidence
+  wins: a turn whose own git branch matches ``issue-N`` (so ``issue-N`` and
+  ``feature/issue-N-*``) is charged to N whatever the session is called. Every
+  other turn (default branch, or a branch that names no issue) takes the
+  session-level verdict, from the first tier that yields any issue number:
     1. the session's latest ``custom-title`` entry contains ``#N``
        (convention: ``claude --name "#N slug"``);
-    2. the git branch recorded on the session's entries (main thread and
-       subagents) matches ``issue-N`` (so ``issue-N`` and ``feature/issue-N-*``);
+    2. the git branches recorded on the session's entries (main thread and
+       subagents) name issues;
     3. the first user prompt has a line starting ``Task: #N``;
     4. subagent transcripts take their parent session's verdict (the parent is
        the session directory the transcript is stored under);
     5. (only with --pr-repo OWNER/NAME) the session's own ``pr-link`` entries
        name a pull request of that repository which the --issues file lists
        for an issue. This is a weak, session-level signal, so it ranks last.
-  When a tier names more than one issue the session is split by turn: a turn
-  whose own branch names one of the issues goes to that issue, every other turn
-  is **shared** between the named issues. Sessions with no signal go to an
-  explicit **unattributed** bucket. Nothing is dropped.
+  With ``--title-first`` the session-level verdict decides every turn instead
+  (the older rule), so a long-lived session titled ``#A`` that works on the
+  branch of issue B is charged entirely to A. Both rules are always computed
+  and compared in summary.md / report.json; the flag only picks the headline.
+  When the session-level verdict names more than one issue, a turn that cannot
+  be placed by its own branch is **shared** between the named issues. Sessions
+  with no signal go to an explicit **unattributed** bucket. Nothing is dropped.
 * If the --issues file lists pull-request numbers for an issue, a ``#<PR>``
   token in a title or prompt is resolved to the issue (PR and issue numbers
   share one number space, so otherwise ``#<PR>`` would read as a second issue).
@@ -49,6 +56,9 @@ What it computes
 Determinism: output has no wall-clock content, fixed float formatting, sorted
 keys and sorted rows, and costs are summed as integers (nano-dollars), so
 unchanged inputs give byte-identical files.
+
+Output hygiene: project directory names are written as short hashes, never as
+paths.
 
 Safety: reads only ``*.jsonl`` and ``*.meta.json`` files under the selected
 project directories, plus the --issues and --ccusage-json files you pass.
@@ -440,20 +450,23 @@ def attribute_session(s, turns, alias, pr_repo=None):
     return "none", frozenset()
 
 
-def turn_target(signal, issues, turn, branch_wins=False):
+def turn_target(signal, issues, turn, title_first=False):
+    """Map one turn to ("issue", n, sig) | ("shared", frozenset, sig) |
+    ("none", None, "none"). sig is the evidence that decided this turn."""
     if signal == "none":
-        return ("none", None)
-    if len(issues) == 1:
-        only = next(iter(issues))
-        if branch_wins and signal != "branch":
-            bi = branch_issue(turn["branch"])
-            if bi is not None and bi != only:
-                return ("issue", bi)
-        return ("issue", only)
+        return ("none", None, "none")
     bi = branch_issue(turn["branch"])
-    if bi in issues:
-        return ("issue", bi)
-    return ("shared", issues)
+    if title_first:
+        if len(issues) == 1:
+            return ("issue", next(iter(issues)), signal)
+        if bi in issues:
+            return ("issue", bi, signal)
+        return ("shared", issues, signal)
+    if bi is not None:
+        return ("issue", bi, "branch")
+    if len(issues) == 1:
+        return ("issue", next(iter(issues)), signal)
+    return ("shared", issues, signal)
 
 
 def classify_session(s, turns):
@@ -488,8 +501,40 @@ def price_turns(store):
     return diag
 
 
-def build(store, issues_meta, tail_days=14, branch_wins=False, pr_repo=None):
-    """Attribute every winning turn. Returns the analysis dict."""
+def build(store, issues_meta, tail_days=14, title_first=False, pr_repo=None):
+    """Attribute every winning turn under the selected rule (branch-first by
+    default, title-first with title_first=True) and also under the other rule,
+    in the same invocation, for the side-by-side comparison. Returns the
+    analysis dict of the selected rule, with result["comparison"]."""
+    res = _build_one(store, issues_meta, tail_days, title_first, pr_repo)
+    other = _build_one(store, issues_meta, tail_days, not title_first, pr_repo)
+    branch_first, title_res = (other, res) if title_first else (res, other)
+    keys = sorted(n for n in res["targets"]
+                  if n in res["issues"] or n in other["issues"])
+    res["comparison"] = {
+        "issue_set": keys,
+        "branch_first": _rule_summary(branch_first, keys),
+        "title_first": _rule_summary(title_res, keys),
+    }
+    return res
+
+
+def _rule_summary(res, keys):
+    zero = {"episode_nano": 0, "tail_nano": 0, "tail_default_branch_nano": 0,
+            "tail_other_issues_nano": 0, "late_nano": 0}
+    rows = {n: res["issues"].get(n, zero) for n in keys}
+    eps = [rows[n]["episode_nano"] for n in keys]
+    return {
+        "episode_by_issue": {n: rows[n]["episode_nano"] for n in keys},
+        "median_nano": median(eps), "sum_nano": sum(eps),
+        "tail_nano": sum(rows[n]["tail_nano"] for n in keys),
+        "tail_default_branch_nano": sum(rows[n]["tail_default_branch_nano"] for n in keys),
+        "tail_other_issues_nano": sum(rows[n]["tail_other_issues_nano"] for n in keys),
+        "late_nano": sum(rows[n]["late_nano"] for n in keys),
+    }
+
+
+def _build_one(store, issues_meta, tail_days, title_first, pr_repo):
     alias = {}
     for it in issues_meta:
         for pr in it.get("prs") or []:
@@ -509,7 +554,7 @@ def build(store, issues_meta, tail_days=14, branch_wins=False, pr_repo=None):
     shared_acc = defaultdict(lambda: Counter())
     unattr_acc = Counter()
     signal_cost = Counter()
-    all_turns = []  # (ts, nano, kind, signal, cls) for window coverage
+    all_turns = []  # (ts, nano, kind, who, sig, cls, conflict, evidenced)
 
     def acc(n):
         a = issue_acc.get(n)
@@ -533,7 +578,7 @@ def build(store, issues_meta, tail_days=14, branch_wins=False, pr_repo=None):
         verdict = "unattributed"
         if signal != "none":
             verdict = "issue" if len(issues) == 1 else "multi"
-        session_rows.append({
+        row = {
             "project": s["project"], "session_id": s["session_id"],
             "class": scls, "signal": signal,
             "issues": " ".join(str(i) for i in sorted(issues)),
@@ -542,18 +587,21 @@ def build(store, issues_meta, tail_days=14, branch_wins=False, pr_repo=None):
             "cost_nano": cost,
             "first_ts": iso(turns[0]["ts"]) if turns else "",
             "last_ts": iso(max(t["ts"] for t in turns)) if turns else "",
-        })
+        }
+        session_rows.append(row)
+        turn_issues = set()
         for t in turns:
             cls = "subagent" if t["sub"] else scls
-            kind, who = turn_target(signal, issues, t, branch_wins)
+            kind, who, sig = turn_target(signal, issues, t, title_first)
             bi = branch_issue(t["branch"])
             conflict = kind == "issue" and bi is not None and bi != who
-            all_turns.append((t["ts"], t["nano"], kind, who, signal, cls, conflict))
+            evid = kind == "issue" and (sig in ("branch", "pr") or bi == who)
+            all_turns.append((t["ts"], t["nano"], kind, who, sig, cls, conflict, evid))
             if kind == "none":
                 unattr_acc[cls] += t["nano"]
                 signal_cost["none"] += t["nano"]
                 continue
-            signal_cost[signal] += t["nano"]
+            signal_cost[sig] += t["nano"]
             if kind == "shared":
                 shared_acc[who][cls] += t["nano"]
                 for n in who:
@@ -561,11 +609,13 @@ def build(store, issues_meta, tail_days=14, branch_wins=False, pr_repo=None):
                     a["shared_exposure"] += t["nano"] / len(who)
                     a["shared_sessions"].add(key)
                 continue
+            turn_issues.add(who)
             a = acc(who)
-            a["turn_list"].append((t["ts"], t["nano"], cls, t["sub"]))
+            a["turn_list"].append((t["ts"], t["nano"], cls, t["sub"], bi))
             a["sessions"].add(key)
             a["session_class"][key] = scls
-            a["signals"][signal] += t["nano"]
+            a["signals"][sig] += t["nano"]
+        row["turn_issues"] = " ".join(str(i) for i in sorted(turn_issues))
     # subagent files per issue (files in sessions that have attributed turns)
     for n, a in issue_acc.items():
         a["sub_files"] = sum(store["sessions"][k]["subagent_files"]
@@ -581,15 +631,24 @@ def build(store, issues_meta, tail_days=14, branch_wins=False, pr_repo=None):
         if meta:
             end = parse_ts(meta.get("merged_at")) or parse_ts(meta.get("closed_at"))
         tl = sorted(a["turn_list"], key=lambda x: x[0])
-        win = {"episode": Counter(), "tail": Counter(), "late": Counter()}
+        # windows: episode (up to the merge); after the merge, by where the turn
+        # ran: this issue's own branch ("tail"), the default branch / a branch
+        # naming no issue ("tail_default"), another issue's branch ("tail_other");
+        # anything after the tail window is "late" whatever its branch.
+        win = {"episode": Counter(), "tail": Counter(), "tail_default": Counter(),
+               "tail_other": Counter(), "late": Counter()}
         n_main = n_sub = 0
-        for ts, nano, cls, sub in tl:
+        for ts, nano, cls, sub, bi in tl:
             if end is None or ts <= end:
                 w = "episode"
-            elif ts <= end + tail:
-                w = "tail"
-            else:
+            elif ts > end + tail:
                 w = "late"
+            elif bi == n:
+                w = "tail"
+            elif bi is None:
+                w = "tail_default"
+            else:
+                w = "tail_other"
             win[w][cls] += nano
             if w == "episode":
                 if sub:
@@ -604,6 +663,8 @@ def build(store, issues_meta, tail_days=14, branch_wins=False, pr_repo=None):
             "end_ts": iso(end) if end else "",
             "episode_nano": sum(win["episode"].values()),
             "tail_nano": sum(win["tail"].values()),
+            "tail_default_branch_nano": sum(win["tail_default"].values()),
+            "tail_other_issues_nano": sum(win["tail_other"].values()),
             "late_nano": sum(win["late"].values()),
             "total_nano": sum(sum(w.values()) for w in win.values()),
             "episode_by_class": {c: win["episode"][c] for c in CLASSES},
@@ -623,6 +684,7 @@ def build(store, issues_meta, tail_days=14, branch_wins=False, pr_repo=None):
         }
     return {
         "alias": alias, "targets": targets, "issues": issues_out,
+        "title_first": bool(title_first),
         "shared": {tuple(sorted(k)): dict(v) for k, v in shared_acc.items()},
         "unattributed": dict(unattr_acc), "signal_nano": dict(signal_cost),
         "sessions": session_rows, "pricing_diag": diag, "all_turns": all_turns,
@@ -642,7 +704,8 @@ def coverage(result, since=None):
                 ("target_issues", "other_issues", "shared", "unattributed")}
     by_signal = Counter()
     conflict_nano = 0
-    for ts, nano, kind, who, signal, cls, conflict in result["all_turns"]:
+    evidence = {"branch_or_pr": 0, "title_or_prompt_only": 0}
+    for ts, nano, kind, who, signal, cls, conflict, evid in result["all_turns"]:
         if since is not None and ts < since:
             continue
         out["total"] += nano
@@ -659,7 +722,9 @@ def coverage(result, since=None):
         by_signal[signal] += nano
         if conflict:
             conflict_nano += nano
-    return {"totals": out, "conflict_nano": conflict_nano,
+        if bucket in ("target_issues", "other_issues"):
+            evidence["branch_or_pr" if evid else "title_or_prompt_only"] += nano
+    return {"totals": out, "conflict_nano": conflict_nano, "evidence": evidence,
             "by_class": {b: {c: v[c] for c in CLASSES} for b, v in by_class.items()},
             "by_signal": dict(sorted(by_signal.items()))}
 
@@ -801,7 +866,12 @@ def write_outputs(out_dir, result, store, params, since, recon):
             "sessions_main", "sessions_branch", "sessions_hook_child",
             "subagent_transcripts", "turns_main", "turns_subagent",
             "first_ts", "last_ts", "episode_first_ts", "episode_last_ts",
-            "shared_exposure_even_split_usd", "shared_sessions"]
+            "shared_exposure_even_split_usd", "shared_sessions",
+            "tail_default_branch_usd", "tail_other_issues_usd",
+            "episode_branch_first_usd", "episode_title_first_usd"]
+    cmp_ = result["comparison"]
+    bf = cmp_["branch_first"]["episode_by_issue"]
+    tf = cmp_["title_first"]["episode_by_issue"]
     issue_nums = sorted(set(targets) | set(result["issues"]))
     rows = []
     for n in issue_nums:
@@ -809,7 +879,9 @@ def write_outputs(out_dir, result, store, params, since, recon):
         if r is None:
             rows.append([n, "1", "", "0.0000", "0.0000", "0.0000", "0.0000",
                          "0.0000", "0.0000", "0.0000", "0.0000", 0, 0, 0, 0, 0,
-                         0, 0, "", "", "", "", "0.0000", 0])
+                         0, 0, "", "", "", "", "0.0000", 0, "0.0000", "0.0000",
+                         fmt_usd(bf[n]) if n in bf else "",
+                         fmt_usd(tf[n]) if n in tf else ""])
             continue
         e = r["episode_by_class"]
         rows.append([n, "1" if r["in_issues_file"] else "0", r["end_ts"],
@@ -824,7 +896,11 @@ def write_outputs(out_dir, result, store, params, since, recon):
                      r["turns_subagent"], r["first_ts"], r["last_ts"],
                      r["episode_first_ts"], r["episode_last_ts"],
                      fmt_usd(r["shared_exposure_even_split_nano"]),
-                     r["shared_sessions"]])
+                     r["shared_sessions"],
+                     fmt_usd(r["tail_default_branch_nano"]),
+                     fmt_usd(r["tail_other_issues_nano"]),
+                     fmt_usd(bf[n]) if n in bf else "",
+                     fmt_usd(tf[n]) if n in tf else ""])
     with open(os.path.join(out_dir, "issues.csv"), "w", newline="") as fh:
         w = csv.writer(fh, lineterminator="\n")
         w.writerow(cols)
@@ -835,13 +911,13 @@ def write_outputs(out_dir, result, store, params, since, recon):
         w = csv.writer(fh, lineterminator="\n")
         w.writerow(["project", "session_id", "class", "signal", "issues",
                     "verdict", "turns", "subagent_transcripts", "cost_usd",
-                    "first_ts", "last_ts"])
+                    "first_ts", "last_ts", "turn_issues"])
         for r in sorted(result["sessions"],
-                        key=lambda r: (r["project"], r["session_id"])):
-            w.writerow([r["project"], r["session_id"], r["class"], r["signal"],
+                        key=lambda r: (project_id(r["project"]), r["session_id"])):
+            w.writerow([project_id(r["project"]), r["session_id"], r["class"], r["signal"],
                         r["issues"], r["verdict"], r["turns"],
                         r["subagent_files"], fmt_usd(r["cost_nano"]),
-                        r["first_ts"], r["last_ts"]])
+                        r["first_ts"], r["last_ts"], r["turn_issues"]])
 
     # report.json
     def issue_json(r):
@@ -849,6 +925,8 @@ def write_outputs(out_dir, result, store, params, since, recon):
             "number": r["number"], "end_ts": r["end_ts"],
             "episode_usd": fmt_usd(r["episode_nano"]),
             "tail_usd": fmt_usd(r["tail_nano"]),
+            "tail_default_branch_usd": fmt_usd(r["tail_default_branch_nano"]),
+            "tail_other_issues_usd": fmt_usd(r["tail_other_issues_nano"]),
             "late_usd": fmt_usd(r["late_nano"]),
             "total_usd": fmt_usd(r["total_nano"]),
             "episode_by_class_usd": _usd_map(r["episode_by_class"]),
@@ -876,6 +954,9 @@ def write_outputs(out_dir, result, store, params, since, recon):
             "by_class_usd": {b: _usd_map(v) for b, v in sorted(c["by_class"].items())},
             "by_signal_usd": _usd_map(c["by_signal"]),
             "branch_conflict_usd": fmt_usd(c["conflict_nano"]),
+            "attributed_by_evidence_usd": _usd_map(c["evidence"]),
+            "attributed_by_evidence_share_of_total_pct": {
+                k: "%.2f" % (100.0 * v / tot) for k, v in sorted(c["evidence"].items())},
         }
 
     class_total = Counter()
@@ -884,8 +965,29 @@ def write_outputs(out_dir, result, store, params, since, recon):
     shared_rows = [{"issues": list(k), "usd": _usd_map(v),
                     "total_usd": fmt_usd(sum(v.values()))}
                    for k, v in sorted(result["shared"].items())]
+    def rule_json(r):
+        return {
+            "issues_compared": len(cmp_["issue_set"]),
+            "median_episode_usd": fmt_usd(r["median_nano"]),
+            "sum_episode_usd": fmt_usd(r["sum_nano"]),
+            "tail_same_issue_branch_usd": fmt_usd(r["tail_nano"]),
+            "post_merge_default_branch_usd": fmt_usd(r["tail_default_branch_nano"]),
+            "other_issues_branch_after_merge_usd": fmt_usd(r["tail_other_issues_nano"]),
+            "late_usd": fmt_usd(r["late_nano"]),
+        }
+    delta = {"median_usd": fmt_usd(cmp_["branch_first"]["median_nano"]
+                                   - cmp_["title_first"]["median_nano"]),
+             "sum_usd": fmt_usd(cmp_["branch_first"]["sum_nano"]
+                                - cmp_["title_first"]["sum_nano"])}
     report = {
         "params": params,
+        "rule_comparison": {
+            "headline_rule": "title_first" if result["title_first"] else "branch_first",
+            "issue_set": cmp_["issue_set"],
+            "branch_first": rule_json(cmp_["branch_first"]),
+            "title_first": rule_json(cmp_["title_first"]),
+            "delta_branch_first_minus_title_first_usd": delta,
+        },
         "prices_verified": PRICES_DATE,
         "store": {
             "transcript_files": len(store["files"]),
@@ -922,6 +1024,12 @@ def write_outputs(out_dir, result, store, params, since, recon):
     if recon is not None:
         with open(os.path.join(out_dir, "reconciliation.md"), "w") as fh:
             fh.write(render_recon(recon))
+
+
+def project_id(name):
+    """Stable short hash standing in for a project directory name (which embeds
+    a local path). Same name, same id, so rows stay joinable within a store."""
+    return "p-" + hashlib.sha256(name.encode()).hexdigest()[:8]
 
 
 def recon_json(r):
@@ -1024,18 +1132,26 @@ def render_summary(report, result, targets, issue_nums, since, recon):
           % (st["transcript_files"], st["sessions"],
              ", ".join("%s %d" % (k, v) for k, v in st["sessions_by_class"].items()),
              st["deduplicated_turns"]), ""]
+    cmp_ = report["rule_comparison"]
+    headline = cmp_["headline_rule"]
+    L += ["Attribution rule for the per-issue table: %s. Both rules are computed in this run (comparison below)."
+          % ("TITLE-FIRST (session title decides every turn)" if headline == "title_first"
+             else "branch-first (a turn on an issue branch is charged to that issue; the session title/prompt only labels other turns)"), ""]
     L += ["## Per issue (USD)", "",
-          "| issue | episode | tail | late | main | branch | subagent | hook | sessions | sub files | turns main/sub | first | merge/close | shared (even split) |",
-          "|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|---|---|--:|"]
-    ep_vals = []
+          "Columns: episode = up to the merge; tail = same-issue branch within the tail window; post-merge default = post-merge default-branch activity (not attributable to the issue); other issues = post-merge cost on other issues' branches (never charged to this issue); late = after the tail.", "",
+          "| issue | episode | tail | post-merge default | other issues | late | main | branch | subagent | hook | sessions | sub files | turns main/sub | first | merge/close | shared (even split) |",
+          "|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|---|---|--:|"]
+    n_listed = 0
     for n in issue_nums:
         r = result["issues"].get(n)
         if r is None or not r["in_issues_file"]:
             continue
         e = r["episode_by_class"]
-        ep_vals.append(r["episode_nano"])
-        L.append("| %d | %s | %s | %s | %s | %s | %s | %s | %d | %d | %d/%d | %s | %s | %s |" % (
-            n, fmt_usd(r["episode_nano"]), fmt_usd(r["tail_nano"]), fmt_usd(r["late_nano"]),
+        n_listed += 1
+        L.append("| %d | %s | %s | %s | %s | %s | %s | %s | %s | %s | %d | %d | %d/%d | %s | %s | %s |" % (
+            n, fmt_usd(r["episode_nano"]), fmt_usd(r["tail_nano"]),
+            fmt_usd(r["tail_default_branch_nano"]), fmt_usd(r["tail_other_issues_nano"]),
+            fmt_usd(r["late_nano"]),
             fmt_usd(e["main"]), fmt_usd(e["branch"]), fmt_usd(e["subagent"]),
             fmt_usd(e["hook_child"]), r["sessions"], r["subagent_transcripts"],
             r["turns_main"], r["turns_subagent"], r["episode_first_ts"][:10],
@@ -1043,9 +1159,25 @@ def render_summary(report, result, targets, issue_nums, since, recon):
     missing = report["issues_without_attributed_cost"]
     if missing:
         L += ["", "No attributed cost found for: %s." % ", ".join(str(n) for n in missing)]
-    if ep_vals:
-        L += ["", "Issues in the --issues file with attributed cost: %d; sum of episode cost %s; median %s."
-              % (len(ep_vals), fmt_usd(sum(ep_vals)), fmt_usd(median(ep_vals)))]
+    if n_listed:
+        bfj, tfj = cmp_["branch_first"], cmp_["title_first"]
+        d = cmp_["delta_branch_first_minus_title_first_usd"]
+        L += ["", "## Episode cost under both attribution rules", "",
+              "Same issue set under both rules (%d issues from the --issues file with attributed cost under either rule)."
+              % bfj["issues_compared"], "",
+              "| rule | median episode | sum of episode | tail (same-issue branch) | post-merge default-branch activity (not attributable to the issue) | cost on other issues' branches after merge (never charged to this issue) |",
+              "|---|--:|--:|--:|--:|--:|",
+              "| branch-first (default) | %s | %s | %s | %s | %s |" % (
+                  bfj["median_episode_usd"], bfj["sum_episode_usd"],
+                  bfj["tail_same_issue_branch_usd"], bfj["post_merge_default_branch_usd"],
+                  bfj["other_issues_branch_after_merge_usd"]),
+              "| title-first (--title-first) | %s | %s | %s | %s | %s |" % (
+                  tfj["median_episode_usd"], tfj["sum_episode_usd"],
+                  tfj["tail_same_issue_branch_usd"], tfj["post_merge_default_branch_usd"],
+                  tfj["other_issues_branch_after_merge_usd"]),
+              "| delta (branch-first minus title-first) | %s | %s | | | |"
+              % (d["median_usd"], d["sum_usd"]),
+              "", "The headline episode cost never includes the post-merge default-branch activity or the cost on other issues' branches. The two medians differ because a long-lived session titled for an early issue often works on the branches of later issues; a large gap means title-first attribution is not trustworthy for this store. Quote both."]
 
     def cov_block(title, c):
         if c is None:
@@ -1064,6 +1196,11 @@ def render_summary(report, result, targets, issue_nums, since, recon):
                 ", ".join("%s %s" % (k, v) for k, v in c["by_signal_usd"].items()),
                 "", "Attributed to an issue although the turn's own branch names a different issue (signal conflict): %s USD."
                 % c["branch_conflict_usd"]]
+        ev = c["attributed_by_evidence_usd"]
+        evp = c["attributed_by_evidence_share_of_total_pct"]
+        out += ["", "Attributed cost (target + other issues) by strength of evidence: attributed by branch/PR evidence %s USD (%s%% of total); attributed by title/prompt only %s USD (%s%% of total). The attributed share above counts both; only the first is confidently attributed."
+                % (ev["branch_or_pr"], evp["branch_or_pr"],
+                   ev["title_or_prompt_only"], evp["title_or_prompt_only"])]
         return out
     L += cov_block("Coverage, all time", report["coverage_all_time"])
     if since:
@@ -1129,10 +1266,14 @@ def build_arg_parser():
                     help="enable the lowest-priority `pr` signal: a session that itself linked a "
                          "pull request of this repository (a pr-link entry) which belongs to a "
                          "listed issue is attributed to that issue. Off when omitted.")
+    ap.add_argument("--title-first", action="store_true",
+                    help="use the older rule as the headline: the session-level verdict "
+                         "(title, then branch, task, pr link) decides every turn. Default: a "
+                         "turn on a branch naming an issue is charged to that issue and the "
+                         "session verdict only labels other turns. Both rules are always "
+                         "computed and compared in the reports.")
     ap.add_argument("--turn-branch-wins", action="store_true",
-                    help="sensitivity mode: a turn on a branch naming issue M goes to M even "
-                         "when the session title/prompt names a different single issue "
-                         "(default follows the signal priority: title first)")
+                    help="no-op, kept for compatibility: this is now the default")
     return ap
 
 
@@ -1144,15 +1285,16 @@ def main(argv=None):
         since = datetime.strptime(args.coverage_since, "%Y-%m-%d").replace(tzinfo=timezone.utc)
     issues_meta = load_issues(args.issues)
     store = scan_store(args.projects_root, globs, args.hook_prompt_prefix)
-    result = build(store, issues_meta, args.tail_days, args.turn_branch_wins, args.pr_repo)
+    result = build(store, issues_meta, args.tail_days, args.title_first, args.pr_repo)
     recon = None
     if args.ccusage_json:
         recon = reconcile(store, load_ccusage_sessions(args.ccusage_json),
                           args.ccusage_tolerance)
-    params = {"project_globs": sorted(globs), "tail_days": args.tail_days,
+    params = {"project_globs_hashed": sorted(project_id(g) for g in globs),
+              "tail_days": args.tail_days,
               "coverage_since": args.coverage_since or "",
               "hook_prompt_prefix": args.hook_prompt_prefix,
-              "turn_branch_wins": bool(args.turn_branch_wins),
+              "title_first": bool(args.title_first),
               "pr_repo": args.pr_repo or "",
               "issues_file_sha256": hashlib.sha256(
                   json.dumps(issues_meta, sort_keys=True).encode()).hexdigest()

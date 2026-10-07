@@ -164,15 +164,59 @@ class AttributionTests(unittest.TestCase):
         self.assertEqual((session_row(res, "b")["signal"], session_row(res, "b")["issues"]),
                          ("branch", "2"))
 
-    def test_turn_branch_wins_sensitivity_mode(self):
+    def _title_session(self):
         s = Store(self)
         s.session("a", [title("#1 x"),
-                        asst("m1", "2026-09-01T10:00:00Z", branch="main", out=10),
-                        asst("m2", "2026-09-01T10:01:00Z", branch="issue-2", out=10)])
-        _, res = run(self, s)
+                        asst("m1", "2026-09-01T10:00:00Z", branch="main", inp=1000000),
+                        asst("m2", "2026-09-01T10:01:00Z", branch="issue-2", inp=3000000)])
+        return s
+
+    def test_default_is_branch_first(self):
+        _, res = run(self, self._title_session())
+        # the branch turn goes to issue 2, the default-branch turn to the title issue
+        self.assertEqual(res["issues"][1]["total_nano"], 2 * 10**9)
+        self.assertEqual(res["issues"][2]["total_nano"], 6 * 10**9)
+        self.assertFalse(res["title_first"])
+        self.assertEqual(res["issues"][2]["signal_nano"], {"branch": 6 * 10**9})
+        self.assertEqual(res["issues"][1]["signal_nano"], {"title": 2 * 10**9})
+        # session-level verdict is still reported; turn-level issues are added
+        row = session_row(res, "a")
+        self.assertEqual((row["signal"], row["issues"], row["turn_issues"]),
+                         ("title", "1", "1 2"))
+
+    def test_title_first_flag_keeps_the_old_rule(self):
+        _, res = run(self, self._title_session(), title_first=True)
         self.assertEqual(set(res["issues"]), {1})
-        _, res = run(self, s, branch_wins=True)
-        self.assertEqual(set(res["issues"]), {1, 2})
+        self.assertEqual(res["issues"][1]["total_nano"], 8 * 10**9)
+        self.assertTrue(res["title_first"])
+        cov = E.coverage(res)
+        self.assertEqual(cov["conflict_nano"], 6 * 10**9)
+
+    def test_both_rules_compared_in_one_build(self):
+        meta = [{"number": 1}, {"number": 2}]
+        for tf in (False, True):
+            _, res = run(self, self._title_session(), meta, title_first=tf)
+            c = res["comparison"]
+            self.assertEqual(c["issue_set"], [1, 2])
+            self.assertEqual(c["branch_first"]["episode_by_issue"],
+                             {1: 2 * 10**9, 2: 6 * 10**9})
+            self.assertEqual(c["title_first"]["episode_by_issue"],
+                             {1: 8 * 10**9, 2: 0})
+            self.assertEqual((c["branch_first"]["sum_nano"], c["title_first"]["sum_nano"]),
+                             (8 * 10**9, 8 * 10**9))
+            self.assertEqual((c["branch_first"]["median_nano"], c["title_first"]["median_nano"]),
+                             (4 * 10**9, 4 * 10**9))
+
+    def test_turn_branch_wins_flag_is_accepted_noop(self):
+        s = self._title_session()
+        outs = []
+        for extra in ([], ["--turn-branch-wins"]):
+            out = os.path.join(s.root, "o%d" % len(outs))
+            self.assertEqual(E.main(["--projects-root", s.root, "--out", out] + extra), 0)
+            outs.append(out)
+        for n in os.listdir(outs[0]):
+            with open(os.path.join(outs[0], n), "rb") as a, open(os.path.join(outs[1], n), "rb") as b:
+                self.assertEqual(a.read(), b.read(), n)
 
     def test_unattributed_bucket_is_explicit_and_counted(self):
         s = Store(self)
@@ -365,6 +409,7 @@ class DedupTests(unittest.TestCase):
 
 class WindowTests(unittest.TestCase):
     def test_episode_tail_late(self):
+        # default-branch turns after the merge are not the issue's tail
         s = Store(self)
         s.session("s1", [title("#60 x"),
                          asst("m1", "2026-09-01T10:00:00Z", inp=1000000),
@@ -374,8 +419,10 @@ class WindowTests(unittest.TestCase):
         meta = [{"number": 60, "merged_at": "2026-09-05T00:00:00Z"}]
         _, res = run(self, s, meta)
         r = res["issues"][60]
-        self.assertEqual((r["episode_nano"], r["tail_nano"], r["late_nano"]),
-                         (2 * 10**9, 2 * 10**9, 4 * 10**9))
+        self.assertEqual((r["episode_nano"], r["tail_nano"], r["tail_default_branch_nano"],
+                          r["tail_other_issues_nano"], r["late_nano"]),
+                         (2 * 10**9, 0, 2 * 10**9, 0, 4 * 10**9))
+        self.assertEqual(r["total_nano"], 8 * 10**9)
         self.assertEqual(r["first_ts"], "2026-09-01T10:00:00Z")
         self.assertEqual(r["episode_last_ts"], "2026-09-01T10:00:00Z")
 
@@ -386,7 +433,49 @@ class WindowTests(unittest.TestCase):
         meta = [{"number": 61, "closed_at": "2026-09-02T00:00:00Z"}]
         _, res = run(self, s, meta)
         self.assertEqual(res["issues"][61]["end_ts"], "2026-09-02T00:00:00Z")
-        self.assertEqual(res["issues"][61]["tail_nano"], 2 * 10**9)
+        self.assertEqual(res["issues"][61]["tail_default_branch_nano"], 2 * 10**9)
+        self.assertEqual(res["issues"][61]["tail_nano"], 0)
+
+    def test_tail_split_same_issue_default_and_other_branches(self):
+        # title-first keeps a title session's later turns on other issues' branches
+        # with the title issue: they must show up as "other issues", not tail
+        s = Store(self)
+        s.session("s1", [title("#62 x"),
+                         asst("m0", "2026-09-01T10:00:00Z", branch="issue-62", inp=1000000),
+                         asst("m1", "2026-09-06T10:00:00Z", branch="issue-62", inp=1000000),
+                         asst("m2", "2026-09-07T10:00:00Z", branch="main", inp=2000000),
+                         asst("m3", "2026-09-08T10:00:00Z", branch="issue-63", inp=4000000),
+                         asst("m4", "2026-11-01T10:00:00Z", branch="issue-62", inp=1000000)])
+        meta = [{"number": 62, "merged_at": "2026-09-05T00:00:00Z"}, {"number": 63}]
+        _, res = run(self, s, meta, title_first=True)
+        r = res["issues"][62]
+        self.assertEqual((r["episode_nano"], r["tail_nano"], r["tail_default_branch_nano"],
+                          r["tail_other_issues_nano"], r["late_nano"]),
+                         (2 * 10**9, 2 * 10**9, 4 * 10**9, 8 * 10**9, 2 * 10**9))
+        self.assertEqual(r["total_nano"], 18 * 10**9)
+        # branch-first charges the other issue's branch turn to that issue instead
+        _, res = run(self, s, meta)
+        r = res["issues"][62]
+        self.assertEqual((r["tail_other_issues_nano"], r["tail_default_branch_nano"]),
+                         (0, 4 * 10**9))
+        self.assertEqual(res["issues"][63]["episode_nano"], 8 * 10**9)
+        self.assertEqual(res["comparison"]["title_first"]["tail_other_issues_nano"], 8 * 10**9)
+        self.assertEqual(res["comparison"]["branch_first"]["tail_other_issues_nano"], 0)
+
+    def test_conservation_per_issue_shared_unattributed(self):
+        s = Store(self)
+        s.session("a", [title("#1 x"),
+                        asst("m1", "2026-09-01T10:00:00Z", branch="main", inp=1000000),
+                        asst("m2", "2026-09-01T10:01:00Z", branch="issue-2", inp=3000000)])
+        s.session("b", [title("#5 #6"), asst("m3", "2026-09-01T10:00:00Z", inp=5000000)])
+        s.session("c", [asst("m4", "2026-09-01T10:00:00Z", inp=7000000)])
+        for tf in (False, True):
+            sc, res = run(self, s, [{"number": 1}], title_first=tf)
+            total = sum(t["nano"] for t in sc["best"].values())
+            parts = (sum(r["total_nano"] for r in res["issues"].values())
+                     + sum(sum(v.values()) for v in res["shared"].values())
+                     + sum(res["unattributed"].values()))
+            self.assertEqual(parts, total)
 
 
 class OutputTests(unittest.TestCase):
@@ -422,6 +511,75 @@ class OutputTests(unittest.TestCase):
             with open(os.path.join(out, n)) as fh:
                 body = fh.read()
             self.assertNotIn("SECRET", body, n)
+
+
+class CoverageEvidenceTests(unittest.TestCase):
+    def test_branch_pr_evidence_vs_title_only(self):
+        s = Store(self)
+        s.session("a", [title("#1 x"),
+                        asst("m1", "2026-09-01T10:00:00Z", branch="main", inp=1000000),
+                        asst("m2", "2026-09-01T10:01:00Z", branch="issue-1", inp=3000000)])
+        s.session("b", [{"type": "pr-link", "prNumber": 71, "prRepository": "o/r"},
+                        asst("m3", "2026-09-01T10:00:00Z", branch="main", inp=5000000)])
+        s.session("c", [asst("m4", "2026-09-01T10:00:00Z", branch="main", inp=7000000)])
+        meta = [{"number": 1}, {"number": 70, "prs": [71]}]
+        for tf in (False, True):
+            _, res = run(self, s, meta, title_first=tf, pr_repo="o/r")
+            ev = E.coverage(res)["evidence"]
+            # branch turn (6) and PR-linked session (10) are evidenced; the main turn is title-only (2)
+            self.assertEqual(ev, {"branch_or_pr": 16 * 10**9, "title_or_prompt_only": 2 * 10**9})
+
+    def test_summary_prints_both_rules_and_evidence_split(self):
+        s = Store(self)
+        s.session("a", [title("#1 x"),
+                        asst("m1", "2026-09-01T10:00:00Z", branch="main", inp=1000000),
+                        asst("m2", "2026-09-01T10:01:00Z", branch="issue-2", inp=3000000)])
+        issues = os.path.join(s.root, "issues.json")
+        with open(issues, "w") as fh:
+            json.dump([{"number": 1, "merged_at": "2026-09-02T00:00:00Z"},
+                       {"number": 2, "merged_at": "2026-09-02T00:00:00Z"}], fh)
+        out = os.path.join(s.root, "out")
+        self.assertEqual(E.main(["--projects-root", s.root, "--issues", issues, "--out", out,
+                                 "--coverage-since", "2026-09-01"]), 0)
+        with open(os.path.join(out, "summary.md")) as fh:
+            md = fh.read()
+        self.assertIn("branch-first (default)", md)
+        self.assertIn("title-first (--title-first)", md)
+        self.assertIn("post-merge default-branch activity (not attributable to the issue)", md)
+        self.assertIn("attributed by branch/PR evidence", md)
+        self.assertIn("attributed by title/prompt only", md)
+        with open(os.path.join(out, "report.json")) as fh:
+            rep_ = json.load(fh)
+        rc = rep_["rule_comparison"]
+        self.assertEqual(rc["headline_rule"], "branch_first")
+        self.assertEqual((rc["branch_first"]["median_episode_usd"], rc["title_first"]["median_episode_usd"]),
+                         ("4.0000", "4.0000"))
+        self.assertEqual(rc["delta_branch_first_minus_title_first_usd"]["sum_usd"], "0.0000")
+        out2 = os.path.join(s.root, "out2")
+        E.main(["--projects-root", s.root, "--issues", issues, "--out", out2, "--title-first"])
+        with open(os.path.join(out2, "report.json")) as fh:
+            self.assertEqual(json.load(fh)["rule_comparison"]["headline_rule"], "title_first")
+
+
+class ProjectIdTests(unittest.TestCase):
+    def test_project_dirs_hashed_in_outputs(self):
+        s = Store(self)
+        s.session("s1", [title("#1"), asst("m1", "2026-09-01T10:00:00Z", inp=1000)],
+                  project="-home-someone-secretproj")
+        s.session("s2", [asst("m2", "2026-09-01T10:00:00Z", inp=1000)],
+                  project="-home-someone-secretproj")
+        out = os.path.join(s.root, "out")
+        E.main(["--projects-root", s.root, "--project-glob=-home-someone-secret*", "--out", out])
+        for n in os.listdir(out):
+            with open(os.path.join(out, n)) as fh:
+                self.assertNotIn("secretproj", fh.read(), n)
+                fh.seek(0)
+                self.assertNotIn("someone", fh.read(), n)
+        with open(os.path.join(out, "sessions.csv")) as fh:
+            rows = fh.read().splitlines()[1:]
+        ids = {r.split(",")[0] for r in rows}
+        self.assertEqual(ids, {E.project_id("-home-someone-secretproj")})
+        self.assertRegex(next(iter(ids)), r"^p-[0-9a-f]{8}$")
 
 
 class ReconcileTests(unittest.TestCase):
