@@ -80,10 +80,10 @@ from datetime import datetime, timedelta, timezone
 # Pricing
 # --------------------------------------------------------------------------
 # Verified against https://platform.claude.com/docs/en/about-claude/pricing on
-# 2026-10-06 (live fetch). Unit: US cents per million tokens, as integers, so
+# 2026-10-08 (live fetch). Unit: US cents per million tokens, as integers, so
 # that cost arithmetic is exact. Tuple order: input, output, cache write 5m,
 # cache write 1h, cache read.
-PRICES_DATE = "2026-10-06"
+PRICES_DATE = "2026-10-08"
 PRICES = {
     "fable-5-1":  (1000, 5000, 1250, 2000, 25),
     "fable-5":    (1000, 5000, 1250, 2000, 100),
@@ -97,7 +97,7 @@ PRICES = {
     "opus-4-5":   (500, 2500, 625, 1000, 50),
     "opus-4-1":   (1500, 7500, 1875, 3000, 150),
     "opus-4":     (1500, 7500, 1875, 3000, 150),
-    "sonnet-5-5": (200, 1000, 250, 400, 20),
+    "sonnet-5-5": (200, 1000, 250, 400, 10),  # cache read 0.05x input, pricing page footnote 2
     "sonnet-5":   (200, 1000, 250, 400, 20),
     "sonnet-4-6": (300, 1500, 375, 600, 30),
     "sonnet-4-5": (300, 1500, 375, 600, 30),
