@@ -90,3 +90,11 @@ Conclusion: session length is the lever, not the baseline. Context-proportional 
 - Thresholds stay provisional.
 - AC4 (work-account run) is folded into the work-account billing-mode item (week of 2026-10-12) rather than keeping #146 open.
 - AC3 (trim issues) not filed.
+
+## 2026-10-10: poc_planning_tool MCP trim result
+- Before (2026-10-09 `/context`, poc_planning_tool): 59.8k total, MCP tools 24.9k loaded (31 tools).
+- Cause: `"alwaysLoad": true` on the gitnexus server in poc_planning_tool's `.mcp.json` exempted its 19 tools (24.3k tokens) from MCP tool-search deferral, although `ENABLE_TOOL_SEARCH` was on globally. Per code.claude.com/docs/en/mcp ("Exempt a server from deferral").
+- After (fresh-session `/context`, user-run 2026-10-10): 34.2k total (6% of 600k window); MCP tools "23 tools · 0 tokens (loaded on-demand)". Saving 25.6k. Tool count fell from 31 to 23; the 8 missing are likely the claude.ai Claude Docs connector tools (unconfirmed).
+- The user ran a gitnexus smoke test and judged deferred loading acceptable.
+- Audit evidence: `claude_code_research/.scratch/poc-mcp-audit.md` (local only). Caveat: its usage counts (gitnexus 649 calls / 156 sessions; 20 of 31 tools never called) may include sessions from other projects (it reports 6,799 sessions scanned); treat the counts as unverified.
+- Lesson: `alwaysLoad` on a many-tool MCP server is a large per-request cost; check `/context` for it.
