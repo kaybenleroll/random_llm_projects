@@ -1386,4 +1386,35 @@ Dated history above is left as written; this entry supersedes the affected wordi
 
 ---
 
+### §2.67 — Steam hung instance and Axis & Allies Online GPU-sandbox crash (2026-10-10)
+
+**Steam hung instance.** Steam pid (up 27h) was alive but headless: `steamwebhelper` had died (time and cause unknown; last seen alive 03:55 Oct 10), leaving only an unmapped 10x10 stub window. New `steam` launches handed off to that instance and showed nothing. It ignored `steam -shutdown` and SIGTERM (futex wait). Fix: SIGKILL of the pid and its `steam-runtime-launcher-service` child, removed stale `~/.steam/steam.pid`, relaunched from a terminal; fresh webhelper and 'Sign in to Steam' window within ~4s.
+
+**Recurrence signature.** Steam 'does not launch', `pgrep -a steam` shows an old pid, no `steamwebhelper` child. Procedure: check for a live pid, `steam -shutdown`, then `kill`, then `kill -9`, relaunch. **Root cause of the webhelper death: OPEN.**
+
+**Axis & Allies Online (AppID 898920).** Not a Proton game: compat_log says 'Mapping AppID 898920 to tool native'; native Linux Electron 6.1.5 / Chrome 76 (2019), run via SteamLinuxRuntime_soldier. Symptom: GPU process SIGSYS (seccomp kill) ~9x per launch, then 'display compositor is frequently crashing' + SIGTRAP; dies in ~3s.
+- NVIDIA 595.91.07 -> 595.99.02 (2026-10-09) was NOT the cause: game files were first installed/updated 2026-10-10 21:42 and no earlier successful run was found.
+- **Fix confirmed by user:** Steam > A&A > Properties > Launch Options = `%command% --disable-gpu-sandbox`.
+- Likely mechanism (inference, unconfirmed): old bundled Chromium seccomp-bpf filter vs syscalls from the newer host glibc. The offending syscall number was not captured.
+- Fallbacks if it recurs: `--no-sandbox`; `--no-sandbox --disable-gpu`; a Windows depot under Proton (not checked whether one exists).
+- **Correction:** an earlier claim that this was a 'Proton prefix' problem was wrong. The empty `compatdata/898920` is Steam-created and irrelevant.
+
+**Status: A&A WORKAROUND CONFIRMED; Steam webhelper-death cause OPEN.**
+
+---
+
+### §2.68 — NVIDIA 595.99.02 upgrade, first boot, and MEGAsync removal (2026-10-10)
+
+**NVIDIA 595.91.07 -> 595.99.02.** Installed by apt 2026-10-09 06:34 (unattended-style) without a reboot, so the running kernel module stayed 595.91.07 and `nvidia-smi` reported 'Driver/library version mismatch' until reboot. User rebooted 2026-10-09 12:49 (after an R container job). First boot on 595.99.02 clean: `nvidia-smi` OK, GPU 47C idle P8, no failed units, no thermal/NVRM warnings beyond the 3 known benign asserts, PM params intact in cmdline (`NVreg_DynamicPowerManagement=0x01`, `pcie_aspm=force`). Pattern: driver package upgrades land without a reboot; the mismatch is expected until reboot.
+
+**Pending.** `~/.claude/MACHINE.md` still records 595.91.07. It is chezmoi-managed and not edited here; update pending via a dotfiles PR.
+
+**MEGAsync removed (2026-10-07).** MEGAsync 6.6.2-1.1 and its apt source (`/etc/apt/sources.list.d/megaio.sources`, keyring `/etc/apt/keyrings/meganz-archive-keyring.gpg`) removed via `.scratch/remove_megasync.sh`. It was unused (no rationale found); originally a manual .deb in mid-2025, apt source added 2026-09-16.
+
+**Apt sources reviewed (2026-10-07).** Healthy. Stale hold on `linux-modules-6.17.0-23-generic` (optional `apt-mark unhold`). Several sources files are named for older codenames but have `Suites: resolute`.
+
+**Status: NVIDIA 595.99.02 first boot clean; MACHINE.md update pending.**
+
+---
+
 _End of draft._
