@@ -23,13 +23,13 @@ Evidence levels: verified live (a command or payload was run), code read, docs, 
 |---|---|---|---|
 | #356 | enforce-agent-model hook ignores the per-call Agent effort parameter | P1 | Verified live (synthetic payload) plus code read; real payload field name not confirmed |
 | #357 | Correct stale subagent effort claims (per-call parameter, Haiku support) | P2 | Docs for both claims; line numbers auditor-reported |
-| #358 | update-config skill: correct effortLevel and thinking-budget guidance | P2 | Docs (model-config page); line numbers auditor-reported |
+| #358 | update-config skill: correct effortLevel and thinking-budget guidance for 5.5 models | P2 | Docs (model-config page); line numbers auditor-reported |
 | #359 | Recalibrate effort settings and pins for Opus 5.5 / Sonnet 5.5 | P2 | Docs (item 1), code read (items 2-3); line numbers auditor-reported |
-| #360 | Restructure skills over the 5,000-token post-compaction re-attach limit | P2 | Docs for the limit; sizes measured; byte-to-token conversion (bytes/4) unvalidated; what falls past the cut is auditor-reported |
-| #361 | Tighten literal-reading hazards in skills and commands | P3 | Wording verified by read; hazard and 5.5 applicability are auditor-reported (supporting rows are Sonnet 5 / Opus 5) |
+| #360 | Restructure skills that exceed the 5,000-token post-compaction re-attach limit | P2 | Docs for the limit; sizes measured; byte-to-token conversion (bytes/4) unvalidated; what falls past the cut is auditor-reported |
+| #361 | Tighten literal-reading hazards in skills and commands (skip-steps, unattended, open-ended scope) | P3 | Wording verified by read; hazard and 5.5 applicability are auditor-reported (supporting rows are Sonnet 5 / Opus 5) |
 | #362 | Review HARD RULE emphasis density and always-loaded size in CLAUDE.md | P3 | Counts auditor-reported; guidance mapping from the checklist; hypothesis not supported |
 | #363 | Reflect and reflect-maintain dispatch recipes omit the mandatory polling-loop line | P3 | Script count plus a read of each block; consequence unmeasured |
-| #364 | deep-research workflow leaves model and effort unset, against the CLAUDE.md model rule | P3 | Code read; which model runs under opusplan is reasoned, not measured |
+| #364 | deep-research workflow leaves model and effort unset, contradicting the CLAUDE.md model rule | P3 | Code read; which model runs under opusplan is reasoned, not measured |
 | #365 | Fix skill frontmatter: two unparseable descriptions and a dead triggers key | P3 | Parser (item 1), docs plus code read (item 2); runtime effect untested |
 | #366 | MACHINE.md.tmpl pins stale kernel and NVIDIA driver versions | P3 | Script (live commands on the host) |
 
