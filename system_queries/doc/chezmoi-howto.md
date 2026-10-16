@@ -57,7 +57,7 @@ The initial commit (439b992) added 86 files. A second commit (b75b024) added the
 - `dot_claude/memory/*.md` — individual memory files
 - `dot_claude/agents/triage-phase2.md` — subagent definition
 - `dot_claude/agents/triage-phase3.md` — subagent definition
-- `dot_claude/skills/*/SKILL.md` — all custom skills (new-session, stress-test, reflect, grill-me, diagnose, tdd, zoom-out, run-project-triage, and others)
+- `dot_claude/skills/*/SKILL.md` — all custom skills (manage-context, stress-test, reflect, grill-me, diagnose, tdd, zoom-out, run-project-triage, and others)
 - `dot_claude/skills/run-project-triage/bin/render_graph_mermaid.py` — skill helper script
 - `dot_claude/skills/*/learnings.md` — per-skill accumulated learnings
 - `dot_claude/rules/skill-hygiene.md` — project-level rules
