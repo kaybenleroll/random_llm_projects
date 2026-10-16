@@ -251,7 +251,7 @@ Terms come in two tiers.
 
 STRICT terms (abort): `Co-Authored-By`, `Claude-Session`, `claude.ai/code`,
 "Generated with Claude", the PR number, the branch name and every `--leak-term`,
-`check-acs`, `.scratch`, handover file names (`handover*.md` and similar),
+`check-acs`, `verify-and-merge`, `.scratch`, handover file names (`handover*.md` and similar),
 plan-file paths (`docs/plans/`, `plans/<year>-...`, `planning/archive/`,
 `docs/superpowers`) and `superpowers`.
 
