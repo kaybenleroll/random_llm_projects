@@ -226,7 +226,7 @@ class ScanTests(unittest.TestCase):
             self.assertEqual({h["file"] for h in r["strict_fail"]}, {"issue.md"})
 
     def test_strict_terms_check_added_diff_lines_and_prompts(self):
-        strict_lines = ["see check-acs output", "wrote .scratch/notes.md", "see handover-2026.md",
+        strict_lines = ["see check-acs output", "see verify-and-merge output", "wrote .scratch/notes.md", "see handover-2026.md",
                         "docs/plans/2026-01-01-x.md", "via superpowers"]
         for line in strict_lines:
             with tmpdir() as t:

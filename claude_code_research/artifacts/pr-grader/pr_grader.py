@@ -80,6 +80,7 @@ STRICT_ALL_LINES = {
 }
 STRICT_ADDED_LINES = {
     "check-acs": r"check-acs",
+    "verify-and-merge": r"verify-and-merge",
     "scratch": r"\.scratch",
     "handover-file": r"handover[\w.-]*\.(?:md|txt|json|ya?ml)\b",
     "plan-file-path": r"docs/plans/|(?<![\w/-])plans/\d{4}-|planning/archive/",
