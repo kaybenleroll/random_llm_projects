@@ -17,7 +17,7 @@ Hardware/firmware/chassis-specific findings belong in
 ### Issue Work Branch Policy — HARD RULE
 
 - **HARD RULE:** All work on a GitHub issue (this repo or `kaybenleroll/dotfiles`) goes on a dedicated feature branch and merges via PR — never commit directly to `main`, even mid-task from a subagent. Any subagent prompt that delegates issue implementation must explicitly instruct it to create/checkout the branch before its first commit, not just tell it to commit.
-  - **How to apply:** when delegating issue implementation, name the branch (derive from issue number + short slug, e.g. `issue-101-keep-max-dedup`) in the subagent prompt and require it to branch before committing; open a PR referencing the issue (`Closes #N` same-repo, full `owner/repo#N` cross-repo — a bare `reponame#N` in a PR body silently fails to close a cross-repo issue) once the final step's tests are green; verify ACs against the diff (`/verify-and-merge` or manually) before merging.
+  - **How to apply:** when delegating issue implementation, name the branch (derive from issue number + short slug, e.g. `issue-101-keep-max-dedup`) in the subagent prompt and require it to branch before committing; open a PR referencing the issue (`Closes #N` same-repo, full `owner/repo#N` cross-repo — a bare `reponame#N` in a PR body silently fails to close a cross-repo issue) once the final step's tests are green; verify ACs against the diff (`/check-and-merge-prs` or manually) before merging.
 
 ### General
 
